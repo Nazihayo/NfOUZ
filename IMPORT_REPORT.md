@@ -30,7 +30,7 @@ Every source file existed only in `Nfouz-` except `.gitignore`. Nothing in NfOUZ
 
 | File | Resolution |
 |---|---|
-| `.gitignore` | Both repos created it. The source version (Unity + Node + secrets rules) is kept verbatim. The Phase 1 lines not already covered are appended under "Unity — additional generated/local artifacts". Nothing was removed from either side. |
+| `.gitignore` | Both repos created it. The source version (Unity + Node + secrets rules) is kept verbatim. The Phase 1 lines not already covered are appended under "Unity — additional generated/local artifacts". Nothing was removed from either side. `backend/logs/` was added afterwards because the backend writes log files there during tests. |
 
 ## 4. Files skipped
 
