@@ -1,0 +1,57 @@
+# NFOUZ — Unity + Node/Express repository .gitignore
+# Build Recovery Phase — excludes generated/local/secret artifacts only.
+# Assets, .meta files, Packages/manifest.json, Packages/packages-lock.json,
+# ProjectSettings, backend source, migrations, tests, and documentation
+# are intentionally NEVER excluded.
+
+## Unity — generated/local only
+Library/
+Temp/
+Obj/
+Logs/
+UserSettings/
+Build/
+Builds/
+MemoryCaptures/
+Recordings/
+*.tmp
+*.csproj
+*.sln
+*.user
+*.userprefs
+.vs/
+.idea/
+*.apk
+*.aab
+*.ipa
+
+## Node / backend — generated/local only
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+coverage/
+dist/
+
+## Secrets — never commit
+.env
+.env.local
+.env.*.local
+backend/.env
+**/google-services.json
+**/GoogleService-Info.plist
+**/*firebase*service*account*.json
+**/*serviceAccountKey*.json
+**/PhotonAppSettings.asset.secret
+**/*.pfx
+**/*.p12
+**/*.keystore
+**/*.jks
+*.pem
+*secret*.json
+*credentials*.json
+
+## OS / editor noise
+.DS_Store
+Thumbs.db
+*.swp

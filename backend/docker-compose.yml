@@ -1,0 +1,48 @@
+version: "3.8"
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: nfouz-backend:dev
+    container_name: nfouz_backend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      DATABASE_URL: postgres://nfouz:nfouz_pass@postgres:5432/nfouz_db
+      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID}
+      FIREBASE_CLIENT_EMAIL: ${FIREBASE_CLIENT_EMAIL}
+      FIREBASE_PRIVATE_KEY: ${FIREBASE_PRIVATE_KEY}
+      LOG_LEVEL: debug
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./src:/app/src
+      - ./migrations:/app/migrations
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: nfouz_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: nfouz
+      POSTGRES_PASSWORD: nfouz_pass
+      POSTGRES_DB: nfouz_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nfouz -d nfouz_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  pgdata:
