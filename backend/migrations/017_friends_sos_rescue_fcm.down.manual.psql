@@ -1,0 +1,72 @@
+-- 017_friends_sos_rescue_fcm.down.manual.psql
+-- DEVELOPMENT-ONLY destructive rollback for 017_friends_sos_rescue_fcm.sql.
+--
+-- Not run automatically by scripts/run-migrations.js (that runner has no
+-- down/rollback mechanism at all — see the note at the top of the UP
+-- migration). Apply by hand only, and only against a NON-production
+-- database:
+--   psql "$DATABASE_URL" -f migrations/017_friends_sos_rescue_fcm.down.manual.psql
+--
+-- PRODUCTION BLOCK: the DO block below refuses to run if the connected
+-- database's name looks like a production database, OR if it can see an
+-- app.environment setting (or PGOPTIONS-style GUC) explicitly set to
+-- 'production'. This is a best-effort guard, not a guarantee — psql has
+-- no reliable way to ask "is this NODE_ENV=production" from inside a SQL
+-- session, since NODE_ENV is a Node process's environment variable, not a
+-- database property. The real, non-bypassable guard belongs at the
+-- operational level (never point this script at a production connection
+-- string in the first place; consider REVOKEing DROP from the
+-- application's own database role in production so even a mistaken run
+-- fails). This block only catches the common, easy mistake of running it
+-- against a database literally named like production.
+--
+-- SAFETY: this DROPs rescue_rewards, rescue_missions, sos_notifications,
+-- player_devices and control_relationships outright, which destroys
+-- completed rescue/reward/control history — unavoidable for a true
+-- rollback of tables this migration created, and exactly why the UP
+-- migration's own audit-bearing FKs (sos_id/mission_id) are RESTRICT
+-- rather than CASCADE: an ordinary DELETE in normal operation can never
+-- silently take that history with it — only this explicit, manually
+-- invoked, dev-only script can. friendships.accepted_at/expires_at and
+-- sos_requests.control_relationship_id are left in place rather than
+-- dropped: those are safe, non-destructive additions to tables that
+-- predate this migration, and dropping them would lose data this
+-- rollback has no way to safely regenerate a second time.
+
+DO $$
+BEGIN
+    IF current_database() ~* '(^|[^a-z])prod([^a-z]|$)|production' THEN
+        RAISE EXCEPTION
+            'Refusing to run a destructive rollback against a database named "%" — this looks like production. '
+            'This script is development-only; see its header comment.', current_database();
+    END IF;
+
+    IF current_setting('app.environment', true) = 'production' THEN
+        RAISE EXCEPTION 'Refusing to run: app.environment is set to production.';
+    END IF;
+END $$;
+
+BEGIN;
+
+-- sos_requests.control_relationship_id's FK must be dropped before
+-- control_relationships itself — caught by actually running this against
+-- real Postgres: a plain DROP TABLE control_relationships fails with
+-- "other objects depend on it" otherwise. The column and its (now
+-- pointless) unique index are left in place, same as the rest of
+-- sos_requests — see the note below.
+ALTER TABLE sos_requests DROP CONSTRAINT IF EXISTS sos_requests_control_relationship_id_fkey;
+
+DROP TABLE IF EXISTS rescue_rewards;
+DROP TABLE IF EXISTS rescue_missions;
+DROP TABLE IF EXISTS sos_notifications;
+DROP TABLE IF EXISTS player_devices;
+DROP TABLE IF EXISTS control_relationships;
+
+DROP INDEX IF EXISTS uniq_sos_per_control_relationship;
+DROP INDEX IF EXISTS idx_sos_requests_status_created;
+-- sos_requests.control_relationship_id itself is left in place (see
+-- header note) — it is inert without control_relationships to reference
+-- and does not block re-running the UP migration, which recreates the
+-- table, the FK, and the index.
+
+COMMIT;

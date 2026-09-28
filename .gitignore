@@ -1,16 +1,63 @@
-/[Ll]ibrary/
-/[Tt]emp/
-/[Oo]bj/
-/[Bb]uild/
-/[Bb]uilds/
-/[Ll]ogs/
-/[Uu]ser[Ss]ettings/
-/[Mm]emoryCaptures/
-/[Rr]ecordings/
+# NFOUZ — Unity + Node/Express repository .gitignore
+# Build Recovery Phase — excludes generated/local/secret artifacts only.
+# Assets, .meta files, Packages/manifest.json, Packages/packages-lock.json,
+# ProjectSettings, backend source, migrations, tests, and documentation
+# are intentionally NEVER excluded.
+
+## Unity — generated/local only
+Library/
+Temp/
+Obj/
+Logs/
+UserSettings/
+Build/
+Builds/
+MemoryCaptures/
+Recordings/
+*.tmp
 *.csproj
 *.sln
-*.suo
 *.user
+*.userprefs
+.vs/
+.idea/
+*.apk
+*.aab
+*.ipa
+
+## Node / backend — generated/local only
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+coverage/
+dist/
+
+## Secrets — never commit
+.env
+.env.local
+.env.*.local
+backend/.env
+**/google-services.json
+**/GoogleService-Info.plist
+**/*firebase*service*account*.json
+**/*serviceAccountKey*.json
+**/PhotonAppSettings.asset.secret
+**/*.pfx
+**/*.p12
+**/*.keystore
+**/*.jks
+*.pem
+*secret*.json
+*credentials*.json
+
+## OS / editor noise
+.DS_Store
+Thumbs.db
+*.swp
+
+## Unity — additional generated/local artifacts
+*.suo
 *.pidb
 *.booproj
 *.svd
@@ -18,17 +65,7 @@
 *.mdb
 *.opendb
 *.VC.db
-*.apk
-*.aab
 *.unitypackage
-.vs/
 .vscode/
-.idea/
-.DS_Store
 crashlytics-buildid.txt
 sysinfo.txt
-.env
-google-services.json
-GoogleService-Info.plist
-*.keystore
-*.jks
