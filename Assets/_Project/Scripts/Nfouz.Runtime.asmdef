@@ -12,6 +12,12 @@
     "precompiledReferences": [],
     "autoReferenced": true,
     "defineConstraints": [],
-    "versionDefines": [],
+    "versionDefines": [
+        {
+            "name": "com.google.firebase.auth",
+            "expression": "0.0.0",
+            "define": "FIREBASE_AUTH_AVAILABLE"
+        }
+    ],
     "noEngineReferences": false
 }

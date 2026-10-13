@@ -41,6 +41,10 @@ dist/
 backend/.env
 **/google-services.json
 **/GoogleService-Info.plist
+**/google-services.json.meta
+**/GoogleService-Info.plist.meta
+**/google-services-desktop.json
+**/google-services-desktop.json.meta
 **/*firebase*service*account*.json
 **/*serviceAccountKey*.json
 **/PhotonAppSettings.asset.secret

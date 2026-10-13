@@ -47,7 +47,7 @@ namespace Nfouz.Core
             var apiClient = apiClientPrefab != null
                 ? Instantiate(apiClientPrefab, transform)
                 : gameObject.AddComponent<ApiClient>();
-            apiClient.Configure(Constants.Api.BaseUrl, Constants.Api.RequestTimeoutSeconds);
+            apiClient.Configure(ApiEnvironmentSettings.ResolveBaseUrl(), Constants.Api.RequestTimeoutSeconds);
             locator.Register<ApiClient>(apiClient);
 
             var firebaseManager = firebaseManagerPrefab != null

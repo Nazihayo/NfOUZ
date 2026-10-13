@@ -21,6 +21,11 @@ namespace Nfouz.Networking
     {
         private const string StoredTokenPrefsKey = "nfouz_firebase_id_token";
 
+#if FIREBASE_AUTH_AVAILABLE
+        // Shown when Login/Register is pressed before (or after a failed) Firebase initialization.
+        private const string NotInitializedMessage = "خدمة تسجيل الدخول غير جاهزة بعد. حاول مرة أخرى.";
+#endif
+
         public bool IsInitialized { get; private set; }
         public string CurrentToken { get; private set; }
 
@@ -103,6 +108,11 @@ namespace Nfouz.Networking
         public async Task<(bool success, string errorMessage)> SignInWithEmail(string email, string password)
         {
 #if FIREBASE_AUTH_AVAILABLE
+            if (!IsInitialized || _auth == null)
+            {
+                return (false, NotInitializedMessage);
+            }
+
             try
             {
                 var result = await _auth.SignInWithEmailAndPasswordAsync(email, password);
@@ -125,6 +135,11 @@ namespace Nfouz.Networking
         public async Task<(bool success, string errorMessage)> RegisterWithEmail(string email, string password)
         {
 #if FIREBASE_AUTH_AVAILABLE
+            if (!IsInitialized || _auth == null)
+            {
+                return (false, NotInitializedMessage);
+            }
+
             try
             {
                 var result = await _auth.CreateUserWithEmailAndPasswordAsync(email, password);
