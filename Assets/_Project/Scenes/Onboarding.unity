@@ -765,6 +765,21 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: -16, y: -8}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &2077520159301963469
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3014906487282617770}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e1e79fe8b9d34b328ab1fd424d4b93eb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  onboardingController: {fileID: 309887564178344435}
+  usernameInput: {fileID: 3134479661733759668}
+  errorMessageText: {fileID: 3634048495394259690}
 --- !u!114 &2165506068346488222
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -892,7 +907,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 3932931997503494847}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 2077520159301963469}
+        m_TargetAssemblyTypeName: "Nfouz.Auth.OnboardingPanelBridge, Nfouz.Runtime"
+        m_MethodName: OnConfirmClicked
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: "UnityEngine.Object, UnityEngine"
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!224 &2782810907453589041
 RectTransform:
   m_ObjectHideFlags: 0
@@ -996,6 +1023,7 @@ GameObject:
   - component: {fileID: 386999130636869860}
   - component: {fileID: 1729206718332901420}
   - component: {fileID: 309887564178344435}
+  - component: {fileID: 2077520159301963469}
   m_Layer: 0
   m_Name: Canvas_Onboarding
   m_TagString: Untagged

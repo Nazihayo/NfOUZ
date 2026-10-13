@@ -286,6 +286,25 @@ MonoBehaviour:
     m_VerticalOverflow: 0
     m_LineSpacing: 1
   m_Text: 
+--- !u!114 &393683909763939446
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2624723906642729426}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4c2b6d3fbaf94e359ace1116a8a259e8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  authController: {fileID: 1168210649009629512}
+  loginEmailInput: {fileID: 2246921628213752282}
+  loginPasswordInput: {fileID: 397659648469406858}
+  registerEmailInput: {fileID: 20067917847935789}
+  registerPasswordInput: {fileID: 1109910441034125570}
+  registerConfirmPasswordInput: {fileID: 740065629932100852}
+  errorMessageText: {fileID: 4264597654204765581}
 --- !u!114 &397659648469406858
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -958,7 +977,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 4215142744598272159}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 393683909763939446}
+        m_TargetAssemblyTypeName: "Nfouz.Auth.LoginPanelBridge, Nfouz.Runtime"
+        m_MethodName: OnLoginClicked
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: "UnityEngine.Object, UnityEngine"
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &1381672904968984293
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1809,6 +1840,7 @@ GameObject:
   - component: {fileID: 1758555775355897775}
   - component: {fileID: 838795646735205947}
   - component: {fileID: 1168210649009629512}
+  - component: {fileID: 393683909763939446}
   m_Layer: 0
   m_Name: Canvas_Login
   m_TagString: Untagged
@@ -2515,7 +2547,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1823395706126425872}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 393683909763939446}
+        m_TargetAssemblyTypeName: "Nfouz.Auth.LoginPanelBridge, Nfouz.Runtime"
+        m_MethodName: OnRegisterClicked
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: "UnityEngine.Object, UnityEngine"
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &3890125833597185018
 MonoBehaviour:
   m_ObjectHideFlags: 0

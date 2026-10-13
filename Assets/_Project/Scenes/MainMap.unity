@@ -2580,6 +2580,7 @@ GameObject:
   - component: {fileID: 4527550388734429893}
   - component: {fileID: 3266598198496456288}
   - component: {fileID: 2641302106482529755}
+  - component: {fileID: 3089425724909610167}
   m_Layer: 0
   m_Name: Managers
   m_TagString: Untagged
@@ -9451,6 +9452,20 @@ RectTransform:
   m_AnchoredPosition: {x: 310, y: -370}
   m_SizeDelta: {x: 260, y: 70}
   m_Pivot: {x: 0, y: 1}
+--- !u!114 &3089425724909610167
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 793999924729334775}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 890b004393fe4bd4aaffeaedc7f14545, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  nearbyPlayersTracker: {fileID: 3212338281170827320}
+  gpsLocationService: {fileID: 969999255029427796}
 --- !u!222 &3097395618014478818
 CanvasRenderer:
   m_ObjectHideFlags: 0
