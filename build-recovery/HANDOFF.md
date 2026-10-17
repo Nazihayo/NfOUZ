@@ -65,6 +65,14 @@ folder; where they differ, this file is current.
 7. Migrations (`f454681`): `npm run migrate` is the only migration mechanism;
    the Docker init-script mount was removed. Fresh DB: 20/20 applied; rerun
    skips all 20.
+8. Backend tests (`9b107b4`): all 26 suites / 318 tests pass (test-side
+   fixes only; no backend source changed).
+9. `ShopPlaceholderItem` moved to its own file, prefab
+   `Prefabs/UI/ShopPlaceholderItem.prefab` created and assigned to
+   `ShopScreen.placeholderItemPrefab` in MainMap (`46819ba`).
+10. `.gitignore` covers `PhotonAppSettings.asset` and
+    `MapboxConfiguration.txt` (+ `.meta`); docker-compose publishes
+    PostgreSQL on `127.0.0.1` only.
 
 ## Current blocker
 
@@ -106,17 +114,12 @@ there is no local PostgreSQL yet.
 - TMP/Arabic migration: 59 `Text` fields + 1 `InputField` in 25 scripts,
   Arabic TMP font asset, and an Arabic shaping solution (e.g. RTLTMPro —
   third-party, needs approval). Legacy `Text` cannot join Arabic letters.
-- `ShopPlaceholderItem` is declared inside `ShopScreen.cs`; it needs its own
-  file before `ShopScreen.placeholderItemPrefab` can be assigned.
 - Firebase error messages are shown in English (raw SDK text).
 - Photon Fusion import (Battle has stub mode only), then Mapbox (needs an
-  asmdef for its sources). Fix `.gitignore` for `PhotonAppSettings.asset` and
-  `MapboxConfiguration.txt` before importing them.
+  asmdef for its sources). Both need the developer's accounts.
 - `Result.unity` is never loaded by code; the live result screen is the panel
   inside `Battle.unity`. `ResultController` has no root-visibility field, so
   the Return button lives in the Victory panel only.
-- Backend Jest: 39 of 308 tests fail (inherited from the source repo:
-  rate limiter 429s in tests, two stale expectations, two suites whose
-  `jest.mock` factories reference out-of-scope variables).
-- Optional hardening: `docker-compose.yml` publishes PostgreSQL on all
-  interfaces (`5432:5432`); `127.0.0.1:5432:5432` would keep it local.
+- `npm test` uses POSIX `NODE_ENV=test jest …` syntax, which fails under
+  Windows `cmd`; on Windows run `npx jest --runInBand` from `backend/`
+  (each test file sets `NODE_ENV=test` itself).

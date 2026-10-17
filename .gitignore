@@ -48,6 +48,11 @@ backend/.env
 **/*firebase*service*account*.json
 **/*serviceAccountKey*.json
 **/PhotonAppSettings.asset.secret
+# Photon Fusion stores the App ID here; Mapbox stores the access token here.
+**/PhotonAppSettings.asset
+**/PhotonAppSettings.asset.meta
+**/MapboxConfiguration.txt
+**/MapboxConfiguration.txt.meta
 **/*.pfx
 **/*.p12
 **/*.keystore
