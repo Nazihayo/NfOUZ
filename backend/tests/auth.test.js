@@ -27,6 +27,9 @@ describe('Auth routes', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    // clearAllMocks keeps queued mockResolvedValueOnce values; a test whose
+    // request fails validation before querying would leak them into the next test.
+    db.query.mockReset();
     app = createApp();
   });
 

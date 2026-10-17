@@ -11,6 +11,20 @@ jest.mock('../src/config/database', () => ({
   pool: { on: jest.fn(), query: jest.fn() },
 }));
 
+// The limiters are process-wide singletons, so their counters would carry
+// over between tests (same mocked uid) and turn later requests into 429s.
+// Rate limiting is not what these tests exercise.
+jest.mock('../src/middleware/rateLimit.middleware', () => {
+  const passThrough = (req, res, next) => next();
+  return {
+    locationUpdateLimiter: passThrough,
+    nearbyQueryLimiter: passThrough,
+    battleChallengeLimiter: passThrough,
+    friendRequestLimiter: passThrough,
+    sosCreateLimiter: passThrough,
+  };
+});
+
 jest.mock('../src/config/firebase', () => ({
   initializeFirebase: jest.fn(),
   checkFirebaseReady: jest.fn().mockReturnValue(true),
@@ -165,7 +179,8 @@ describe('Battle routes (Sprint 5 — Photon Multiplayer Foundation)', () => {
         .mockResolvedValueOnce({ rows: [DEFENDER] }) // getById(defender)
         .mockResolvedValueOnce({ rows: [] }) // Sprint 7: clearExpiredControl(attacker)
         .mockResolvedValueOnce({ rows: [] }) // Sprint 7: clearExpiredControl(defender)
-        .mockResolvedValueOnce({ rows: [baseBattleRow()] }); // findActiveBattleForPlayer(attacker) -> already active
+        .mockResolvedValueOnce({ rows: [baseBattleRow()] }) // findActiveBattleForPlayer(attacker) -> already active
+        .mockResolvedValueOnce({ rows: [] }); // findActiveBattleForPlayer(defender) — queried in parallel
 
       const response = await request(app)
         .post('/battle/challenge')
@@ -354,6 +369,7 @@ describe('Battle routes (Sprint 5 — Photon Multiplayer Foundation)', () => {
         .mockResolvedValueOnce({ rows: [staleControlledDefender] }) // getById(defender)
         .mockResolvedValueOnce({ rows: [] }) // clearExpiredControl(attacker)
         .mockResolvedValueOnce({ rows: [{ player_id: DEFENDER.player_id, is_controlled: false, controlled_until: null }] }) // clearExpiredControl(defender) -> persists the expiry
+        .mockResolvedValueOnce({ rows: [] }) // controlRelationshipRepo.closeActiveForControlled(defender, 'timer_expiry')
         .mockResolvedValueOnce({ rows: [] }) // findActiveBattleForPlayer(attacker)
         .mockResolvedValueOnce({ rows: [] }) // findActiveBattleForPlayer(defender)
         .mockResolvedValueOnce({ rows: [baseBattleRow()] }); // createBattle

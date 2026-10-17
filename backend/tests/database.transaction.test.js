@@ -16,7 +16,7 @@ const fakeClient = {
   release: jest.fn(),
 };
 
-const fakePool = {
+const mockPool = {
   connect: jest.fn(),
   on: jest.fn(),
   query: jest.fn(),
@@ -24,7 +24,7 @@ const fakePool = {
 };
 
 jest.mock('pg', () => ({
-  Pool: jest.fn(() => fakePool),
+  Pool: jest.fn(() => mockPool),
 }));
 
 const db = require('../src/config/database');
@@ -32,7 +32,7 @@ const db = require('../src/config/database');
 describe('config/database — withTransaction', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    fakePool.connect.mockResolvedValue(fakeClient);
+    mockPool.connect.mockResolvedValue(fakeClient);
     fakeClient.query.mockResolvedValue({ rows: [] });
   });
 

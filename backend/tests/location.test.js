@@ -11,6 +11,20 @@ jest.mock('../src/config/database', () => ({
   pool: { on: jest.fn(), query: jest.fn() },
 }));
 
+// The limiters are process-wide singletons, so their counters would carry
+// over between tests (same mocked uid) and turn later requests into 429s.
+// Rate limiting is not what these tests exercise.
+jest.mock('../src/middleware/rateLimit.middleware', () => {
+  const passThrough = (req, res, next) => next();
+  return {
+    locationUpdateLimiter: passThrough,
+    nearbyQueryLimiter: passThrough,
+    battleChallengeLimiter: passThrough,
+    friendRequestLimiter: passThrough,
+    sosCreateLimiter: passThrough,
+  };
+});
+
 jest.mock('../src/config/firebase', () => ({
   initializeFirebase: jest.fn(),
   checkFirebaseReady: jest.fn().mockReturnValue(true),

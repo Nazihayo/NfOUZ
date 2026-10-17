@@ -333,7 +333,8 @@ describe('player.repository — clearExpiredControl (Sprint 7 Influence + Contro
     const result = await playerRepo.clearExpiredControl('p-1');
 
     const [sql, params] = db.query.mock.calls[0];
-    expect(sql).toMatch(/SET is_controlled = FALSE, controlled_until = NULL/);
+    // Sprint 7/8: clearing Control also clears the controller link and start time.
+    expect(sql).toMatch(/SET is_controlled = FALSE, controller_id = NULL, controlled_until = NULL, controlled_since = NULL/);
     expect(sql).toMatch(/WHERE player_id = \$1 AND is_controlled = TRUE AND controlled_until <= now\(\)/);
     expect(params).toEqual(['p-1']);
     expect(result.is_controlled).toBe(false);
