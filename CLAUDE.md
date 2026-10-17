@@ -4,6 +4,11 @@ These rules govern any AI-assisted or human work on this repository during and
 after the Build Recovery Phase. They are binding project policy, not
 suggestions.
 
+## Current status
+
+- **Resuming work?** Read `build-recovery/HANDOFF.md` first: current
+  state, verified results, the active blocker and the next steps.
+
 ## Authoritative sources
 
 - **Unity 6 is authoritative.** All Unity Editor, package, and build-target
