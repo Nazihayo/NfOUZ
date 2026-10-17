@@ -9412,7 +9412,7 @@ MonoBehaviour:
   titleLabel: {fileID: 2712899770639924494}
   comingSoonLabel: {fileID: 3512592434051928747}
   placeholderItemContainer: {fileID: 3840721884644237611}
-  placeholderItemPrefab: {fileID: 0}
+  placeholderItemPrefab: {fileID: 3953981277471984413, guid: 94d04c281d1535d93833e890af3b8e6c, type: 3}
 --- !u!224 &3086631771383198201
 RectTransform:
   m_ObjectHideFlags: 0
