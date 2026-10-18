@@ -10,6 +10,7 @@ const controlRelationshipRepo = require('../repositories/controlRelationship.rep
 const { haversineDistanceMeters } = require('../utils/geoUtils');
 const { ApiError } = require('../utils/responseEnvelope');
 const resultSignature = require('../utils/battleResultSignature');
+const { battleLifecycleLimits } = require('../utils/battleLifecycle');
 const questService = require('./quest.service'); // Sprint 9 — best-effort quest progress hook only, see resolveBattle's decisive-win branch below.
 const logger = require('../utils/logger');
 
@@ -185,6 +186,11 @@ async function createChallenge(attackerId, defenderId, location) {
     throw new ApiError('PLAYER_IS_PROTECTED', 'Target is currently Protected and cannot be challenged.', 403);
   }
 
+  // Lazy lifecycle cleanup: a stale battle of either player (no result
+  // can arrive any more, or a reconnect deadline passed) is ended first,
+  // so it cannot block a new challenge forever (utils/battleLifecycle.js).
+  await battleRepo.expireStaleBattles({ playerIds: [attackerId, defenderId] }, battleLifecycleLimits());
+
   const [attackerActive, defenderActive] = await Promise.all([
     battleRepo.findActiveBattleForPlayer(attackerId),
     battleRepo.findActiveBattleForPlayer(defenderId),
@@ -253,9 +259,14 @@ async function createChallenge(attackerId, defenderId, location) {
 
 /**
  * Retrieves a battle by id. Used for GET /battle/{battleId} and for
- * clients re-checking session state after a reconnect.
+ * clients re-checking session state after a reconnect, and by every
+ * battle endpoint before it acts. A battle that can no longer finish
+ * normally is ended first (utils/battleLifecycle.js), so callers always
+ * see its real state — ready/disconnect/reconnect/resolve on it answer
+ * SESSION_EXPIRED.
  */
 async function getBattleById(battleId) {
+  await battleRepo.expireStaleBattles({ battleId }, battleLifecycleLimits());
   const battle = await battleRepo.getById(battleId);
   if (!battle) {
     throw new ApiError('BATTLE_NOT_FOUND', 'No battle exists with this id.', 404);
@@ -322,6 +333,11 @@ async function handleReconnect(battleId, playerId) {
   const deadlineField = side === 'attacker' ? 'attacker_reconnect_deadline' : 'defender_reconnect_deadline';
   const deadline = battle[deadlineField];
 
+  // getBattleById has just applied the forfeit rule: if this caller's own
+  // reconnect deadline is why the battle ended, say so specifically.
+  if (battle.status === 'forfeited' && battle.forfeited_by === playerId) {
+    throw new ApiError('RECONNECT_WINDOW_EXPIRED', 'The 15-second reconnect grace period has already elapsed.', 409);
+  }
   if (battle.status !== 'in_progress') {
     throw new ApiError('SESSION_EXPIRED', 'This battle session is no longer active.', 409);
   }
@@ -334,39 +350,17 @@ async function handleReconnect(battleId, playerId) {
 }
 
 /**
- * Checks whether a disconnected player's grace period has elapsed and,
- * if so, marks the battle forfeited by that player. Safe to call
- * repeatedly (idempotent — markForfeited only affects 'in_progress'
- * rows). Sprint 5 scope: session state (forfeit flag) only — no
- * winner/loser/Influence computation, which is Sprint 6.
+ * GET /battle/{battleId}'s lookup. Checks whether a disconnected player's
+ * grace period has elapsed and, if so, marks the battle forfeited by that
+ * player (attacker first) — together with the ready-timeout and
+ * no-result rules, this now happens inside getBattleById for every
+ * battle endpoint (battle.repository.js expireStaleBattles). Idempotent,
+ * and it always re-reads the row, so a forfeit racing a result
+ * submission returns whichever outcome actually won. Sprint 5 scope:
+ * session state (forfeit flag) only — no winner/loser/Influence.
  */
 async function checkForfeit(battleId) {
-  const battle = await getBattleById(battleId);
-
-  if (battle.status !== 'in_progress') {
-    return battle;
-  }
-
-  const now = Date.now();
-
-  const attackerExpired =
-    battle.attacker_disconnected_at &&
-    battle.attacker_reconnect_deadline &&
-    new Date(battle.attacker_reconnect_deadline).getTime() < now;
-
-  const defenderExpired =
-    battle.defender_disconnected_at &&
-    battle.defender_reconnect_deadline &&
-    new Date(battle.defender_reconnect_deadline).getTime() < now;
-
-  if (attackerExpired) {
-    return battleRepo.markForfeited(battleId, battle.attacker_id);
-  }
-  if (defenderExpired) {
-    return battleRepo.markForfeited(battleId, battle.defender_id);
-  }
-
-  return battle;
+  return getBattleById(battleId);
 }
 
 const VALID_OUTCOMES = new Set(['attacker_win', 'defender_win', 'draw']);

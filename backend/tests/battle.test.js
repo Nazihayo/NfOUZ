@@ -35,6 +35,13 @@ jest.mock('../src/config/firebase', () => ({
 const db = require('../src/config/database');
 const { verifyIdToken } = require('../src/config/firebase');
 const createApp = require('../src/app');
+const battleRepo = require('../src/repositories/battle.repository');
+
+// The battle lifecycle cleanup (battleRepo.expireStaleBattles) is stubbed
+// to "nothing stale" so these tests keep their existing query sequences;
+// its SQL is tested in battle.lifecycle.test.js and against real
+// PostgreSQL (tests/contract/db/battleLifecycle.dbtest.js).
+let expireStaleBattlesSpy;
 
 const ATTACKER = {
   player_id: 'attacker-id',
@@ -84,6 +91,7 @@ describe('Battle routes (Sprint 5 — Photon Multiplayer Foundation)', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    expireStaleBattlesSpy = jest.spyOn(battleRepo, 'expireStaleBattles').mockResolvedValue([]);
     app = createApp();
   });
 
@@ -443,10 +451,12 @@ describe('Battle routes (Sprint 5 — Photon Multiplayer Foundation)', () => {
       });
       const forfeitedBattle = { ...expiredBattle, status: 'forfeited', forfeited_by: ATTACKER.player_id };
 
+      // The forfeit decision is now one guarded UPDATE (expireStaleBattles,
+      // tested against real PostgreSQL); here it reports the row it ended.
+      expireStaleBattlesSpy.mockResolvedValueOnce([forfeitedBattle]);
       db.query
         .mockResolvedValueOnce({ rows: [ATTACKER] }) // resolveSelf
-        .mockResolvedValueOnce({ rows: [expiredBattle] }) // getById (inside checkForfeit)
-        .mockResolvedValueOnce({ rows: [forfeitedBattle] }); // markForfeited
+        .mockResolvedValueOnce({ rows: [forfeitedBattle] }); // getById, re-read after the cleanup
 
       const response = await request(app)
         .get('/battle/battle-1')
@@ -455,6 +465,7 @@ describe('Battle routes (Sprint 5 — Photon Multiplayer Foundation)', () => {
       expect(response.status).toBe(200);
       expect(response.body.data.status).toBe('forfeited');
       expect(response.body.data.forfeited_by).toBe(ATTACKER.player_id);
+      expect(expireStaleBattlesSpy).toHaveBeenCalledWith({ battleId: 'battle-1' }, { readyTimeoutSeconds: 30, noResultCutoffSeconds: 298 });
     });
 
     it('leaves the battle in_progress when the grace period has not yet elapsed', async () => {

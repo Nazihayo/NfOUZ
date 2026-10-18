@@ -40,6 +40,13 @@ jest.mock('../src/config/firebase', () => ({
 const db = require('../src/config/database');
 const { verifyIdToken } = require('../src/config/firebase');
 const createApp = require('../src/app');
+const battleRepo = require('../src/repositories/battle.repository');
+
+// The battle lifecycle cleanup (battleRepo.expireStaleBattles) is stubbed
+// to "nothing stale" so these tests keep their existing query sequences;
+// its SQL is tested in battle.lifecycle.test.js and against real
+// PostgreSQL (tests/contract/db/battleLifecycle.dbtest.js).
+let expireStaleBattlesSpy;
 
 const ATTACKER = { player_id: 'attacker-id', firebase_uid: 'fb-attacker' };
 const DEFENDER = { player_id: 'defender-id', firebase_uid: 'fb-defender' };
@@ -101,6 +108,7 @@ describe('POST /battle/{battleId}/resolve — Sprint 6 final security correction
 
   beforeEach(() => {
     jest.clearAllMocks();
+    expireStaleBattlesSpy = jest.spyOn(battleRepo, 'expireStaleBattles').mockResolvedValue([]);
     app = createApp();
     db.withTransaction.mockImplementation((fn) => fn(txClient));
     verifyIdToken.mockResolvedValue({ uid: ATTACKER.firebase_uid });

@@ -76,6 +76,9 @@ const env = {
   BATTLE_DISCONNECT_GRACE_SECONDS: toInt(process.env.BATTLE_DISCONNECT_GRACE_SECONDS, 15),
   BATTLE_READY_TIMEOUT_SECONDS: toInt(process.env.BATTLE_READY_TIMEOUT_SECONDS, 30),
   BATTLE_SESSION_MAX_DURATION_SECONDS: toInt(process.env.BATTLE_SESSION_MAX_DURATION_SECONDS, 90),
+  // Pre-match countdown once both players are ready — must stay equal to
+  // Unity's Constants.Battle.CountdownSeconds (Battle System v1.0 section 2).
+  BATTLE_COUNTDOWN_SECONDS: toInt(process.env.BATTLE_COUNTDOWN_SECONDS, 3),
 
   // Sprint 6 — Full Combat System: battle resolution. Values are NOT new
   // design — they are the already-approved GDD v1.0 section 7 (Influence

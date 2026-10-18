@@ -199,6 +199,46 @@ async function cancelBattle(battleId) {
  * writes so a battle is never left "resolved" with those side effects
  * only partially applied.
  */
+/**
+ * Ends the in_progress battles that can no longer finish normally (see
+ * utils/battleLifecycle.js for the rules): an expired reconnect deadline
+ * -> 'forfeited' (the existing forfeit rule); not both ready within the
+ * ready timeout, or past the no-result cutoff -> 'cancelled'. Scoped to
+ * one battle (`battleId`) or to every battle of `playerIds`.
+ *
+ * One guarded UPDATE (`status = 'in_progress'`), so it is idempotent and
+ * safe under concurrency: PostgreSQL row locks mean simultaneous calls,
+ * and a simultaneous resolveBattle / markForfeited, produce exactly one
+ * terminal outcome — whoever commits second matches no row. A battle
+ * that already ended (resolved, forfeited, cancelled, pending_review) is
+ * never touched, and nothing is deleted. Returns the rows it ended.
+ */
+async function expireStaleBattles({ battleId = null, playerIds = null }, limits, executor = db) {
+  if (!battleId && !(playerIds && playerIds.length)) {
+    throw new Error('expireStaleBattles needs a battleId or playerIds');
+  }
+  const attackerGone = 'attacker_disconnected_at IS NOT NULL AND attacker_reconnect_deadline < now()';
+  const defenderGone = 'defender_disconnected_at IS NOT NULL AND defender_reconnect_deadline < now()';
+  const startedAt = 'COALESCE(session_started_at, started_at)';
+  const result = await executor.query(
+    `UPDATE battles
+     SET status = CASE WHEN (${attackerGone}) OR (${defenderGone}) THEN 'forfeited' ELSE 'cancelled' END,
+         forfeited_by = CASE WHEN (${attackerGone}) THEN attacker_id
+                             WHEN (${defenderGone}) THEN defender_id
+                             ELSE forfeited_by END,
+         ended_at = now()
+     WHERE status = 'in_progress'
+       AND (battle_id = $1 OR attacker_id = ANY($2::uuid[]) OR defender_id = ANY($2::uuid[]))
+       AND ((${attackerGone})
+            OR (${defenderGone})
+            OR (NOT (attacker_ready AND defender_ready) AND ${startedAt} + $3 * interval '1 second' < now())
+            OR ${startedAt} + $4 * interval '1 second' < now())
+     RETURNING *`,
+    [battleId, playerIds || [], limits.readyTimeoutSeconds, limits.noResultCutoffSeconds]
+  );
+  return result.rows;
+}
+
 async function resolveBattle(battleId, { winnerId, loserId, durationSeconds, eventSeq, status = 'resolved' }, executor = db) {
   const result = await executor.query(
     `UPDATE battles
@@ -213,6 +253,7 @@ async function resolveBattle(battleId, { winnerId, loserId, durationSeconds, eve
 
 module.exports = {
   findActiveBattleForPlayer,
+  expireStaleBattles,
   createBattle,
   getById,
   getByPhotonRoomName,

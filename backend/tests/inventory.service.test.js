@@ -34,6 +34,7 @@ jest.mock('../src/repositories/inventory.repository', () => ({
 
 jest.mock('../src/repositories/battle.repository', () => ({
   findActiveBattleForPlayer: jest.fn(),
+  expireStaleBattles: jest.fn().mockResolvedValue([]),
 }));
 
 const db = require('../src/config/database');

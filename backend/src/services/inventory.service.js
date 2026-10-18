@@ -3,6 +3,7 @@
 const db = require('../config/database');
 const inventoryRepo = require('../repositories/inventory.repository');
 const battleRepo = require('../repositories/battle.repository');
+const { battleLifecycleLimits } = require('../utils/battleLifecycle');
 const { ApiError } = require('../utils/responseEnvelope');
 
 /**
@@ -70,6 +71,8 @@ async function withIdempotency(playerId, operation, requestId, effectFn) {
  * transaction itself writes to.
  */
 async function assertNoActiveBattle(playerId) {
+  // A stale battle (no result can arrive any more) must not lock the inventory forever.
+  await battleRepo.expireStaleBattles({ playerIds: [playerId] }, battleLifecycleLimits());
   const activeBattle = await battleRepo.findActiveBattleForPlayer(playerId);
   if (activeBattle) {
     throw new ApiError('ACTIVE_BATTLE_IN_PROGRESS', 'Cannot change equipment or use items during an active battle.', 409);
