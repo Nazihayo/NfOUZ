@@ -47,5 +47,52 @@ namespace Nfouz.Tests.EditMode
             Assert.AreEqual("SESSION_EXPIRED", Constants.ErrorCodes.SessionExpired);
             Assert.AreEqual("BATTLE_NOT_FOUND", Constants.ErrorCodes.BattleNotFound);
         }
+
+        // ---- Loading screen: waiting for the opponent to be ready
+
+        [Test]
+        public void Waiting_KeepsWaitingWhileTheOpponentIsNotReady()
+        {
+            Assert.AreEqual(ReadyWaitStep.KeepWaiting, BattleLifecycle.NextReadyStep(true, "in_progress", true, false, null, 3f));
+        }
+
+        [Test]
+        public void Waiting_StartsTheCountdownOnceBothAreReady()
+        {
+            Assert.AreEqual(ReadyWaitStep.StartCountdown, BattleLifecycle.NextReadyStep(true, "in_progress", true, true, null, 3f));
+        }
+
+        [TestCase("cancelled")]
+        [TestCase("forfeited")]
+        [TestCase("resolved")]
+        public void Waiting_LeavesWhenTheServerEndedTheBattle(string status)
+        {
+            Assert.AreEqual(ReadyWaitStep.LeaveBattle, BattleLifecycle.NextReadyStep(true, status, true, false, null, 3f));
+        }
+
+        [TestCase("SESSION_EXPIRED")]
+        [TestCase("BATTLE_NOT_FOUND")]
+        public void Waiting_LeavesWhenTheBattleIsGone(string code)
+        {
+            Assert.AreEqual(ReadyWaitStep.LeaveBattle, BattleLifecycle.NextReadyStep(false, null, false, false, new ApiError { code = code }, 3f));
+        }
+
+        [Test]
+        public void Waiting_KeepsTryingThroughNetworkErrorsUntilTheReadyTimeoutHasPassed()
+        {
+            var network = new ApiError { code = Constants.ErrorCodes.NetworkError };
+            var lastChance = Constants.Battle.ReadyTimeoutSeconds + BattleLifecycle.ReadyPollIntervalSeconds;
+            Assert.AreEqual(ReadyWaitStep.KeepWaiting, BattleLifecycle.NextReadyStep(false, null, false, false, network, lastChance - 0.1f));
+            Assert.AreEqual(ReadyWaitStep.LeaveBattle, BattleLifecycle.NextReadyStep(false, null, false, false, network, lastChance));
+        }
+
+        [Test]
+        public void Waiting_NeverOutlastsTheServerReadyTimeout()
+        {
+            // The server cancels at the ready timeout; the client gives it one
+            // more poll and then leaves even if it still reads in_progress.
+            Assert.AreEqual(30f, Constants.Battle.ReadyTimeoutSeconds);
+            Assert.AreEqual(ReadyWaitStep.LeaveBattle, BattleLifecycle.NextReadyStep(true, "in_progress", true, false, null, 31.5f));
+        }
     }
 }

@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Nfouz.Core;
 using Nfouz.Map;
+using Nfouz.UI;
 using Nfouz.Utils;
 using UnityEngine;
 
@@ -29,6 +30,7 @@ namespace Nfouz.Networking
 
         private float _disconnectGraceRemaining = -1f;
         private bool _awaitingReconnect;
+        private readonly ActionGate _challengeGate = new ActionGate();
 
         private void Awake()
         {
@@ -92,6 +94,25 @@ namespace Nfouz.Networking
                 return;
             }
 
+            // One challenge at a time: a second tap while the first is in
+            // flight would otherwise send POST /battle/challenge again.
+            if (!_challengeGate.TryBegin())
+            {
+                return;
+            }
+
+            try
+            {
+                await ChallengeAsync(targetData);
+            }
+            finally
+            {
+                _challengeGate.End();
+            }
+        }
+
+        private async Task ChallengeAsync(NearbyPlayerData targetData)
+        {
             var payload = new ChallengeRequestPayload
             {
                 defender_id = targetData.player_id,
@@ -102,7 +123,8 @@ namespace Nfouz.Networking
 
             if (!response.success)
             {
-                Debug.LogWarning($"[PhotonRoomLifecycle] Challenge failed: {response.error?.code} — {response.error?.message}");
+                Debug.LogWarning($"[PhotonRoomLifecycle] Challenge failed: {response.error?.code}");
+                ShowChallengeError(ChallengeErrorMessages.FromApiError(response.error));
                 return;
             }
 
@@ -128,6 +150,11 @@ namespace Nfouz.Networking
             if (!joined)
             {
                 Debug.LogError("[PhotonRoomLifecycle] Failed to join Photon room — aborting battle entry.");
+                // Nobody entered the room: drop the local session so MainMap
+                // is not left holding a battle. The server cancels it when the
+                // ready timeout passes (backend utils/battleLifecycle.js).
+                BattleSession.Clear();
+                ShowChallengeError(ChallengeErrorMessages.JoinFailed);
                 return;
             }
 
@@ -140,6 +167,15 @@ namespace Nfouz.Networking
         /// (battle.service.js handleDisconnect). Sprint 5 scope: session
         /// state only, no forfeit RESULT logic here.
         /// </summary>
+        private static void ShowChallengeError(string message)
+        {
+            var locator = ServiceLocator.Instance;
+            if (locator != null && locator.TryGet<PopupManager>(out var popups))
+            {
+                popups.ShowInfo(ChallengeErrorMessages.Title, message);
+            }
+        }
+
         private async void HandlePlayerDisconnected()
         {
             _awaitingReconnect = true;

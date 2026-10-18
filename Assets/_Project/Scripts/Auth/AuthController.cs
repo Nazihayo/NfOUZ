@@ -20,6 +20,7 @@ namespace Nfouz.Auth
 
         private FirebaseManager _firebaseManager;
         private ApiClient _apiClient;
+        private readonly ActionGate _gate = new ActionGate();
 
         private void Awake()
         {
@@ -32,6 +33,25 @@ namespace Nfouz.Auth
         /// Routes to MainMap if a player row already exists, or Onboarding
         /// if this Firebase account has not finished registration yet.</summary>
         public async void OnLoginButtonPressed(string email, string password)
+        {
+            // One request at a time: a second tap while the first is in
+            // flight would otherwise sign in / register twice.
+            if (!_gate.TryBegin())
+            {
+                return;
+            }
+
+            try
+            {
+                await LoginAsync(email, password);
+            }
+            finally
+            {
+                _gate.End();
+            }
+        }
+
+        private async Task LoginAsync(string email, string password)
         {
             if (!ValidateCredentials(email, password))
             {
@@ -70,6 +90,25 @@ namespace Nfouz.Auth
         /// account only — the actual player row is created afterward in
         /// Onboarding once the class and username are chosen.</summary>
         public async void OnRegisterButtonPressed(string email, string password, string confirmPassword)
+        {
+            // One request at a time: a second tap while the first is in
+            // flight would otherwise sign in / register twice.
+            if (!_gate.TryBegin())
+            {
+                return;
+            }
+
+            try
+            {
+                await RegisterAsync(email, password, confirmPassword);
+            }
+            finally
+            {
+                _gate.End();
+            }
+        }
+
+        private async Task RegisterAsync(string email, string password, string confirmPassword)
         {
             if (!ValidateCredentials(email, password))
             {

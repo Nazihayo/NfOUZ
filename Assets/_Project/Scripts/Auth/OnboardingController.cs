@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Nfouz.Core;
 using Nfouz.Networking;
 using Nfouz.Utils;
@@ -29,6 +30,7 @@ namespace Nfouz.Auth
 
         private ApiClient _apiClient;
         private string _selectedClassType;
+        private readonly ActionGate _gate = new ActionGate();
 
         private void Awake()
         {
@@ -52,6 +54,25 @@ namespace Nfouz.Auth
 
         /// <summary>Called by the "تأكيد" button after class + username are chosen.</summary>
         public async void OnConfirmButtonPressed(string username)
+        {
+            // One request at a time: a second tap while the first is in
+            // flight would otherwise send POST /auth/register twice.
+            if (!_gate.TryBegin())
+            {
+                return;
+            }
+
+            try
+            {
+                await ConfirmAsync(username);
+            }
+            finally
+            {
+                _gate.End();
+            }
+        }
+
+        private async Task ConfirmAsync(string username)
         {
             if (string.IsNullOrEmpty(_selectedClassType))
             {

@@ -206,6 +206,7 @@ namespace Nfouz.Utils
             public const string InvalidToken = "INVALID_TOKEN";
             public const string PlayerNotFound = "PLAYER_NOT_FOUND";
             public const string PlayerIsControlled = "PLAYER_IS_CONTROLLED";
+            public const string PlayerIsProtected = "PLAYER_IS_PROTECTED";
             public const string TargetOutOfRange = "TARGET_OUT_OF_RANGE";
             public const string RateLimited = "RATE_LIMITED";
             public const string InvalidLocation = "INVALID_LOCATION";
