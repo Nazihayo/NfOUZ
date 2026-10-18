@@ -214,6 +214,42 @@ tested in the cloud, **not yet checked in Unity**:
       now pin the backend rule: every token failure is 401
       `INVALID_TOKEN`, and that is the only code sent with 401.
     - Tokens are never logged.
+25. Stuck battles (`56dfcb6`, `fdfa74b`, `3977dfb`): a battle that can no
+    longer finish now ends by itself and stops blocking both players.
+    - **Before:** only `status = 'in_progress'` was checked. Nothing ended
+      a battle without a result, so both players got `DUPLICATE_CHALLENGE`
+      (and inventory `ACTIVE_BATTLE_IN_PROGRESS`) forever.
+    - **Statuses:** `in_progress` is the only live one. `resolved`,
+      `pending_review`, `forfeited` and `cancelled` are terminal and are
+      never reopened or rewritten.
+    - **Rules** (`backend/src/utils/battleLifecycle.js`, existing settings
+      only; times count from the challenge):
+      - a reconnect deadline (15 s grace) passed → `forfeited` by that
+        player (attacker first if both);
+      - not both ready after `BATTLE_READY_TIMEOUT_SECONDS` (30 s) →
+        `cancelled`;
+      - no result after 298 s (ready 30 + countdown 3 + result max duration
+        130 + max age 120 + clock skew 15), the point after which no result
+        can be accepted → `cancelled`.
+      - `session_expires_at` (challenge + 90 s) is not used: combat
+        (90 s + 30 s overtime) starts after loading, so it would end valid
+        battles.
+      - No rewards, influence, control or rescue changes for `forfeited` or
+        `cancelled`.
+    - **Trigger (no scheduler):** one guarded `UPDATE … WHERE status =
+      'in_progress'` (`expireStaleBattles`) runs before every battle endpoint
+      (GET, ready, disconnect, reconnect, resolve), before the
+      duplicate-challenge check and before the inventory battle lock. It is
+      idempotent; PostgreSQL row locks let exactly one of cleanup or result
+      win. Old stuck rows are ended the next time either player acts. No
+      migration.
+    - **Unity:** a polled `forfeited` / `cancelled` battle shows the
+      unknown-result panel (no longer a draw), which clears `BattleSession`
+      and returns to MainMap. A ready call answered `SESSION_EXPIRED` /
+      `BATTLE_NOT_FOUND` clears `BattleSession` and loads MainMap once.
+    - **Tests:** 15 EditMode tests in `BattleLifecycleTests`; 18 real-PostgreSQL
+      tests in `backend/tests/contract/db/battleLifecycle.dbtest.js`; the
+      contract tests check that Unity handles every battle status.
 
 Check in Unity after pulling:
 - EditMode Test Runner: all tests, including the new ones above.
@@ -229,6 +265,11 @@ Check in Unity after pulling:
   Console), then open Friends or Quests.
   - Expected after waiting: the call succeeds after a silent refresh.
   - Expected after revoking: a single return to Login.
+- Stuck battles (item 25): `BattleLifecycleTests` in the Test Runner. By hand
+  in stub mode: challenge with only one client, wait more than 30 s, return
+  to MainMap and challenge the same player again.
+  - Expected: the new challenge is accepted (no `DUPLICATE_CHALLENGE`), and
+    the old battle's row reads `cancelled`.
 
 Notes for the laptop:
 - On an Android phone, `http://localhost:3000` is the phone itself. Point the
@@ -239,10 +280,6 @@ Notes for the laptop:
   real Android settings exist only on the laptop. Review that file's diff
   (package name, min/target SDK, IL2CPP + ARM64, "Allow downloads over HTTP")
   before committing it. Unity does not store keystore passwords there.
-- A battle that never resolves stays `in_progress` forever, and both players
-  then get `DUPLICATE_CHALLENGE` (nothing expires it; see backlog). In stub
-  mode, clear it in the local DB with
-  `UPDATE battles SET status = 'cancelled' WHERE status = 'in_progress';`.
 
 ## Current blocker
 
@@ -290,8 +327,6 @@ there is no local PostgreSQL yet.
   is currently unused (see item 12).
 - Faction System (see item 14) — new feature.
 - Needs a decision (found in the 2026-10-18 audit):
-  - Stale battles: `findActiveBattleForPlayer` ignores `session_expires_at`,
-    so an unresolved battle blocks both players from challenging again.
   - The backend accepts only `^[a-zA-Z0-9_]{3,20}$` usernames. Arabic
     names are rejected (shown as "اسم المستخدم غير صالح").
   - Logout: `FirebaseManager.SignOut` exists, but no screen calls it.

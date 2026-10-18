@@ -41,6 +41,7 @@ Both modes need the full repository checkout: they read the Unity C# sources fro
 | Every error code the client handles (and every `Constants.ErrorCodes` value) is one the backend sends | the client handling a code the backend never sends |
 | Error envelopes match the client's `ApiResponse` / `ApiError` | a changed error envelope |
 | Every token failure answers HTTP 401 `INVALID_TOKEN`, which is the only code sent with 401, and it matches the rule the client refreshes on (`AuthSession.IsTokenRejection`) | a token failure sent as 403, or another 401 that the client would mistake for an expired sign-in |
+| Unity's `BattleLifecycle.FromStatus` has a case for exactly the battle statuses the schema's `battles_status_check` allows | a new terminal status the client would keep polling as if the match were running |
 | No allowlist entry is stale | an exception that no longer applies |
 
 ## How it works
@@ -120,7 +121,7 @@ connects to nothing. It prints why, with these setup steps, and exits with code
 
 | When | What |
 |---|---|
-| Start | `CREATE DATABASE nfouz_contract_test_run_<UTC yyyymmddhhmmss>_<8 random hex>`, then `COMMENT ON DATABASE … IS 'nfouz-contract-test-run:<that name>'` (the ownership marker) |
+| Start (once per test file: `unityContract.dbtest.js`, `battleLifecycle.dbtest.js`) | `CREATE DATABASE nfouz_contract_test_run_<UTC yyyymmddhhmmss>_<8 random hex>`, then `COMMENT ON DATABASE … IS 'nfouz-contract-test-run:<that name>'` (the ownership marker) |
 | Setup | The backend's own `scripts/run-migrations.js` runs on that database, in a child process started in an empty temporary folder (so it can't load `backend/.env`) and with `DATABASE_URL`, `FIREBASE_*` and `PG*` removed from its environment |
 | Before each scenario | Every table of **that** database is truncated and the world from `world.js` is inserted (only after checking `current_database()` is the run database) |
 | End (`afterAll`, also after failures) | `DROP DATABASE … WITH (FORCE)`, only if all of these hold: the name is the one this run generated, it has the run-database shape, it isn't the connection database, and its comment carries this run's marker |
@@ -178,6 +179,7 @@ enter it.
 | The fake mode's `rowCounts` hints (lookups that "find nothing") are true in PostgreSQL | a scenario world that only passes because of a fake-only hint |
 | The migrations run cleanly, and the world's reference rows (items, quest) match their seeds | a seed changed in a migration but not in `world.js` |
 | 15 representative error paths (`errorScenarios`): status, code and envelope | e.g. `PLAYER_NOT_FOUND`, `USERNAME_TAKEN`, `PLAYER_BLOCKED`, `DUPLICATE_CHALLENGE`, `RECONNECT_WINDOW_EXPIRED`, `QUEST_NOT_COMPLETED`, `FRIENDSHIP_TOO_NEW`, idempotent re-claim |
+| The battle lifecycle cleanup (`battleLifecycle.dbtest.js`, 18 tests; timings are set relative to the database's `now()`) | a stale battle still blocking a challenge or the inventory; a fresh, overtime or reconnectable battle ended early; a ready timeout that ignores the ready flags; a cleanup that is not idempotent or ends a battle twice under 8 concurrent calls; a cleanup overwriting a committed result (or a late result overwriting a cleanup); terminal history, control, SOS or rescue rows changing |
 
 ### Fake and real modes: intentional differences
 
