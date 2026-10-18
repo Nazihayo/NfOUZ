@@ -684,7 +684,11 @@ PrefabInstance:
       value: 0.5
       objectReference: {fileID: 0}
     - target: {fileID: 1200084602039422307, guid: a70748c47257ef37a0c54c5cb4ec991f, type: 3}
-      propertyPath: m_Text
+      propertyPath: originalText
+      value: Ranger
+      objectReference: {fileID: 0}
+    - target: {fileID: 1200084602039422307, guid: a70748c47257ef37a0c54c5cb4ec991f, type: 3}
+      propertyPath: m_text
       value: Ranger
       objectReference: {fileID: 0}
     - target: {fileID: 3804864692661353234, guid: a70748c47257ef37a0c54c5cb4ec991f, type: 3}
@@ -1363,7 +1367,11 @@ PrefabInstance:
       value: 0.5
       objectReference: {fileID: 0}
     - target: {fileID: 1200084602039422307, guid: a70748c47257ef37a0c54c5cb4ec991f, type: 3}
-      propertyPath: m_Text
+      propertyPath: originalText
+      value: Titan
+      objectReference: {fileID: 0}
+    - target: {fileID: 1200084602039422307, guid: a70748c47257ef37a0c54c5cb4ec991f, type: 3}
+      propertyPath: m_text
       value: Titan
       objectReference: {fileID: 0}
     - target: {fileID: 3804864692661353234, guid: a70748c47257ef37a0c54c5cb4ec991f, type: 3}
@@ -1569,7 +1577,11 @@ PrefabInstance:
       value: 0.5
       objectReference: {fileID: 0}
     - target: {fileID: 1200084602039422307, guid: a70748c47257ef37a0c54c5cb4ec991f, type: 3}
-      propertyPath: m_Text
+      propertyPath: originalText
+      value: Scout
+      objectReference: {fileID: 0}
+    - target: {fileID: 1200084602039422307, guid: a70748c47257ef37a0c54c5cb4ec991f, type: 3}
+      propertyPath: m_text
       value: Scout
       objectReference: {fileID: 0}
     - target: {fileID: 3804864692661353234, guid: a70748c47257ef37a0c54c5cb4ec991f, type: 3}

@@ -176,6 +176,32 @@ describe('Arabic UI: scenes and prefabs', () => {
     expect(problems).toEqual([]);
   });
 
+  test('prefab-instance overrides of a text component name a field that component has', () => {
+    // An override of the legacy Text field (m_Text) on a converted
+    // component would silently stop applying: the label shows the
+    // prefab's default text instead.
+    const prefabsByGuid = new Map(assets.filter((u) => u.rel.endsWith('.prefab')).map((u) => [metaGuid(path.join(PROJECT, u.rel)), u]));
+    const problems = [];
+    let checked = 0;
+    for (const unity of assets) {
+      for (const doc of unity.docs.filter((d) => d.classId === 1001)) {
+        const mods = doc.body.matchAll(/- target: \{fileID: (-?\d+), guid: ([0-9a-f]{32}), type: 3\}\r?\n\s+propertyPath: ([^\r\n]+)/g);
+        for (const [, targetId, guid, propertyPath] of mods) {
+          const prefab = prefabsByGuid.get(guid);
+          const target = prefab && prefab.byId.get(targetId);
+          if (!target || !TMP_TEXT_TYPES.has(NAME_BY_GUID[scriptGuid(target)])) continue;
+          checked++;
+          const root = propertyPath.split('.')[0];
+          if (field(target, root) === undefined) {
+            problems.push(`${unity.rel}: override "${propertyPath}" on ${prefab.rel} &${targetId} (${NAME_BY_GUID[scriptGuid(target)]}) matches no field`);
+          }
+        }
+      }
+    }
+    expect(checked).toBeGreaterThan(0);
+    expect(problems).toEqual([]);
+  });
+
   test('scene/prefab structure: ascending fileIDs and no dangling local references', () => {
     const problems = [];
     for (const unity of assets) {
