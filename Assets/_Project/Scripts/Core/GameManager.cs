@@ -1,6 +1,7 @@
 using Nfouz.Networking;
 using Nfouz.Utils;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Nfouz.Core
 {
@@ -15,6 +16,7 @@ namespace Nfouz.Core
     public class GameManager : MonoBehaviour
     {
         private static GameManager _instance;
+        private bool _returningToLogin;
 
         [Header("Service Prefabs / Components")]
         [SerializeField] private ApiClient apiClientPrefab;
@@ -55,6 +57,11 @@ namespace Nfouz.Core
                 : gameObject.AddComponent<FirebaseManager>();
             locator.Register<FirebaseManager>(firebaseManager);
 
+            // Expired ID token -> one refresh and retry inside ApiClient; a
+            // session that cannot be recovered comes back here (see AuthSession).
+            apiClient.SetTokenProvider(firebaseManager);
+            apiClient.SessionExpired += reason => HandleSessionExpired(firebaseManager, reason);
+
             // Sprint 5 — Photon Multiplayer Foundation.
             var photonConnectionManager = photonConnectionManagerPrefab != null
                 ? Instantiate(photonConnectionManagerPrefab, transform)
@@ -62,6 +69,35 @@ namespace Nfouz.Core
             locator.Register<PhotonConnectionManager>(photonConnectionManager);
 
             Debug.Log("[GameManager] Core services registered.");
+        }
+
+        /// <summary>
+        /// The sign-in can no longer be recovered (no Firebase user, refresh
+        /// refused, or the fresh token rejected too). AuthSession raises this
+        /// at most once per session. Clears the session and returns to Login
+        /// once; Boot (SessionBootstrap) and Login route by themselves.
+        /// </summary>
+        private async void HandleSessionExpired(FirebaseManager firebaseManager, string reason)
+        {
+            Debug.LogWarning($"[GameManager] Session ended ({reason}); returning to Login.");
+            firebaseManager.SignOut();
+            PlayerSession.Clear();
+
+            var activeScene = SceneManager.GetActiveScene().name;
+            if (_returningToLogin || activeScene == Constants.Scenes.Boot || activeScene == Constants.Scenes.Login)
+            {
+                return;
+            }
+
+            _returningToLogin = true;
+            try
+            {
+                await SceneLoader.LoadAsync(Constants.Scenes.Login);
+            }
+            finally
+            {
+                _returningToLogin = false;
+            }
         }
 
         private void Start()

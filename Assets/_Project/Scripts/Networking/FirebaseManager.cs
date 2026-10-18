@@ -18,7 +18,7 @@ namespace Nfouz.Networking
     /// project compiles even before the Firebase Unity SDK package is imported
     /// (Phase 1 / Phase 2 boundary — see Unity MVP Implementation Plan v1.0).
     /// </summary>
-    public class FirebaseManager : MonoBehaviour
+    public class FirebaseManager : MonoBehaviour, IAuthTokenProvider
     {
         private const string StoredTokenPrefsKey = "nfouz_firebase_id_token";
 
@@ -77,27 +77,50 @@ namespace Nfouz.Networking
         /// is signed in or the refresh fails — caller should route to Login in that case.</summary>
         public async Task<bool> RefreshTokenSilently()
         {
+            return (await RefreshTokenAsync()).Status == TokenRefreshStatus.Refreshed;
+        }
+
+        /// <summary>
+        /// Forces a new ID token from Firebase (IAuthTokenProvider; ApiClient
+        /// calls it, via AuthSession, when the backend answers 401
+        /// INVALID_TOKEN). The token itself is never logged.
+        /// </summary>
+        public async Task<TokenRefreshResult> RefreshTokenAsync()
+        {
 #if FIREBASE_AUTH_AVAILABLE
-            if (_auth?.CurrentUser == null)
+            if (!IsInitialized || _auth == null)
             {
-                return false;
+                return TokenRefreshResult.Of(TokenRefreshStatus.Transient);
+            }
+            if (_auth.CurrentUser == null)
+            {
+                return TokenRefreshResult.Of(TokenRefreshStatus.NoUser);
             }
 
             try
             {
-                CurrentToken = await _auth.CurrentUser.TokenAsync(true);
-                PlayerPrefs.SetString(StoredTokenPrefsKey, CurrentToken);
+                var token = await _auth.CurrentUser.TokenAsync(true);
+                if (string.IsNullOrEmpty(token))
+                {
+                    return TokenRefreshResult.Of(TokenRefreshStatus.Transient);
+                }
+
+                CurrentToken = token;
+                PlayerPrefs.SetString(StoredTokenPrefsKey, token);
                 PlayerPrefs.Save();
-                return !string.IsNullOrEmpty(CurrentToken);
+                return TokenRefreshResult.Refreshed(token);
             }
             catch (Exception ex)
             {
-                Debug.LogWarning($"[FirebaseManager] Silent token refresh failed: {ex.Message}");
-                return false;
+                var errorName = GetAuthErrorName(ex);
+                var status = TokenRefreshClassifier.FromAuthErrorName(errorName);
+                Debug.LogWarning($"[FirebaseManager] Token refresh failed ({errorName ?? ex.GetType().Name}): {status}.");
+                return TokenRefreshResult.Of(status);
             }
 #else
             await Task.CompletedTask;
-            return false;
+            // Stub mode: no Firebase SDK, so no user can be signed in.
+            return TokenRefreshResult.Of(TokenRefreshStatus.NoUser);
 #endif
         }
 

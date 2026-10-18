@@ -18,7 +18,7 @@ namespace Nfouz.Networking
     {
         private string _baseUrl;
         private int _timeoutSeconds;
-        private string _authToken;
+        private readonly AuthSession _session = new AuthSession(message => Debug.Log(message));
 
         public void Configure(string baseUrl, int timeoutSeconds)
         {
@@ -28,9 +28,25 @@ namespace Nfouz.Networking
 
         /// <summary>Sets the Firebase ID token attached as Authorization: Bearer &lt;token&gt;
         /// on every subsequent request. Call again after each token refresh.</summary>
+        /// <summary>Starts (token) or ends (null) the authenticated session.</summary>
         public void SetAuthToken(string token)
         {
-            _authToken = token;
+            _session.SetToken(token);
+        }
+
+        /// <summary>Where fresh ID tokens come from when the backend answers
+        /// 401 INVALID_TOKEN (FirebaseManager; wired by GameManager).</summary>
+        public void SetTokenProvider(IAuthTokenProvider provider)
+        {
+            _session.TokenProvider = provider;
+        }
+
+        /// <summary>Raised once when the session can no longer be recovered
+        /// (see AuthSession for the rules); the argument is a safe reason code.</summary>
+        public event Action<string> SessionExpired
+        {
+            add => _session.SessionExpired += value;
+            remove => _session.SessionExpired -= value;
         }
 
         public Task<ApiResponse<T>> GetAsync<T>(string endpoint, CancellationToken cancellationToken = default)
@@ -70,31 +86,40 @@ namespace Nfouz.Networking
         /// after the await, exactly as they would with any cooperative
         /// cancellation.
         /// </summary>
-        private async Task<ApiResponse<T>> SendAsync<T>(string method, string endpoint, object payload, CancellationToken cancellationToken = default)
+        private Task<ApiResponse<T>> SendAsync<T>(string method, string endpoint, object payload, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(_baseUrl))
             {
                 Debug.LogError("[ApiClient] Configure() was never called — missing base URL.");
-                return ApiResponse<T>.Failure(Constants.ErrorCodes.NetworkError, "API client not configured.", true);
+                return Task.FromResult(ApiResponse<T>.Failure(Constants.ErrorCodes.NetworkError, "API client not configured.", true));
             }
 
+            // Serialized once: a retry after a token refresh sends exactly this.
+            var apiRequest = new ApiRequest(method, endpoint, payload != null ? JsonUtility.ToJson(payload) : null);
+            return _session.ExecuteAsync<T>(apiRequest, (req, token) => SendOnceAsync<T>(req, token, cancellationToken), cancellationToken);
+        }
+
+        /// <summary>One HTTP attempt with the given token. Never logs the token.</summary>
+        private async Task<TransportResult<T>> SendOnceAsync<T>(ApiRequest apiRequest, string authToken, CancellationToken cancellationToken)
+        {
+            var method = apiRequest.Method;
+            var endpoint = apiRequest.Endpoint;
             var url = $"{_baseUrl}{endpoint}";
 
             using var request = new UnityWebRequest(url, method);
             request.downloadHandler = new DownloadHandlerBuffer();
             request.timeout = _timeoutSeconds;
 
-            if (payload != null)
+            if (apiRequest.Body != null)
             {
-                var json = JsonUtility.ToJson(payload);
-                var bodyRaw = Encoding.UTF8.GetBytes(json);
+                var bodyRaw = Encoding.UTF8.GetBytes(apiRequest.Body);
                 request.uploadHandler = new UploadHandlerRaw(bodyRaw);
             }
 
             request.SetRequestHeader("Content-Type", "application/json");
-            if (!string.IsNullOrEmpty(_authToken))
+            if (!string.IsNullOrEmpty(authToken))
             {
-                request.SetRequestHeader("Authorization", $"Bearer {_authToken}");
+                request.SetRequestHeader("Authorization", $"Bearer {authToken}");
             }
 
             try
@@ -105,28 +130,30 @@ namespace Nfouz.Networking
                     if (cancellationToken.IsCancellationRequested)
                     {
                         request.Abort();
-                        return ApiResponse<T>.Failure(Constants.ErrorCodes.NetworkError, "Request cancelled.", true);
+                        return Transport(ApiResponse<T>.Failure(Constants.ErrorCodes.NetworkError, "Request cancelled.", true));
                     }
                     await Task.Yield();
                 }
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[ApiClient] Transport exception calling {method} {endpoint}: {ex.Message}");
-                return ApiResponse<T>.Failure(Constants.ErrorCodes.NetworkError, ex.Message, true);
+                Debug.LogError($"[ApiClient] Transport exception calling {method} {endpoint}: {ex.GetType().Name}");
+                return Transport(ApiResponse<T>.Failure(Constants.ErrorCodes.NetworkError, "Transport failure.", true));
             }
 
             if (cancellationToken.IsCancellationRequested)
             {
-                return ApiResponse<T>.Failure(Constants.ErrorCodes.NetworkError, "Request cancelled.", true);
+                return Transport(ApiResponse<T>.Failure(Constants.ErrorCodes.NetworkError, "Request cancelled.", true));
             }
 
             if (request.result == UnityWebRequest.Result.ConnectionError ||
                 request.result == UnityWebRequest.Result.DataProcessingError)
             {
                 Debug.LogWarning($"[ApiClient] Connection error calling {method} {endpoint}: {request.error}");
-                return ApiResponse<T>.Failure(Constants.ErrorCodes.NetworkError, request.error, true);
+                return Transport(ApiResponse<T>.Failure(Constants.ErrorCodes.NetworkError, request.error, true));
             }
+
+            var status = request.responseCode;
 
             var responseText = request.downloadHandler.text;
 
@@ -137,23 +164,26 @@ namespace Nfouz.Networking
                 var parsedError = TryParseEnvelope<T>(responseText);
                 if (parsedError != null)
                 {
-                    return parsedError;
+                    return new TransportResult<T>(status, parsedError);
                 }
 
-                return ApiResponse<T>.Failure(
+                return new TransportResult<T>(status, ApiResponse<T>.Failure(
                     Constants.ErrorCodes.InternalError,
-                    $"HTTP {request.responseCode} with unparseable body.");
+                    $"HTTP {status} with unparseable body."));
             }
 
             var parsed = TryParseEnvelope<T>(responseText);
             if (parsed != null)
             {
-                return parsed;
+                return new TransportResult<T>(status, parsed);
             }
 
-            Debug.LogError($"[ApiClient] Failed to parse response body for {method} {endpoint}: {responseText}");
-            return ApiResponse<T>.Failure(Constants.ErrorCodes.InternalError, "Failed to parse server response.");
+            // Only the length: a body can carry secrets (e.g. host_authority_secret).
+            Debug.LogError($"[ApiClient] Failed to parse response body for {method} {endpoint} ({responseText?.Length ?? 0} chars).");
+            return new TransportResult<T>(status, ApiResponse<T>.Failure(Constants.ErrorCodes.InternalError, "Failed to parse server response."));
         }
+
+        private static TransportResult<T> Transport<T>(ApiResponse<T> failure) => new TransportResult<T>(0, failure);
 
         private static ApiResponse<T> TryParseEnvelope<T>(string json)
         {
