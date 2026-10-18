@@ -64,7 +64,8 @@ async function getQuests(playerId) {
       current_progress: row.current_progress,
       is_completed: row.is_completed,
       is_claimed: row.is_claimed,
-      reward_coins: row.reward_coins,
+      // BIGINT column: node-postgres returns it as a string; the client expects a number.
+      reward_coins: Number(row.reward_coins),
       reward_bp_xp: row.reward_bp_xp,
       expires_at: row.expires_at,
     })),
@@ -125,7 +126,7 @@ async function claimQuest(playerId, questId, requestId) {
     return {
       quest_id: questId,
       already_claimed: false,
-      reward_coins: questRow.reward_coins,
+      reward_coins: Number(questRow.reward_coins),
       reward_bp_xp: questRow.reward_bp_xp,
       battle_pass_xp: xpRow ? xpRow.battle_pass_xp : null,
     };

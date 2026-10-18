@@ -104,6 +104,18 @@ describe('quest.service (Sprint 9)', () => {
       expect(result.quests[0].is_completed).toBe(true);
       expect(result.quests[0].is_claimed).toBe(false);
     });
+
+    it('reward_coins is a JSON number — node-postgres returns the BIGINT column as a string', async () => {
+      questRepo.listDailyQuestDefinitions.mockResolvedValue([]);
+      questRepo.getTodayQuestsForPlayer.mockResolvedValue([
+        { player_quest_id: 'pq-1', quest_id: 'q-1', title: 'Win 2 Battles', goal_type: 'win_battles', goal_target: 2, current_progress: 0, is_completed: false, is_claimed: false, reward_coins: '100', reward_bp_xp: 30, expires_at: new Date() },
+      ]);
+      playerRepo.getById.mockResolvedValue({ player_id: 'P1', battle_pass_xp: 0 });
+
+      const result = await questService.getQuests('P1');
+
+      expect(result.quests[0].reward_coins).toBe(100);
+    });
   });
 
   describe('claimQuest', () => {
@@ -117,6 +129,16 @@ describe('quest.service (Sprint 9)', () => {
       expect(result).toEqual({ quest_id: 'q-1', already_claimed: false, reward_coins: 100, reward_bp_xp: 30, battle_pass_xp: 130 });
       expect(playerRepo.adjustCredits).toHaveBeenCalledWith('P1', 100, txClient);
       expect(questRepo.adjustBattlePassXp).toHaveBeenCalledWith('P1', 30, txClient);
+    });
+
+    it('the claim response reports reward_coins as a number even though the BIGINT column arrives as a string', async () => {
+      questRepo.getPlayerQuestForClaim.mockResolvedValue(eligibleQuestRow({ reward_coins: '100' }));
+      questRepo.claimIfEligible.mockResolvedValue({ player_quest_id: 'pq-1', is_claimed: true });
+      questRepo.adjustBattlePassXp.mockResolvedValue({ player_id: 'P1', battle_pass_xp: 130 });
+
+      const result = await questService.claimQuest('P1', 'q-1', 'req-1');
+
+      expect(result.reward_coins).toBe(100);
     });
 
     it('Battle Pass XP — the exact reward_bp_xp seeded for the quest is what gets added, nothing else', async () => {
