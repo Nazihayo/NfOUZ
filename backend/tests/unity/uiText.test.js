@@ -254,6 +254,21 @@ describe('Arabic UI: scripts', () => {
     expect(problems).toEqual([]);
   });
 
+  test('every error event that carries a player message has a subscriber that shows it', () => {
+    // An error raised but never subscribed to is a silent dead end (e.g.
+    // a refused location permission left the map empty without a word).
+    const handledElsewhere = {
+      // A failed join is returned by JoinRoomAsync, and PhotonRoomLifecycle
+      // shows ChallengeErrorMessages.JoinFailed for it.
+      OnConnectFailed: 'PhotonConnectionManager.JoinRoomAsync result',
+    };
+    const all = sources.map((f) => f.code).join('\n');
+    const events = [...all.matchAll(/public event Action<string> (On\w*(?:Error|Failed))\b/g)].map((m) => m[1]);
+    expect(events.length).toBeGreaterThan(3);
+    const silent = [...new Set(events)].filter((e) => !new RegExp(`\\.${e}\\s*\\+=`).test(all) && !handledElsewhere[e]);
+    expect(silent).toEqual([]);
+  });
+
   test("the client's username rule is the backend's", () => {
     const cs = fs.readFileSync(path.join(SCRIPTS_DIR, 'Auth/UsernameRules.cs'), 'utf8');
     const csPattern = cs.match(/public const string Pattern = "([^"]+)";/)[1];
