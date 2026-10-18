@@ -9,7 +9,7 @@ folder; where they differ, this file is current.
 - **Branch:** `claude/sprint-5-photon-multiplayer-5jv8v2` (all work below is pushed)
 - **Phase:** Build Recovery — make the existing Sprint 1–10 code runnable.
   **Do not start Sprint 11. Do not add gameplay features or redesign systems.**
-- **Last updated:** 2026-10-17
+- **Last updated:** 2026-10-18
 
 ## Working rules agreed with the developer
 
@@ -34,7 +34,7 @@ folder; where they differ, this file is current.
 | `Assets/_Project/Scripts` | 84 Sprint 1–10 scripts + recovery additions, assembly `Nfouz.Runtime` |
 | `Assets/_Project/Tests/EditMode` | EditMode tests, assembly `Nfouz.Tests.EditMode` |
 | `Assets/_Project/Scenes` | Boot, Login, Onboarding, MainMap, Battle, Result (Build Settings order) |
-| `Assets/_Project/Prefabs` | 12 placeholder prefabs (Core, UI, Map, Networking) |
+| `Assets/_Project/Prefabs` | 13 placeholder prefabs (Core, UI, Map, Networking) |
 | `Assets/_Project/Resources/ApiEnvironmentSettings.asset` | Backend URL per environment |
 | `backend/` | Node/Express API + PostgreSQL migrations (`npm run dev`, `npm run migrate`) |
 | `documentation/unity-scene-setup/` | Per-scene setup specs |
@@ -73,6 +73,35 @@ folder; where they differ, this file is current.
 10. `.gitignore` covers `PhotonAppSettings.asset` and
     `MapboxConfiguration.txt` (+ `.meta`); docker-compose publishes
     PostgreSQL on `127.0.0.1` only.
+
+Done in the cloud repository on 2026-10-18 — compiled and tested there, **not
+yet checked in the Unity Editor** (see "Check in Unity after pulling" below):
+
+11. Arabic auth errors (`004f095`): new `Auth/AuthErrorMessages.cs` maps
+    Firebase `AuthError` names and API error codes to Arabic; `FirebaseManager`,
+    `AuthController` and `OnboardingController` no longer show raw Firebase or
+    server text (it is logged with `Debug.LogWarning`). Wrong password and
+    unknown user share one message. A failed `POST /auth/register` because the
+    backend is down now shows "تعذّر الاتصال بالخادم…". 17 EditMode tests in
+    `AuthErrorMessagesTests` (pass under .NET in the cloud).
+12. Result screen (`d021cbb`): `ResultController` hides the return button until
+    a result is shown and shows it for every outcome; in `Battle.unity` and
+    `Result.unity` the button moved from `VictoryPanel` to the shared
+    `ResultPanel`. `Result.unity` is kept but is never loaded by code
+    (`Constants.Scenes.Result` / `ScreenId.Result` unused; `BattleManager`
+    calls the `ResultController` inside `Battle.unity`).
+13. `.gitignore` (`3a56ca8`): Firebase's generated
+    `Assets/Plugins/Android/FirebaseApp.androidlib/` (+ `.meta`, and any
+    `google-services.xml`) — it contains the API key and project identifiers.
+14. Faction investigated, unchanged: nothing ever sets `players.faction_id`
+    (always `NULL`), the API returns only that id (a per-database random UUID,
+    no name), and Unity has no faction field, so the profile's "—" is correct.
+    Showing a faction needs the not-yet-built Faction System (assignment +
+    name in the API) — a new feature, needs approval.
+
+Check in Unity after pulling: EditMode Test Runner (incl.
+`AuthErrorMessagesTests`), the Login error label in Arabic, and the result
+screen's return button in Battle (needs Photon for a real match).
 
 ## Current blocker
 
@@ -114,12 +143,11 @@ there is no local PostgreSQL yet.
 - TMP/Arabic migration: 59 `Text` fields + 1 `InputField` in 25 scripts,
   Arabic TMP font asset, and an Arabic shaping solution (e.g. RTLTMPro —
   third-party, needs approval). Legacy `Text` cannot join Arabic letters.
-- Firebase error messages are shown in English (raw SDK text).
 - Photon Fusion import (Battle has stub mode only), then Mapbox (needs an
   asmdef for its sources). Both need the developer's accounts.
-- `Result.unity` is never loaded by code; the live result screen is the panel
-  inside `Battle.unity`. `ResultController` has no root-visibility field, so
-  the Return button lives in the Victory panel only.
+- Decide whether `Result.unity` should be loaded by the flow or retired; it
+  is currently unused (see item 12).
+- Faction System (see item 14) — new feature.
 - `npm test` uses POSIX `NODE_ENV=test jest …` syntax, which fails under
   Windows `cmd`; on Windows run `npx jest --runInBand` from `backend/`
   (each test file sets `NODE_ENV=test` itself).
