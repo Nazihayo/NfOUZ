@@ -9,7 +9,7 @@ folder; where they differ, this file is current.
 - **Branch:** `claude/sprint-5-photon-multiplayer-5jv8v2` (all work below is pushed)
 - **Phase:** Build Recovery — make the existing Sprint 1–10 code runnable.
   **Do not start Sprint 11. Do not add gameplay features or redesign systems.**
-- **Last updated:** 2026-10-18 (covers commits through `64f274a`)
+- **Last updated:** 2026-10-18 (covers commits through `ac4e213`)
 
 ## Working rules agreed with the developer
 
@@ -255,14 +255,85 @@ tested in the cloud, **not yet checked in Unity**:
       contract tests check that Unity handles every battle status.
     - Docs: `64f274a`.
 
-Current test counts (cloud, at `64f274a`; run from `backend/`):
+Verified on the real laptop on 2026-10-18:
+
+26. **Boot → Login → Register → Onboarding → MainMap works end to end**
+    (Unity 6000.0.58f2).
+    - Local PostgreSQL 16, the backend, Firebase Admin and `/health` all
+      work: the former blocker and its setup steps are done (kept below for
+      a new machine).
+    - `UnityWebRequest` to `http://localhost:3000` failed with Curl error 56;
+      `http://127.0.0.1:3000` works. The laptop's
+      `Resources/ApiEnvironmentSettings.asset` Development URL was changed to
+      `http://127.0.0.1:3000` locally; the repository still says `localhost`
+      (item 5). Commit that change from the laptop (Next steps 1). Cloud
+      sessions don't touch the file, so it can't conflict.
+    - TMP Essential Resources were imported (`Assets/TextMesh Pro/`, not yet
+      in Git) and the Console is clean.
+
+Done in the cloud after that — compiled and tested there, **not yet checked
+in the Unity Editor**:
+
+27. Arabic UI on TextMeshPro + RTLTMPro (`6d4035b`, `d45f25d`, `eead30b`,
+    `ac4e213`): Arabic letters are joined and laid out right-to-left.
+    - **Package:** `com.nosuchstudio.rtltmpro` 4.0.0, RTLTMPro's Unity 6
+      release, installed the way its README documents (git URL
+      `https://github.com/hk1ll3r/RTLTMPro.git?path=/UPMPackage#v4.0.0`,
+      locked to commit `69c9193`). Unity downloads it with git on first
+      open. Its demo `.unitypackage` (sample scenes, Segoe UI fonts) is not
+      imported; Segoe UI is not redistributable.
+    - **Before:** 145 legacy `Text` and 7 `InputField` components in the 6
+      scenes and 10 UI prefabs (Boot has none), 3 world-space `TextMeshPro`
+      labels, and 68 `Text`/`InputField` fields in 28 scripts.
+      - By role: 37 static labels, 30 button labels, 46 player-data/number
+        labels, 15 status/error/message labels, 3 other dynamic labels, 14
+        input text/placeholder components.
+      - By content: 64 static Arabic texts, 41 Latin/number-only, 40 empty
+        until code fills them; no static text mixes Arabic with Latin.
+    - **After:** 0 legacy components.
+      - Labels: 138 `RTLTextMeshPro` (Farsi off, numbers kept as typed) and
+        3 `RTLTextMeshPro3D`. Latin-only text (numbers, emails, usernames)
+        passes through unchanged.
+      - Inputs: 7 `TMP_InputField`, each with a left-to-right
+        `TextMeshProUGUI` for the typed text (email, password, username and
+        player id are Latin) and an `RTLTextMeshPro` placeholder.
+      - Converted in place with the same fileIDs, so references, layout,
+        sizes, colours and button wiring are unchanged. Scripts use
+        `TMP_Text` / `TMP_InputField`; `RtlLayoutFlip` sets the TMP
+        horizontal alignment.
+      - Text overflow is now "Overflow" (always visible) instead of the
+        legacy "Truncate", because the new font's metrics differ.
+    - **Font:** every text uses the project default font (TMP Settings →
+      Default Font Asset). The repository has no Arabic font yet; see Next
+      steps 2.
+    - **Messages:** 11 Arabic messages put U+200F (right-to-left mark)
+      before punctuation that follows a Latin word, number or value;
+      RTLTMPro otherwise draws it on the wrong side. The class-choice
+      message no longer puts parentheses around Latin words. All 145 script
+      messages and 52 scene texts were checked against the Unicode bidi
+      algorithm.
+    - **Usernames:** Onboarding checks the backend's rule
+      (`Auth/UsernameRules.cs`, the same pattern as `auth.service.js`)
+      before calling the server, and shows "اسم المستخدم يجب أن يكون من 3
+      إلى 20 حرفاً، ويستخدم الحروف الإنجليزية والأرقام و _ فقط." for it and
+      for `INVALID_USERNAME`. The backend rule is unchanged.
+    - **Tests:**
+      - `backend/tests/unity/uiText.test.js` (14 checks, part of `npm test`)
+        reads every scene, prefab and script.
+      - EditMode `ArabicRtlTextTests` (27): joining, tashkeel, digits, Latin
+        pass-through and punctuation order.
+      - EditMode `ArabicUiAssetTests` (Editor only): loads every Build
+        Settings scene and prefab, and checks the project font has every
+        glyph the UI draws.
+
+Current test counts (cloud, at `ac4e213`; run from `backend/`):
 
 | Command | Result |
 |---|---|
-| `npm test` (same as `npx jest --runInBand`; includes the fake-database contract test) | 29 suites / 374 tests |
+| `npm test` (same as `npx jest --runInBand`; includes the fake-database contract test and the Unity UI checks) | 30 suites / 388 tests |
 | `npm run test:contract` | 50 tests |
 | `npm run test:contract:db` (needs `CONTRACT_TEST_DATABASE_URL`, item 22) | 71 tests: 53 contract + 18 battle lifecycle |
-| Unity EditMode, run under .NET in the cloud | `AuthErrorMessagesTests` 17, `AuthSessionTests` 30, `BattleLifecycleTests` 15, `PlayerSessionDataContractTests` + `BattleSessionPartialUpdateTests` + `CultureInvariantRequestTests` 13 of 14 (the 14th needs Unity's JsonUtility) |
+| Unity EditMode, run under .NET in the cloud | `AuthErrorMessagesTests` 17, `AuthSessionTests` 30, `BattleLifecycleTests` 15, `ArabicRtlTextTests` 27, `PlayerSessionDataContractTests` + `BattleSessionPartialUpdateTests` + `CultureInvariantRequestTests` 13 of 14 (the 14th needs Unity's JsonUtility) |
 
 Check in Unity after pulling:
 - EditMode Test Runner: all tests, including the new ones above.
@@ -283,6 +354,23 @@ Check in Unity after pulling:
   to MainMap and challenge the same player again.
   - Expected: the new challenge is accepted (no `DUPLICATE_CHALLENGE`), and
     the old battle's row reads `cancelled`.
+- Arabic UI (item 27), after Next steps 1–2:
+  - Package Manager lists "RTL Text Mesh Pro" 4.0.0. The Console has no
+    errors and no "missing script" warnings in any scene.
+  - EditMode: `ArabicRtlTextTests` and `ArabicUiAssetTests` pass.
+    `ProjectFont_HasEveryGlyphTheUiDraws` fails until the Arabic font is
+    set, and lists each missing character.
+  - Login/Register: titles, buttons and placeholders read right-to-left with
+    joined letters; a typed email/password runs left-to-right; the password
+    shows asterisks; an error (e.g. a wrong password) shows joined Arabic.
+  - Onboarding: an Arabic or 2-letter username shows the new username
+    message without a server call.
+  - MainMap: HUD numbers, bottom tabs, every screen title, Profile
+    (username, stats), Settings toggles, popups, toasts, the SOS banner, and
+    quest/inventory/friend list items.
+  - Battle and Result panels (stub mode): titles and the return button.
+  - No text overlaps or runs outside its panel; the ⚙ Settings button and
+    the ✓ quest badge show a glyph, not a box.
 
 Notes for the laptop:
 - On an Android phone, `http://localhost:3000` is the phone itself. Point the
@@ -296,6 +384,70 @@ Notes for the laptop:
 
 ## Current blocker
 
+None since 2026-10-18 (item 26). The resolved blocker is kept under "Local
+setup reference" below.
+
+## Next steps (in order)
+
+1. Bring this branch to the laptop without losing local work. In PowerShell
+   at the repo root, run `git status` first. Expected local changes:
+   `Assets/TextMesh Pro/` (untracked: TMP Essentials),
+   `Assets/_Project/Resources/ApiEnvironmentSettings.asset` (127.0.0.1),
+   maybe `Packages/packages-lock.json` or `ProjectSettings/*` (written by
+   Unity), and `Assets/csc.rsp` (untracked, item 6).
+   1. Commit TMP Essentials and the URL. No cloud commit touches them, so
+      they can't conflict:
+      ```powershell
+      git add "Assets/TextMesh Pro" Assets/_Project/Resources/ApiEnvironmentSettings.asset
+      git commit -m "Add TMP Essential Resources; use 127.0.0.1 for the local backend"
+      ```
+      Commit the whole `Assets/TextMesh Pro` folder with its `.meta` files
+      (TMP Settings, LiberationSans SDF and `LiberationSans - OFL.txt`,
+      shaders, sprites, style sheets, line-breaking rules): every machine
+      needs the same TMP Settings. Leave out
+      `Assets/TextMesh Pro/Examples & Extras` if it was imported.
+   2. If `Packages/packages-lock.json` is modified, run
+      `git stash push Packages/packages-lock.json`. This branch adds the
+      RTLTMPro entry, and Unity rewrites the file anyway.
+   3. If any file under `Assets/_Project/Scenes` or `Assets/_Project/Prefabs`
+      is modified, stop and ask before pulling: this branch rewrites every
+      text component in them.
+   4. `git pull`. Leave a stashed lock file in the stash unless Unity
+      reports a package error.
+   5. Open the project in Unity 6000.0.58f2. The Package Manager downloads
+      RTLTMPro (needs git on PATH and access to github.com). The Console
+      must be clean.
+2. Arabic font. The repository has no Arabic font, and RTLTMPro's demo
+   Segoe UI fonts may not be redistributed, so a font must be chosen and
+   added on the laptop:
+   1. Pick an Arabic font under the SIL Open Font License whose cmap
+      includes Arabic Presentation Forms-B (U+FE70–U+FEFF): RTLTMPro outputs
+      those code points. Candidates: Noto Naskh Arabic or Noto Sans Arabic
+      (Google Fonts, OFL 1.1). Choosing the family is a product decision.
+   2. Put the `.ttf` and its `OFL.txt` together in
+      `Assets/_Project/Fonts/<Family>/`. `uiText.test.js` rejects a font
+      without a license file next to it.
+   3. Window → TextMeshPro → Font Asset Creator: Source = that `.ttf`,
+      Atlas Resolution 2048×2048, Render Mode SDFAA, Character Set "Unicode
+      Range (Hex)" =
+      `20-7E,A0,2014,2026,2192,200F,060C,061B,061F,0621-063A,0640-065F,0660-0669,0670,FC5E-FC63,FE70-FEFF`.
+      Generate, then save as `Assets/_Project/Fonts/<Family>/<Family> SDF.asset`.
+   4. In the new font asset, add `LiberationSans SDF` (TMP Essentials) under
+      Fallback Font Assets, for Latin letters the Arabic font lacks.
+   5. Project Settings → TextMesh Pro → Settings → Default Font Asset = the
+      new Arabic SDF asset.
+   6. Run EditMode `ArabicUiAssetTests.ProjectFont_HasEveryGlyphTheUiDraws`.
+      It lists every missing code point. ⚙ (U+2699) and ✓ (U+2713) may be
+      missing from both fonts; see the backlog.
+   7. Commit `Assets/_Project/Fonts/**` (font, `OFL.txt`, SDF asset, `.meta`
+      files) and the changed `Assets/TextMesh Pro/Resources/TMP Settings.asset`.
+3. Run "Check in Unity after pulling" above, especially the Arabic UI list.
+4. Optional: the real-database contract test (backlog, "Needs the laptop").
+
+### Local setup reference (done on 2026-10-18; repeat on a new machine)
+
+Resolved blocker, for the record:
+
 Onboarding's `POST /auth/register` fails with "Cannot connect to destination
 host": the local backend at `http://localhost:3000` is not running because
 there is no local PostgreSQL yet.
@@ -308,7 +460,7 @@ there is no local PostgreSQL yet.
 - Chosen path: native PostgreSQL 16 on Windows (no Docker/WSL) via
   `backend/scripts/setup-local-windows.ps1` (`dd6e2c3`).
 
-## Next steps (in order)
+Setup steps used:
 
 1. Firebase Console → project NFOUZ → Project settings → Service accounts →
    Generate new private key. Save the JSON **outside the repository**.
@@ -331,26 +483,37 @@ there is no local PostgreSQL yet.
 
 ## Backlog after the Register → MainMap test (do not start without approval)
 
-Completed work is items 1–25 above; nothing completed is listed here.
+Completed work is items 1–27 above; nothing completed is listed here.
 
 Needs the laptop:
-- "Current blocker" and "Next steps (in order)" above.
+- "Next steps (in order)" above: reconcile and pull, the Arabic font, then
+  the Unity checks.
 - "Check in Unity after pulling" and "Notes for the laptop" above.
-- Optional, once local PostgreSQL works (Next steps 2): create the
+- Optional, now that local PostgreSQL works: create the
   `nfouz_contract_test` role/database (item 22) and run
   `npm run test:contract:db` (README, "Real-database mode"). It never
   touches `nfouz_db`.
 
 Needs a decision or approval:
-- TMP/Arabic migration: 59 `Text` fields + 1 `InputField` in 25
-  scripts (the recovery bridges `LoginPanelBridge` / `OnboardingPanelBridge`
-  add 6 more `InputField`s), an Arabic TMP font asset, and an Arabic shaping
-  solution (e.g. RTLTMPro — third-party, needs approval). Legacy `Text`
-  cannot join Arabic letters.
+- Arabic font family (Next steps 2): which OFL font NFOUZ uses.
+- ⚙ (Settings button) and ✓ (quest "claimed" badge) are text symbols. If
+  the chosen fonts lack them: add an OFL symbol font as a fallback, or
+  replace them with icons.
+- Digits: Western digits (0–9) are kept as typed in Arabic text. Showing
+  Arabic-Indic digits (٠–٩) instead would be a one-setting change
+  (`preserveNumbers`), but it is a product choice.
+- RTLTMPro limits found in the migration:
+  - a sign is drawn before the number ("+100", not "100+");
+  - parentheses around Latin words are misplaced (avoided in current
+    messages);
+  - typed Arabic input is not supported in the TMP input fields (all
+    current inputs are Latin; matters only if Arabic usernames are
+    approved).
 - Whether `Result.unity` should be loaded by the flow or retired; it is
   currently unused (see item 12).
 - Usernames: the backend accepts only `^[a-zA-Z0-9_]{3,20}$`. Arabic names
-  are rejected (shown as "اسم المستخدم غير صالح").
+  are rejected; Onboarding now explains the rule before sending (item 27).
+  Supporting Arabic usernames needs a backend rule change and RTL input.
 - Logout: `FirebaseManager.SignOut` is called only when a session ends
   (item 24); no screen offers logout.
 - Battle loading screen: a battle the server cancels while the player
@@ -358,7 +521,8 @@ Needs a decision or approval:
   check while waiting would be a separate change.
 
 Needs the developer's external accounts:
-- Firebase Admin service-account key (Next steps 1).
+- Firebase Admin service-account key: done on the laptop (item 26); a new
+  machine needs it again ("Local setup reference", step 1).
 - Photon Fusion import (Battle has stub mode only), then Mapbox (needs an
   asmdef for its sources). Each needs its account and App ID / token, kept
   out of Git.
