@@ -55,13 +55,13 @@ namespace Nfouz.Auth
         {
             if (string.IsNullOrEmpty(_selectedClassType))
             {
-                RaiseError("اختر فئة أولاً (Scout / Ranger / Titan).");
+                RaiseError("اختر فئة أولاً: Scout أو Ranger أو Titan\u200F.");
                 return;
             }
 
-            if (string.IsNullOrWhiteSpace(username) || username.Length < 3 || username.Length > 20)
+            if (!UsernameRules.IsValid(username))
             {
-                RaiseError("اسم المستخدم يجب أن يكون بين 3 و20 حرفاً.");
+                RaiseError(UsernameRules.InvalidMessage);
                 return;
             }
 
@@ -87,7 +87,7 @@ namespace Nfouz.Auth
                 "USERNAME_TAKEN" => "اسم المستخدم مُستخدَم بالفعل.",
                 "PLAYER_ALREADY_REGISTERED" => "هذا الحساب مُسجَّل بالفعل.",
                 "INVALID_CLASS_TYPE" => "الفئة المختارة غير صالحة.",
-                "INVALID_USERNAME" => "اسم المستخدم غير صالح.",
+                "INVALID_USERNAME" => UsernameRules.InvalidMessage,
                 _ => AuthErrorMessages.FromApiError(error),
             };
         }

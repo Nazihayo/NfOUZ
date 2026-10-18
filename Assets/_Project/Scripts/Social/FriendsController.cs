@@ -312,7 +312,7 @@ namespace Nfouz.Social
                 case Constants.ErrorCodes.AlreadyFriends:
                     return "أنتما صديقان بالفعل.";
                 case Constants.ErrorCodes.FriendLimitReached:
-                    return "تم الوصول للحد الأقصى لعدد الأصدقاء (100).";
+                    return "تم الوصول للحد الأقصى لعدد الأصدقاء (100)\u200F.";
                 case Constants.ErrorCodes.PlayerBlocked:
                     return "لا يمكن التفاعل مع هذا اللاعب.";
                 case Constants.ErrorCodes.FriendRequestNotFound:

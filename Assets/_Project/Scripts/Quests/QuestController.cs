@@ -106,7 +106,7 @@ namespace Nfouz.Quests
 
             try
             {
-                SetStatus($"جارٍ استلام مكافأة \"{quest.title}\"...");
+                SetStatus($"جارٍ استلام مكافأة \"{quest.title}\"\u200F...");
 
                 var token = _lifetimeCts.Token;
                 var requestId = QuestTracker.NewRequestId();
@@ -128,7 +128,7 @@ namespace Nfouz.Quests
 
                 SetStatus(response.data.already_claimed
                     ? "تم استلام هذه المكافأة مسبقاً."
-                    : $"تم استلام +{response.data.reward_coins} عملة و +{response.data.reward_bp_xp} XP!");
+                    : $"تم استلام +{response.data.reward_coins} عملة و +{response.data.reward_bp_xp} XP\u200F!");
 
                 if (questTracker != null)
                 {

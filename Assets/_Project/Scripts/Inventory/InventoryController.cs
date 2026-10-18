@@ -137,7 +137,7 @@ namespace Nfouz.Inventory
 
         private async Task HandleEquipAsync(InventoryItemData item)
         {
-            SetStatus($"جارٍ تجهيز {item.item_key}...");
+            SetStatus($"جارٍ تجهيز {item.item_key}\u200F...");
 
             bool succeeded;
             if (equipmentManager != null)
@@ -149,7 +149,7 @@ namespace Nfouz.Inventory
                 succeeded = await EquipDirectlyAsync(item.item_key);
             }
 
-            SetStatus(succeeded ? $"تم تجهيز {item.item_key}." : "تعذّر تجهيز هذا السلاح.");
+            SetStatus(succeeded ? $"تم تجهيز {item.item_key}\u200F." : "تعذّر تجهيز هذا السلاح.");
         }
 
         /// <summary>Fallback path if no EquipmentManager is wired in the scene — calls
@@ -179,7 +179,7 @@ namespace Nfouz.Inventory
 
         private async Task HandleUseAsync(InventoryItemData item)
         {
-            SetStatus($"جارٍ استخدام {item.item_key}...");
+            SetStatus($"جارٍ استخدام {item.item_key}\u200F...");
 
             var token = _lifetimeCts.Token;
             var requestId = PlayerInventory.NewRequestId();
@@ -199,7 +199,7 @@ namespace Nfouz.Inventory
                 return;
             }
 
-            SetStatus($"تم استخدام {item.item_key}.");
+            SetStatus($"تم استخدام {item.item_key}\u200F.");
             await RefreshAsync();
         }
 

@@ -57,7 +57,7 @@ namespace Nfouz.UI.Screens
 
             if (blockedPlayersUnavailableLabel != null)
             {
-                blockedPlayersUnavailableLabel.text = "قائمة اللاعبين المحظورين غير متاحة بعد (لا يوجد نقطة نهاية في الخادم لعرضها).";
+                blockedPlayersUnavailableLabel.text = "قائمة اللاعبين المحظورين غير متاحة بعد (لا يوجد نقطة نهاية في الخادم لعرضها)\u200F.";
             }
 
             if (SOSManager.Instance != null)
