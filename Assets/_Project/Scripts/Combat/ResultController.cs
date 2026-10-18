@@ -118,7 +118,7 @@ namespace Nfouz.Combat
                     influenceChangeLabel.text = "تعذّر تأكيد نتيجة المعركة من الخادم.";
                 }
 
-                _autoReturnRemaining = autoReturnSeconds;
+                StartReturnToMainMap();
                 return;
             }
 
@@ -136,7 +136,7 @@ namespace Nfouz.Combat
                     influenceChangeLabel.text = "نتيجة هذه المعركة قيد المراجعة الأمنية — لم يُمنح أي تغيير في النفوذ بعد.";
                 }
 
-                _autoReturnRemaining = autoReturnSeconds;
+                StartReturnToMainMap();
                 return;
             }
 
@@ -196,6 +196,19 @@ namespace Nfouz.Combat
                         influenceChangeLabel.text = $"{Constants.Influence.LossDelta} Influence";
                     }
                     break;
+            }
+
+            StartReturnToMainMap();
+        }
+
+        /// <summary>Every shown result returns to MainMap: automatically after
+        /// autoReturnSeconds, or earlier via the return button, which is only
+        /// visible once a result is on screen (hidden by SetAllPanelsInactive).</summary>
+        private void StartReturnToMainMap()
+        {
+            if (returnToMainMapButton != null)
+            {
+                returnToMainMapButton.gameObject.SetActive(true);
             }
 
             _autoReturnRemaining = autoReturnSeconds;
@@ -324,6 +337,7 @@ namespace Nfouz.Combat
             if (drawPanel != null) drawPanel.SetActive(false);
             if (unknownResultPanel != null) unknownResultPanel.SetActive(false);
             if (rankTransitionLabel != null) rankTransitionLabel.gameObject.SetActive(false);
+            if (returnToMainMapButton != null) returnToMainMapButton.gameObject.SetActive(false);
         }
 
         /// <summary>Match Flow's final step: Return To MainMap. Also clears
