@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 
 namespace Nfouz.Map
 {
@@ -36,5 +37,19 @@ namespace Nfouz.Map
     public class NearbyPlayersResponseData
     {
         public NearbyPlayerData[] players;
+    }
+
+    /// <summary>
+    /// GET /player/nearby query string. Formatted with the invariant culture:
+    /// on a German (or ar-SA / ar-EG) system a double prints as "52,5978" /
+    /// "52٫5978", which the backend's Number() reads as NaN.
+    /// </summary>
+    public static class NearbyPlayersQuery
+    {
+        public static string BuildEndpoint(double lat, double lng, int radiusMeters)
+        {
+            return string.Format(CultureInfo.InvariantCulture,
+                "/player/nearby?lat={0}&lng={1}&radius={2}", lat, lng, radiusMeters);
+        }
     }
 }

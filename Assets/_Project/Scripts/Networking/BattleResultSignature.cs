@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -41,13 +42,13 @@ namespace Nfouz.Networking
                 result.room_name,
                 result.rules_version,
                 result.match_nonce,
-                result.event_seq.ToString(),
+                result.event_seq.ToString(CultureInfo.InvariantCulture),
                 result.attacker_id,
                 result.defender_id,
-                result.attacker_final_health.ToString(),
-                result.defender_final_health.ToString(),
+                result.attacker_final_health.ToString(CultureInfo.InvariantCulture),
+                result.defender_final_health.ToString(CultureInfo.InvariantCulture),
                 result.outcome,
-                result.duration_seconds.ToString(),
+                result.duration_seconds.ToString(CultureInfo.InvariantCulture),
                 result.issued_at,
             });
         }
@@ -57,6 +58,16 @@ namespace Nfouz.Networking
         /// crypto.createHmac('sha256', secret).update(...).digest('hex')
         /// on the backend exactly.
         /// </summary>
+        /// <summary>
+        /// issued_at in the ISO 8601 UTC form the backend's Date.parse
+        /// expects. Invariant culture: under ar-SA, fa-IR or th-TH the current
+        /// culture's calendar would print a different year (e.g. 1448).
+        /// </summary>
+        public static string FormatIssuedAt(DateTime utc)
+        {
+            return utc.ToString("yyyy-MM-ddTHH:mm:ss.fffZ", CultureInfo.InvariantCulture);
+        }
+
         public static string Sign(BattleResultPayload result, string secret)
         {
             var canonical = Canonicalize(result);

@@ -84,7 +84,7 @@ namespace Nfouz.Map
             _queryInFlight = true;
             try
             {
-                var endpoint = $"/player/nearby?lat={lat}&lng={lng}&radius={radiusMeters}";
+                var endpoint = NearbyPlayersQuery.BuildEndpoint(lat, lng, radiusMeters);
                 var response = await _apiClient.GetAsync<NearbyPlayersResponseData>(endpoint);
 
                 if (!response.success || response.data?.players == null)

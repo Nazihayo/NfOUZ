@@ -587,7 +587,7 @@ namespace Nfouz.Combat
                 defender_final_health = defenderHealth,
                 outcome = absoluteOutcome,
                 duration_seconds = durationSeconds,
-                issued_at = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
+                issued_at = BattleResultSignature.FormatIssuedAt(DateTime.UtcNow),
             };
 
             var signature = BattleResultSignature.Sign(result, BattleSession.Current.host_authority_secret);
