@@ -38,6 +38,8 @@ dist/
 .env
 .env.local
 .env.*.local
+.env.*
+!.env.example
 backend/.env
 **/google-services.json
 **/GoogleService-Info.plist
@@ -53,6 +55,9 @@ backend/.env
 **/google-services.xml.meta
 **/*firebase*service*account*.json
 **/*serviceAccountKey*.json
+# Firebase Console's default name for a downloaded Admin SDK private key.
+**/*-firebase-adminsdk-*.json
+**/*service-account*.json
 **/PhotonAppSettings.asset.secret
 # Photon Fusion stores the App ID here; Mapbox stores the access token here.
 **/PhotonAppSettings.asset
@@ -63,6 +68,9 @@ backend/.env
 **/*.p12
 **/*.keystore
 **/*.jks
+**/*.p8
+**/*.mobileprovision
+**/keystore.properties
 *.pem
 *secret*.json
 *credentials*.json
