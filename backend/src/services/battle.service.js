@@ -186,15 +186,24 @@ async function createChallenge(attackerId, defenderId, location) {
     throw new ApiError('PLAYER_IS_PROTECTED', 'Target is currently Protected and cannot be challenged.', 403);
   }
 
+  // Everything from here to the insert runs in one transaction holding
+  // both players' challenge locks, so simultaneous challenges between the
+  // same players produce exactly one battle (the others get
+  // DUPLICATE_CHALLENGE).
+  return db.withTransaction(async (client) => {
+    await battleRepo.lockPlayersForChallenge([attackerId, defenderId], client);
+    return createChallengeLocked(attackerId, defenderId, defender, location, client);
+  });
+}
+
+async function createChallengeLocked(attackerId, defenderId, defender, location, client) {
   // Lazy lifecycle cleanup: a stale battle of either player (no result
   // can arrive any more, or a reconnect deadline passed) is ended first,
   // so it cannot block a new challenge forever (utils/battleLifecycle.js).
-  await battleRepo.expireStaleBattles({ playerIds: [attackerId, defenderId] }, battleLifecycleLimits());
+  await battleRepo.expireStaleBattles({ playerIds: [attackerId, defenderId] }, battleLifecycleLimits(), client);
 
-  const [attackerActive, defenderActive] = await Promise.all([
-    battleRepo.findActiveBattleForPlayer(attackerId),
-    battleRepo.findActiveBattleForPlayer(defenderId),
-  ]);
+  const attackerActive = await battleRepo.findActiveBattleForPlayer(attackerId, client);
+  const defenderActive = await battleRepo.findActiveBattleForPlayer(defenderId, client);
 
   if (attackerActive) {
     throw new ApiError('DUPLICATE_CHALLENGE', 'Attacker already has an active battle in progress.', 409);
@@ -252,7 +261,7 @@ async function createChallenge(attackerId, defenderId, location) {
     hostAuthoritySecret,
     matchNonce,
     rulesVersion: env.COMBAT_RULES_VERSION,
-  });
+  }, client);
 
   return battle;
 }

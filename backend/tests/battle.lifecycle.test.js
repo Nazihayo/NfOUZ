@@ -9,7 +9,12 @@ process.env.NODE_ENV = 'test';
  * against real PostgreSQL in tests/contract/db/battleLifecycle.dbtest.js.
  */
 
+jest.mock('../src/config/database', () => ({
+  query: jest.fn(),
+  withTransaction: jest.fn((fn) => fn({ query: jest.fn() })),
+}));
 jest.mock('../src/repositories/battle.repository', () => ({
+  lockPlayersForChallenge: jest.fn().mockResolvedValue(undefined),
   expireStaleBattles: jest.fn().mockResolvedValue([]),
   findActiveBattleForPlayer: jest.fn().mockResolvedValue(null),
   getById: jest.fn(),
@@ -45,17 +50,22 @@ describe('battle lifecycle wiring', () => {
     })).toEqual({ readyTimeoutSeconds: 10, noResultCutoffSeconds: 166 });
   });
 
-  test('a challenge ends both players\' stale battles before the duplicate check', async () => {
+  test('a challenge locks both players, then ends their stale battles before the duplicate check, in one transaction', async () => {
     playerRepo.getById.mockImplementation(async (id) => ({ player_id: id }));
     battleRepo.createBattle.mockImplementation(async (b) => ({ battle_id: b.battleId }));
     const order = [];
+    battleRepo.lockPlayersForChallenge.mockImplementation(async () => { order.push('lock'); });
     battleRepo.expireStaleBattles.mockImplementation(async () => { order.push('expire'); return []; });
     battleRepo.findActiveBattleForPlayer.mockImplementation(async () => { order.push('lookup'); return null; });
 
     await battleService.createChallenge('p-a', 'p-b', null);
 
-    expect(battleRepo.expireStaleBattles).toHaveBeenCalledWith({ playerIds: ['p-a', 'p-b'] }, LIMITS);
-    expect(order).toEqual(['expire', 'lookup', 'lookup']);
+    const tx = battleRepo.lockPlayersForChallenge.mock.calls[0][1];
+    expect(battleRepo.lockPlayersForChallenge).toHaveBeenCalledWith(['p-a', 'p-b'], tx);
+    expect(battleRepo.expireStaleBattles).toHaveBeenCalledWith({ playerIds: ['p-a', 'p-b'] }, LIMITS, tx);
+    expect(battleRepo.findActiveBattleForPlayer).toHaveBeenCalledWith('p-a', tx);
+    expect(battleRepo.createBattle.mock.calls[0][1]).toBe(tx);
+    expect(order).toEqual(['lock', 'expire', 'lookup', 'lookup']);
   });
 
   test('every battle endpoint sees the battle after the cleanup', async () => {

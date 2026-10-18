@@ -16,8 +16,8 @@ const { query } = db;
  * `in_progress`. Used to reject duplicate challenges and to resolve the
  * player's current session on reconnect.
  */
-async function findActiveBattleForPlayer(playerId) {
-  const result = await query(
+async function findActiveBattleForPlayer(playerId, executor = db) {
+  const result = await executor.query(
     `SELECT * FROM battles
      WHERE (attacker_id = $1 OR defender_id = $1)
        AND status = 'in_progress'
@@ -53,8 +53,8 @@ async function createBattle({
   hostAuthoritySecret,
   matchNonce,
   rulesVersion,
-}) {
-  const result = await query(
+}, executor = db) {
+  const result = await executor.query(
     `INSERT INTO battles
        (battle_id, attacker_id, defender_id, status, photon_room_name,
         location_lat, location_lng, session_started_at, session_expires_at,
@@ -251,8 +251,23 @@ async function resolveBattle(battleId, { winnerId, loserId, durationSeconds, eve
   return result.rows[0] || null;
 }
 
+/**
+ * Serializes challenge creation for these players until the surrounding
+ * transaction ends (transaction-scoped advisory locks, taken in a fixed
+ * order so two challenges between the same pair cannot deadlock). Without
+ * it, two simultaneous challenges — a double tap, or two players
+ * challenging each other — both pass the active-battle check and create
+ * two battles.
+ */
+async function lockPlayersForChallenge(playerIds, executor) {
+  for (const playerId of [...playerIds].sort()) {
+    await executor.query('SELECT pg_advisory_xact_lock(hashtextextended($1, 0))', [`battle-challenge:${playerId}`]);
+  }
+}
+
 module.exports = {
   findActiveBattleForPlayer,
+  lockPlayersForChallenge,
   expireStaleBattles,
   createBattle,
   getById,

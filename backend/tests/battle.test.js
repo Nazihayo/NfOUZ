@@ -4,12 +4,21 @@ process.env.NODE_ENV = 'test';
 
 const request = require('supertest');
 
-jest.mock('../src/config/database', () => ({
-  query: jest.fn(),
-  checkConnection: jest.fn().mockResolvedValue(true),
-  shutdown: jest.fn(),
-  pool: { on: jest.fn(), query: jest.fn() },
-}));
+jest.mock('../src/config/database', () => {
+  const query = jest.fn();
+  return {
+    query,
+    checkConnection: jest.fn().mockResolvedValue(true),
+    shutdown: jest.fn(),
+    pool: { on: jest.fn(), query: jest.fn() },
+    // createChallenge runs in a transaction: its queries go through the
+    // same mocked query sequence, except the challenge advisory locks
+    // (tested against real PostgreSQL in battleLifecycle.dbtest.js).
+    withTransaction: jest.fn((fn) => fn({
+      query: (text, params) => (text.includes('pg_advisory_xact_lock') ? Promise.resolve({ rows: [] }) : query(text, params)),
+    })),
+  };
+});
 
 // The limiters are process-wide singletons, so their counters would carry
 // over between tests (same mocked uid) and turn later requests into 429s.
