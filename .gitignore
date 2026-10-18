@@ -8,6 +8,7 @@
 Library/
 Temp/
 Obj/
+obj/
 Logs/
 UserSettings/
 Build/
@@ -78,6 +79,10 @@ backend/.env
 ## OS / editor noise
 .DS_Store
 Thumbs.db
+desktop.ini
+# Office / LibreOffice lock files (docs opened from a synced folder)
+~$*
+.~lock.*#
 *.swp
 
 ## Unity — additional generated/local artifacts
