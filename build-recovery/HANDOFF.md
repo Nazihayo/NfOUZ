@@ -9,7 +9,7 @@ folder; where they differ, this file is current.
 - **Branch:** `claude/sprint-5-photon-multiplayer-5jv8v2` (all work below is pushed)
 - **Phase:** Build Recovery — make the existing Sprint 1–10 code runnable.
   **Do not start Sprint 11. Do not add gameplay features or redesign systems.**
-- **Last updated:** 2026-10-18
+- **Last updated:** 2026-10-18 (covers commits through `64f274a`)
 
 ## Working rules agreed with the developer
 
@@ -59,14 +59,15 @@ folder; where they differ, this file is current.
 6. Firebase Auth on the laptop: `FirebaseAuth.unitypackage` imported,
    `google-services.json` in `Assets/` (gitignored), EDM4U Android resolve OK,
    Email/Password enabled, `FIREBASE_AUTH_AVAILABLE` defined (Player settings +
-   `Assets/csc.rsp`). Firebase initializes and account creation reaches
+   `Assets/csc.rsp`, which exists only on the laptop and is not in Git).
+   Firebase initializes and account creation reaches
    Onboarding. (The asmdef `versionDefines` entry only auto-detects the UPM
    package, not the `.unitypackage`, hence the manual define.)
 7. Migrations (`f454681`): `npm run migrate` is the only migration mechanism;
    the Docker init-script mount was removed. Fresh DB: 20/20 applied; rerun
    skips all 20.
-8. Backend tests (`9b107b4`): all 26 suites / 318 tests pass (test-side
-   fixes only; no backend source changed).
+8. Backend tests (`9b107b4`): all 26 suites / 318 tests passed at the time
+   (test-side fixes only; no backend source changed).
 9. `ShopPlaceholderItem` moved to its own file, prefab
    `Prefabs/UI/ShopPlaceholderItem.prefab` created and assigned to
    `ShopScreen.placeholderItemPrefab` in MainMap (`46819ba`).
@@ -129,10 +130,11 @@ tested in the cloud, **not yet checked in Unity**:
     `.env.*` (except `.env.example`), `*.p8`, `*.mobileprovision` and
     `keystore.properties`. The secret scan of tracked files and full history
     found nothing.
-20. Checked and OK: all 32 Unity endpoints exist with the right method,
-    request bodies match what the backend reads, rescue/inventory/SOS/
-    friends/devices/quests responses match, and every error code Unity
-    handles is one the backend sends. Backend tests: 26 suites / 320 tests.
+20. Checked and OK: all 29 Unity endpoints (33 call sites) exist with the
+    right method, request bodies match what the backend reads,
+    rescue/inventory/SOS/friends/devices/quests responses match, and every
+    error code Unity handles is one the backend sends. Backend tests then:
+    26 suites / 320 tests.
 21. Contract regression test (`d253cbd`, `47989dc`, `48ae5e5`):
     `backend/tests/contract/` re-checks items 15–20 automatically on every
     backend test run. No Unity, database, Docker, network or credentials are
@@ -148,7 +150,7 @@ tested in the cloud, **not yet checked in Unity**:
     - Run it from `backend/` with `npm run test:contract` (same command on
       Windows and Linux). It is also part of `npx jest --runInBand`.
     - Details and limits are in `backend/tests/contract/README.md`.
-    - Backend tests are now 27 suites / 356 tests.
+    - Backend tests then: 27 suites / 356 tests.
 22. Optional real-PostgreSQL contract mode (`2b6893f`, `b7c85a0`, `6c8053e`,
     `f5cc342`, `a36c5a0`): `npm run test:contract:db`.
     - It runs the same scenarios against a throwaway database created and
@@ -169,12 +171,13 @@ tested in the cloud, **not yet checked in Unity**:
     - It refuses `nfouz_db`, non-local hosts, names without `contract_test`,
       the database in `DATABASE_URL`, and superuser roles. It never reads
       `backend/.env`.
-    - Verified in the cloud with a throwaway PostgreSQL 16: 51/51, repeated,
-      in parallel and in random order. Cleanup was proven after success and
+    - Verified in the cloud with a throwaway PostgreSQL 16: 51/51 at the
+      time, repeated, in parallel and in random order. Cleanup was proven after success and
       after injected failures.
-    - Backend tests are now 28 suites / 368 tests (the safety checks run in
+    - Backend tests then: 28 suites / 368 tests (the safety checks run in
       the normal suite).
-23. `npm test` is cross-platform: it now works in PowerShell, cmd and Linux.
+23. `npm test` is cross-platform (`63dfcea`): it now works in PowerShell,
+    cmd and Linux.
     - The script is now `jest --runInBand`; the POSIX `NODE_ENV=test` prefix
       is gone.
     - `backend/tests/setupTestEnv.js` (Jest `setupFiles`) runs before every
@@ -250,6 +253,16 @@ tested in the cloud, **not yet checked in Unity**:
     - **Tests:** 15 EditMode tests in `BattleLifecycleTests`; 18 real-PostgreSQL
       tests in `backend/tests/contract/db/battleLifecycle.dbtest.js`; the
       contract tests check that Unity handles every battle status.
+    - Docs: `64f274a`.
+
+Current test counts (cloud, at `64f274a`; run from `backend/`):
+
+| Command | Result |
+|---|---|
+| `npm test` (same as `npx jest --runInBand`; includes the fake-database contract test) | 29 suites / 374 tests |
+| `npm run test:contract` | 50 tests |
+| `npm run test:contract:db` (needs `CONTRACT_TEST_DATABASE_URL`, item 22) | 71 tests: 53 contract + 18 battle lifecycle |
+| Unity EditMode, run under .NET in the cloud | `AuthErrorMessagesTests` 17, `AuthSessionTests` 30, `BattleLifecycleTests` 15, `PlayerSessionDataContractTests` + `BattleSessionPartialUpdateTests` + `CultureInvariantRequestTests` 13 of 14 (the 14th needs Unity's JsonUtility) |
 
 Check in Unity after pulling:
 - EditMode Test Runner: all tests, including the new ones above.
@@ -318,22 +331,42 @@ there is no local PostgreSQL yet.
 
 ## Backlog after the Register → MainMap test (do not start without approval)
 
-- TMP/Arabic migration: 59 `Text` fields + 1 `InputField` in 25 scripts,
-  Arabic TMP font asset, and an Arabic shaping solution (e.g. RTLTMPro —
-  third-party, needs approval). Legacy `Text` cannot join Arabic letters.
-- Photon Fusion import (Battle has stub mode only), then Mapbox (needs an
-  asmdef for its sources). Both need the developer's accounts.
-- Decide whether `Result.unity` should be loaded by the flow or retired; it
-  is currently unused (see item 12).
-- Faction System (see item 14) — new feature.
-- Needs a decision (found in the 2026-10-18 audit):
-  - The backend accepts only `^[a-zA-Z0-9_]{3,20}$` usernames. Arabic
-    names are rejected (shown as "اسم المستخدم غير صالح").
-  - Logout: `FirebaseManager.SignOut` exists, but no screen calls it.
-- When a Unity API call or a backend response changes on purpose, update
-  `backend/tests/contract/scenarios.js` / `allowlist.js` in the same commit
-  (see `backend/tests/contract/README.md`).
-- Optional on the laptop, once local PostgreSQL works (Next steps 2):
-  create the `nfouz_contract_test` role/database above and run
+Completed work is items 1–25 above; nothing completed is listed here.
+
+Needs the laptop:
+- "Current blocker" and "Next steps (in order)" above.
+- "Check in Unity after pulling" and "Notes for the laptop" above.
+- Optional, once local PostgreSQL works (Next steps 2): create the
+  `nfouz_contract_test` role/database (item 22) and run
   `npm run test:contract:db` (README, "Real-database mode"). It never
   touches `nfouz_db`.
+
+Needs a decision or approval:
+- TMP/Arabic migration: 59 `Text` fields + 1 `InputField` in 25
+  scripts (the recovery bridges `LoginPanelBridge` / `OnboardingPanelBridge`
+  add 6 more `InputField`s), an Arabic TMP font asset, and an Arabic shaping
+  solution (e.g. RTLTMPro — third-party, needs approval). Legacy `Text`
+  cannot join Arabic letters.
+- Whether `Result.unity` should be loaded by the flow or retired; it is
+  currently unused (see item 12).
+- Usernames: the backend accepts only `^[a-zA-Z0-9_]{3,20}$`. Arabic names
+  are rejected (shown as "اسم المستخدم غير صالح").
+- Logout: `FirebaseManager.SignOut` is called only when a session ends
+  (item 24); no screen offers logout.
+- Battle loading screen: a battle the server cancels while the player
+  waits is noticed only on the player's next battle call (item 25). A live
+  check while waiting would be a separate change.
+
+Needs the developer's external accounts:
+- Firebase Admin service-account key (Next steps 1).
+- Photon Fusion import (Battle has stub mode only), then Mapbox (needs an
+  asmdef for its sources). Each needs its account and App ID / token, kept
+  out of Git.
+
+Future features (not Build Recovery):
+- Faction System (see item 14).
+- Sprint 11 and anything else not already in the Sprint 1–10 code.
+
+Rule for later changes: when a Unity API call or a backend response changes
+on purpose, update `backend/tests/contract/scenarios.js` / `allowlist.js` in
+the same commit (see `backend/tests/contract/README.md`).
