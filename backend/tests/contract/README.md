@@ -18,12 +18,12 @@ From `backend/`, after `npm install`. These commands are the same on Windows
 
 ```
 npm run test:contract        # only the contract test
-npx jest --runInBand         # all backend tests, including the contract test
+npm test                     # all backend tests, including the contract test
 ```
 
-On Linux/macOS, `npm test` also runs everything. On Windows, `npm test` does not
-work in cmd or PowerShell, because the script uses POSIX `NODE_ENV=test` syntax;
-use `npx jest --runInBand` there instead.
+`npx jest --runInBand` is equivalent to `npm test`. Test mode does not depend on
+the shell: `tests/setupTestEnv.js` (Jest `setupFiles`) forces `NODE_ENV=test`, and
+keeps `backend/.env` from being loaded, before every test file.
 
 Both modes need the full repository checkout: they read the Unity C# sources from
 `../Assets/_Project/Scripts` and fail with a clear message if they are missing.

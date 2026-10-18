@@ -174,6 +174,14 @@ tested in the cloud, **not yet checked in Unity**:
       after injected failures.
     - Backend tests are now 28 suites / 368 tests (the safety checks run in
       the normal suite).
+23. `npm test` is cross-platform: it now works in PowerShell, cmd and Linux.
+    - The script is now `jest --runInBand`; the POSIX `NODE_ENV=test` prefix
+      is gone.
+    - `backend/tests/setupTestEnv.js` (Jest `setupFiles`) runs before every
+      test file. It forces `NODE_ENV=test`, whatever the shell has set, and
+      stops `backend/.env` from being loaded during tests.
+    - Before this change, a developer's `.env` could change results: a
+      hostile one failed 28 tests.
 
 Check in Unity after pulling:
 - EditMode Test Runner: all tests, including the new ones above.
@@ -253,9 +261,6 @@ there is no local PostgreSQL yet.
   - The backend accepts only `^[a-zA-Z0-9_]{3,20}$` usernames. Arabic
     names are rejected (shown as "اسم المستخدم غير صالح").
   - Logout: `FirebaseManager.SignOut` exists, but no screen calls it.
-- `npm test` uses POSIX `NODE_ENV=test jest …` syntax, which fails under
-  Windows `cmd`; on Windows run `npx jest --runInBand` from `backend/`
-  (each test file sets `NODE_ENV=test` itself).
 - When a Unity API call or a backend response changes on purpose, update
   `backend/tests/contract/scenarios.js` / `allowlist.js` in the same commit
   (see `backend/tests/contract/README.md`).
