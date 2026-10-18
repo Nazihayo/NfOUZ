@@ -16,8 +16,8 @@
  * (see setRowCounts).
  */
 
-const { AsyncLocalStorage } = require('async_hooks');
 const { shapeOf } = require('./sqlShape');
+const { instrumentRepository, currentRepoFn } = require('./repoContext');
 
 const FIXED_TIME = '2026-01-01T00:00:00.000Z';
 
@@ -47,7 +47,6 @@ function toDriverValue(kind, value) {
 }
 
 function createFakeDatabase({ schema, nullable }) {
-  const repoContext = new AsyncLocalStorage();
   let world = {};
   let rowCounts = {};
   let log = [];
@@ -79,7 +78,7 @@ function createFakeDatabase({ schema, nullable }) {
 
   async function query(text, params = []) {
     if (typeof text !== 'string') throw new Error('contract fake database: only query(text, params) is supported');
-    const repoFn = repoContext.getStore() || '(outside a repository)';
+    const repoFn = currentRepoFn();
     let shape;
     try {
       shape = shapeOf(text, schema);
@@ -107,23 +106,6 @@ function createFakeDatabase({ schema, nullable }) {
     shutdown: async () => {},
     withTransaction: async (fn) => fn(client),
   };
-
-  /**
-   * Wraps every exported repository function so statements know which
-   * repository function issued them (for setRowCounts and the log).
-   * Services call repositories through the module object, so wrapping
-   * the exports is enough.
-   */
-  function instrumentRepository(name, mod) {
-    for (const [fnName, fn] of Object.entries(mod)) {
-      if (typeof fn !== 'function') continue;
-      const qualified = `${name}.${fnName}`;
-      mod[fnName] = function instrumented(...args) {
-        if (repoContext.getStore()) return fn.apply(this, args); // nested call keeps the outer name
-        return repoContext.run(qualified, () => fn.apply(this, args));
-      };
-    }
-  }
 
   return {
     databaseModule,
