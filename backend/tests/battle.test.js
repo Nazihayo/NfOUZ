@@ -44,7 +44,7 @@ const battleRepo = require('../src/repositories/battle.repository');
 let expireStaleBattlesSpy;
 
 const ATTACKER = {
-  player_id: 'attacker-id',
+  player_id: '0a000000-0000-4000-8000-00000000000a',
   username: 'attacker_1',
   firebase_uid: 'fb-attacker',
   last_lat: 52.5978,
@@ -52,7 +52,7 @@ const ATTACKER = {
 };
 
 const DEFENDER = {
-  player_id: 'defender-id',
+  player_id: '0d000000-0000-4000-8000-00000000000d',
   username: 'defender_1',
   firebase_uid: 'fb-defender',
   last_lat: 52.5979,
@@ -61,14 +61,14 @@ const DEFENDER = {
 
 const FAR_DEFENDER = {
   ...DEFENDER,
-  player_id: 'far-defender-id',
+  player_id: '0f000000-0000-4000-8000-00000000000f',
   last_lat: 52.62, // far outside the 20m challenge range
   last_lng: 9.12,
 };
 
 function baseBattleRow(overrides = {}) {
   return {
-    battle_id: 'battle-1',
+    battle_id: '0b000000-0000-4000-8000-000000000001',
     attacker_id: ATTACKER.player_id,
     defender_id: DEFENDER.player_id,
     status: 'in_progress',
@@ -124,7 +124,7 @@ describe('Battle routes (Sprint 5 — Photon Multiplayer Foundation)', () => {
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
-      expect(response.body.data.battle_id).toBe('battle-1');
+      expect(response.body.data.battle_id).toBe('0b000000-0000-4000-8000-000000000001');
       expect(response.body.data.photon_room_name).toBe('battle_abc123');
       expect(response.body.data.status).toBe('in_progress');
 
@@ -231,7 +231,7 @@ describe('Battle routes (Sprint 5 — Photon Multiplayer Foundation)', () => {
       const response = await request(app)
         .post('/battle/challenge')
         .set('Authorization', 'Bearer valid-token')
-        .send({ defender_id: 'ghost-id', location: { lat: 52.5978, lng: 9.0854 } });
+        .send({ defender_id: '09000000-0000-4000-8000-000000000009', location: { lat: 52.5978, lng: 9.0854 } });
 
       expect(response.status).toBe(404);
       expect(response.body.error.code).toBe('PLAYER_NOT_FOUND');
@@ -401,16 +401,16 @@ describe('Battle routes (Sprint 5 — Photon Multiplayer Foundation)', () => {
         .mockResolvedValueOnce({ rows: [baseBattleRow()] }); // getById (inside checkForfeit)
 
       const response = await request(app)
-        .get('/battle/battle-1')
+        .get('/battle/0b000000-0000-4000-8000-000000000001')
         .set('Authorization', 'Bearer valid-token');
 
       expect(response.status).toBe(200);
-      expect(response.body.data.battle_id).toBe('battle-1');
+      expect(response.body.data.battle_id).toBe('0b000000-0000-4000-8000-000000000001');
       expect(response.body.data.photon_room_name).toBe('battle_abc123');
     });
 
     it('rejects a non-participant with FORBIDDEN', async () => {
-      const stranger = { player_id: 'stranger-id', firebase_uid: 'fb-stranger' };
+      const stranger = { player_id: '05000000-0000-4000-8000-000000000005', firebase_uid: 'fb-stranger' };
       verifyIdToken.mockResolvedValue({ uid: stranger.firebase_uid });
 
       db.query
@@ -418,7 +418,7 @@ describe('Battle routes (Sprint 5 — Photon Multiplayer Foundation)', () => {
         .mockResolvedValueOnce({ rows: [baseBattleRow()] }); // getById
 
       const response = await request(app)
-        .get('/battle/battle-1')
+        .get('/battle/0b000000-0000-4000-8000-000000000001')
         .set('Authorization', 'Bearer valid-token');
 
       expect(response.status).toBe(403);
@@ -433,7 +433,7 @@ describe('Battle routes (Sprint 5 — Photon Multiplayer Foundation)', () => {
         .mockResolvedValueOnce({ rows: [] }); // getById -> not found
 
       const response = await request(app)
-        .get('/battle/does-not-exist')
+        .get('/battle/0e000000-0000-4000-8000-0000000000e0')
         .set('Authorization', 'Bearer valid-token');
 
       expect(response.status).toBe(404);
@@ -459,13 +459,13 @@ describe('Battle routes (Sprint 5 — Photon Multiplayer Foundation)', () => {
         .mockResolvedValueOnce({ rows: [forfeitedBattle] }); // getById, re-read after the cleanup
 
       const response = await request(app)
-        .get('/battle/battle-1')
+        .get('/battle/0b000000-0000-4000-8000-000000000001')
         .set('Authorization', 'Bearer valid-token');
 
       expect(response.status).toBe(200);
       expect(response.body.data.status).toBe('forfeited');
       expect(response.body.data.forfeited_by).toBe(ATTACKER.player_id);
-      expect(expireStaleBattlesSpy).toHaveBeenCalledWith({ battleId: 'battle-1' }, { readyTimeoutSeconds: 30, noResultCutoffSeconds: 298 });
+      expect(expireStaleBattlesSpy).toHaveBeenCalledWith({ battleId: '0b000000-0000-4000-8000-000000000001' }, { readyTimeoutSeconds: 30, noResultCutoffSeconds: 298 });
     });
 
     it('leaves the battle in_progress when the grace period has not yet elapsed', async () => {
@@ -481,7 +481,7 @@ describe('Battle routes (Sprint 5 — Photon Multiplayer Foundation)', () => {
         .mockResolvedValueOnce({ rows: [stillGraced] }); // getById
 
       const response = await request(app)
-        .get('/battle/battle-1')
+        .get('/battle/0b000000-0000-4000-8000-000000000001')
         .set('Authorization', 'Bearer valid-token');
 
       expect(response.status).toBe(200);
@@ -504,7 +504,7 @@ describe('Battle routes (Sprint 5 — Photon Multiplayer Foundation)', () => {
         .mockResolvedValueOnce({ rows: [disconnected] }); // recordDisconnect
 
       const response = await request(app)
-        .post('/battle/battle-1/disconnect')
+        .post('/battle/0b000000-0000-4000-8000-000000000001/disconnect')
         .set('Authorization', 'Bearer valid-token')
         .send({});
 
@@ -520,7 +520,7 @@ describe('Battle routes (Sprint 5 — Photon Multiplayer Foundation)', () => {
         .mockResolvedValueOnce({ rows: [baseBattleRow({ status: 'forfeited' })] }); // getById
 
       const response = await request(app)
-        .post('/battle/battle-1/disconnect')
+        .post('/battle/0b000000-0000-4000-8000-000000000001/disconnect')
         .set('Authorization', 'Bearer valid-token')
         .send({});
 
@@ -545,7 +545,7 @@ describe('Battle routes (Sprint 5 — Photon Multiplayer Foundation)', () => {
         .mockResolvedValueOnce({ rows: [cleared] }); // clearDisconnect
 
       const response = await request(app)
-        .post('/battle/battle-1/reconnect')
+        .post('/battle/0b000000-0000-4000-8000-000000000001/reconnect')
         .set('Authorization', 'Bearer valid-token')
         .send({});
 
@@ -566,7 +566,7 @@ describe('Battle routes (Sprint 5 — Photon Multiplayer Foundation)', () => {
         .mockResolvedValueOnce({ rows: [expired] }); // getById
 
       const response = await request(app)
-        .post('/battle/battle-1/reconnect')
+        .post('/battle/0b000000-0000-4000-8000-000000000001/reconnect')
         .set('Authorization', 'Bearer valid-token')
         .send({});
 
@@ -587,7 +587,7 @@ describe('Battle routes (Sprint 5 — Photon Multiplayer Foundation)', () => {
         .mockResolvedValueOnce({ rows: [readyBattle] }); // setPlayerReady
 
       const response = await request(app)
-        .post('/battle/battle-1/ready')
+        .post('/battle/0b000000-0000-4000-8000-000000000001/ready')
         .set('Authorization', 'Bearer valid-token')
         .send({});
 
@@ -598,27 +598,27 @@ describe('Battle routes (Sprint 5 — Photon Multiplayer Foundation)', () => {
 
   describe('Idempotency and authorization (Sprint 5 correction pass)', () => {
     it('rejects GET /battle/{battleId} with no Authorization header (unauthorized battle lookup)', async () => {
-      const response = await request(app).get('/battle/battle-1');
+      const response = await request(app).get('/battle/0b000000-0000-4000-8000-000000000001');
       expect(response.status).toBe(401);
     });
 
     it('rejects POST /battle/{battleId}/ready with no Authorization header', async () => {
-      const response = await request(app).post('/battle/battle-1/ready').send({});
+      const response = await request(app).post('/battle/0b000000-0000-4000-8000-000000000001/ready').send({});
       expect(response.status).toBe(401);
     });
 
     it('rejects POST /battle/{battleId}/disconnect with no Authorization header', async () => {
-      const response = await request(app).post('/battle/battle-1/disconnect').send({});
+      const response = await request(app).post('/battle/0b000000-0000-4000-8000-000000000001/disconnect').send({});
       expect(response.status).toBe(401);
     });
 
     it('rejects POST /battle/{battleId}/reconnect with no Authorization header', async () => {
-      const response = await request(app).post('/battle/battle-1/reconnect').send({});
+      const response = await request(app).post('/battle/0b000000-0000-4000-8000-000000000001/reconnect').send({});
       expect(response.status).toBe(401);
     });
 
     it('rejects a non-participant calling POST /ready (participant-only room access)', async () => {
-      const stranger = { player_id: 'stranger-id', firebase_uid: 'fb-stranger' };
+      const stranger = { player_id: '05000000-0000-4000-8000-000000000005', firebase_uid: 'fb-stranger' };
       verifyIdToken.mockResolvedValue({ uid: stranger.firebase_uid });
 
       db.query
@@ -626,7 +626,7 @@ describe('Battle routes (Sprint 5 — Photon Multiplayer Foundation)', () => {
         .mockResolvedValueOnce({ rows: [baseBattleRow()] }); // getById
 
       const response = await request(app)
-        .post('/battle/battle-1/ready')
+        .post('/battle/0b000000-0000-4000-8000-000000000001/ready')
         .set('Authorization', 'Bearer valid-token')
         .send({});
 
@@ -635,7 +635,7 @@ describe('Battle routes (Sprint 5 — Photon Multiplayer Foundation)', () => {
     });
 
     it('rejects a non-participant calling POST /disconnect (participant-only room access)', async () => {
-      const stranger = { player_id: 'stranger-id', firebase_uid: 'fb-stranger' };
+      const stranger = { player_id: '05000000-0000-4000-8000-000000000005', firebase_uid: 'fb-stranger' };
       verifyIdToken.mockResolvedValue({ uid: stranger.firebase_uid });
 
       db.query
@@ -643,7 +643,7 @@ describe('Battle routes (Sprint 5 — Photon Multiplayer Foundation)', () => {
         .mockResolvedValueOnce({ rows: [baseBattleRow()] }); // getById
 
       const response = await request(app)
-        .post('/battle/battle-1/disconnect')
+        .post('/battle/0b000000-0000-4000-8000-000000000001/disconnect')
         .set('Authorization', 'Bearer valid-token')
         .send({});
 
@@ -652,7 +652,7 @@ describe('Battle routes (Sprint 5 — Photon Multiplayer Foundation)', () => {
     });
 
     it('rejects a non-participant calling POST /reconnect (participant-only room access)', async () => {
-      const stranger = { player_id: 'stranger-id', firebase_uid: 'fb-stranger' };
+      const stranger = { player_id: '05000000-0000-4000-8000-000000000005', firebase_uid: 'fb-stranger' };
       verifyIdToken.mockResolvedValue({ uid: stranger.firebase_uid });
 
       db.query
@@ -660,7 +660,7 @@ describe('Battle routes (Sprint 5 — Photon Multiplayer Foundation)', () => {
         .mockResolvedValueOnce({ rows: [baseBattleRow()] }); // getById
 
       const response = await request(app)
-        .post('/battle/battle-1/reconnect')
+        .post('/battle/0b000000-0000-4000-8000-000000000001/reconnect')
         .set('Authorization', 'Bearer valid-token')
         .send({});
 
@@ -680,7 +680,7 @@ describe('Battle routes (Sprint 5 — Photon Multiplayer Foundation)', () => {
         .mockResolvedValueOnce({ rows: [alreadyReady] });
 
       const first = await request(app)
-        .post('/battle/battle-1/ready')
+        .post('/battle/0b000000-0000-4000-8000-000000000001/ready')
         .set('Authorization', 'Bearer valid-token')
         .send({});
       expect(first.status).toBe(200);
@@ -693,7 +693,7 @@ describe('Battle routes (Sprint 5 — Photon Multiplayer Foundation)', () => {
         .mockResolvedValueOnce({ rows: [alreadyReady] });
 
       const second = await request(app)
-        .post('/battle/battle-1/ready')
+        .post('/battle/0b000000-0000-4000-8000-000000000001/ready')
         .set('Authorization', 'Bearer valid-token')
         .send({});
       expect(second.status).toBe(200);
@@ -712,7 +712,7 @@ describe('Battle routes (Sprint 5 — Photon Multiplayer Foundation)', () => {
         .mockResolvedValueOnce({ rows: [baseBattleRow({ attacker_disconnected_at: new Date().toISOString(), attacker_reconnect_deadline: firstDeadline })] });
 
       const first = await request(app)
-        .post('/battle/battle-1/disconnect')
+        .post('/battle/0b000000-0000-4000-8000-000000000001/disconnect')
         .set('Authorization', 'Bearer valid-token')
         .send({});
       expect(first.status).toBe(200);
@@ -725,7 +725,7 @@ describe('Battle routes (Sprint 5 — Photon Multiplayer Foundation)', () => {
         .mockResolvedValueOnce({ rows: [baseBattleRow({ attacker_disconnected_at: new Date().toISOString(), attacker_reconnect_deadline: secondDeadline })] });
 
       const second = await request(app)
-        .post('/battle/battle-1/disconnect')
+        .post('/battle/0b000000-0000-4000-8000-000000000001/disconnect')
         .set('Authorization', 'Bearer valid-token')
         .send({});
       expect(second.status).toBe(200);
@@ -740,7 +740,7 @@ describe('Battle routes (Sprint 5 — Photon Multiplayer Foundation)', () => {
         .mockResolvedValueOnce({ rows: [baseBattleRow({ status: 'cancelled' })] }); // getById
 
       const response = await request(app)
-        .post('/battle/battle-1/ready')
+        .post('/battle/0b000000-0000-4000-8000-000000000001/ready')
         .set('Authorization', 'Bearer valid-token')
         .send({});
 
@@ -756,7 +756,7 @@ describe('Battle routes (Sprint 5 — Photon Multiplayer Foundation)', () => {
         .mockResolvedValueOnce({ rows: [baseBattleRow({ status: 'resolved' })] }); // getById
 
       const response = await request(app)
-        .post('/battle/battle-1/reconnect')
+        .post('/battle/0b000000-0000-4000-8000-000000000001/reconnect')
         .set('Authorization', 'Bearer valid-token')
         .send({});
 

@@ -3,6 +3,7 @@
 const playerRepo = require('../repositories/player.repository');
 const battleService = require('../services/battle.service');
 const { success, ApiError } = require('../utils/responseEnvelope');
+const { isUuid } = require('../utils/ids');
 
 /**
  * Resolves the authenticated caller's own player row from req.firebaseUid.
@@ -33,6 +34,9 @@ async function createChallenge(req, res, next) {
     const defenderId = req.body.defender_id;
     if (!defenderId) {
       throw new ApiError('INVALID_CHALLENGE', 'defender_id is required.', 400);
+    }
+    if (!isUuid(defenderId)) {
+      throw new ApiError('INVALID_CHALLENGE', 'defender_id must be a player id.', 400);
     }
 
     let location = null;

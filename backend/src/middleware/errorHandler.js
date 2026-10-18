@@ -23,6 +23,17 @@ function errorHandler(err, req, res, next) {
     return res.status(err.statusCode).json(errorEnvelope(err.code, err.message));
   }
 
+  // express.json() rejects a body it cannot parse or that exceeds the
+  // limit (app.js) — the client's mistake, not a server failure.
+  if (err.type === 'entity.too.large') {
+    logger.warn('Request body too large', { requestId, path: req.path });
+    return res.status(413).json(errorEnvelope('PAYLOAD_TOO_LARGE', 'The request body is too large.'));
+  }
+  if (err.type === 'entity.parse.failed' || err.type === 'encoding.unsupported' || err.type === 'charset.unsupported') {
+    logger.warn('Malformed request body', { requestId, path: req.path, type: err.type });
+    return res.status(400).json(errorEnvelope('INVALID_REQUEST', 'The request body is not valid JSON.'));
+  }
+
   logger.error('Unhandled error', {
     requestId,
     message: err.message,

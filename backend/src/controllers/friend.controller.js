@@ -3,6 +3,7 @@
 const playerRepo = require('../repositories/player.repository');
 const friendService = require('../services/friend.service');
 const { success, ApiError } = require('../utils/responseEnvelope');
+const { isUuid } = require('../utils/ids');
 
 /**
  * Resolves the authenticated caller's own player row from req.firebaseUid.
@@ -21,6 +22,9 @@ function requirePlayerId(body, field = 'player_id') {
   const value = body[field];
   if (!value || typeof value !== 'string') {
     throw new ApiError('INVALID_REQUEST', `${field} is required.`, 400);
+  }
+  if (!isUuid(value)) {
+    throw new ApiError('INVALID_REQUEST', `${field} must be a player id.`, 400);
   }
   return value;
 }

@@ -59,16 +59,16 @@ describe('battle lifecycle wiring', () => {
   });
 
   test('every battle endpoint sees the battle after the cleanup', async () => {
-    battleRepo.getById.mockResolvedValue({ battle_id: 'b-1', status: 'cancelled', attacker_id: 'p-a', defender_id: 'p-b' });
+    battleRepo.getById.mockResolvedValue({ battle_id: '0b000000-0000-4000-8000-0000000000b1', status: 'cancelled', attacker_id: 'p-a', defender_id: 'p-b' });
 
-    await expect(battleService.setReady('b-1', 'p-a')).rejects.toMatchObject({ code: 'SESSION_EXPIRED' });
-    expect(battleRepo.expireStaleBattles).toHaveBeenCalledWith({ battleId: 'b-1' }, LIMITS);
+    await expect(battleService.setReady('0b000000-0000-4000-8000-0000000000b1', 'p-a')).rejects.toMatchObject({ code: 'SESSION_EXPIRED' });
+    expect(battleRepo.expireStaleBattles).toHaveBeenCalledWith({ battleId: '0b000000-0000-4000-8000-0000000000b1' }, LIMITS);
   });
 
   test('a reconnect after the caller\'s own forfeit still answers RECONNECT_WINDOW_EXPIRED', async () => {
-    battleRepo.getById.mockResolvedValue({ battle_id: 'b-1', status: 'forfeited', forfeited_by: 'p-b', attacker_id: 'p-a', defender_id: 'p-b' });
+    battleRepo.getById.mockResolvedValue({ battle_id: '0b000000-0000-4000-8000-0000000000b1', status: 'forfeited', forfeited_by: 'p-b', attacker_id: 'p-a', defender_id: 'p-b' });
 
-    await expect(battleService.handleReconnect('b-1', 'p-b')).rejects.toMatchObject({ code: 'RECONNECT_WINDOW_EXPIRED' });
-    await expect(battleService.handleReconnect('b-1', 'p-a')).rejects.toMatchObject({ code: 'SESSION_EXPIRED' });
+    await expect(battleService.handleReconnect('0b000000-0000-4000-8000-0000000000b1', 'p-b')).rejects.toMatchObject({ code: 'RECONNECT_WINDOW_EXPIRED' });
+    await expect(battleService.handleReconnect('0b000000-0000-4000-8000-0000000000b1', 'p-a')).rejects.toMatchObject({ code: 'SESSION_EXPIRED' });
   });
 });
