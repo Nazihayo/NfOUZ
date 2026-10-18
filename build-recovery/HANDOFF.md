@@ -133,6 +133,22 @@ tested in the cloud, **not yet checked in Unity**:
     request bodies match what the backend reads, rescue/inventory/SOS/
     friends/devices/quests responses match, and every error code Unity
     handles is one the backend sends. Backend tests: 26 suites / 320 tests.
+21. Contract regression test (`d253cbd`, `47989dc`, `48ae5e5`):
+    `backend/tests/contract/` re-checks items 15–20 automatically on every
+    backend test run. No Unity, database, Docker, network or credentials are
+    needed.
+    - It reads the Unity C# DTOs and API calls, then runs each of the 29
+      endpoints through the real backend code.
+    - A fake database returns rows typed like PostgreSQL's driver, from the
+      migrations.
+    - It fails on renamed or missing fields, wrong JSON types (e.g. a number
+      sent as a string), removed endpoints, renamed request fields, partial
+      battle responses applied as full sessions, and unknown error codes.
+    - Intentional differences are in `allowlist.js`, each with a reason.
+    - Run it from `backend/` with `npm run test:contract` (same command on
+      Windows and Linux). It is also part of `npx jest --runInBand`.
+    - Details and limits are in `backend/tests/contract/README.md`.
+    - Backend tests are now 27 suites / 356 tests.
 
 Check in Unity after pulling:
 - EditMode Test Runner: all tests, including the new ones above.
@@ -215,3 +231,6 @@ there is no local PostgreSQL yet.
 - `npm test` uses POSIX `NODE_ENV=test jest …` syntax, which fails under
   Windows `cmd`; on Windows run `npx jest --runInBand` from `backend/`
   (each test file sets `NODE_ENV=test` itself).
+- When a Unity API call or a backend response changes on purpose, update
+  `backend/tests/contract/scenarios.js` / `allowlist.js` in the same commit
+  (see `backend/tests/contract/README.md`).
