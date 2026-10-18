@@ -149,6 +149,31 @@ tested in the cloud, **not yet checked in Unity**:
       Windows and Linux). It is also part of `npx jest --runInBand`.
     - Details and limits are in `backend/tests/contract/README.md`.
     - Backend tests are now 27 suites / 356 tests.
+22. Optional real-PostgreSQL contract mode (`2b6893f`, `b7c85a0`, `6c8053e`,
+    `f5cc342`, `a36c5a0`): `npm run test:contract:db`.
+    - It runs the same scenarios against a throwaway database created and
+      dropped by each run, and adds checks only a real database can answer:
+      - values written by INSERT/UPDATE and the state left after each call;
+      - the real BIGINT/timestamp/NULL behaviour;
+      - migration seeds;
+      - 15 error paths.
+    - It is never part of `npm test`.
+    - It needs a dedicated local role and database. One-time setup as a
+      PostgreSQL superuser:
+      `CREATE ROLE nfouz_contract_test LOGIN CREATEDB PASSWORD '…';`
+      `CREATE DATABASE nfouz_contract_test OWNER nfouz_contract_test;`
+    - Then run it with
+      `CONTRACT_TEST_DATABASE_URL=postgres://nfouz_contract_test:…@localhost:5432/nfouz_contract_test`.
+    - Commands for PowerShell and cmd are in
+      `backend/tests/contract/README.md`.
+    - It refuses `nfouz_db`, non-local hosts, names without `contract_test`,
+      the database in `DATABASE_URL`, and superuser roles. It never reads
+      `backend/.env`.
+    - Verified in the cloud with a throwaway PostgreSQL 16: 51/51, repeated,
+      in parallel and in random order. Cleanup was proven after success and
+      after injected failures.
+    - Backend tests are now 28 suites / 368 tests (the safety checks run in
+      the normal suite).
 
 Check in Unity after pulling:
 - EditMode Test Runner: all tests, including the new ones above.
@@ -234,3 +259,7 @@ there is no local PostgreSQL yet.
 - When a Unity API call or a backend response changes on purpose, update
   `backend/tests/contract/scenarios.js` / `allowlist.js` in the same commit
   (see `backend/tests/contract/README.md`).
+- Optional on the laptop, once local PostgreSQL works (Next steps 2):
+  create the `nfouz_contract_test` role/database above and run
+  `npm run test:contract:db` (README, "Real-database mode"). It never
+  touches `nfouz_db`.
