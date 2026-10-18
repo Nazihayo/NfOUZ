@@ -6,12 +6,20 @@
  * column comes from the schema (NULL if nullable, else a typed default).
  *
  * Player A (token "uid-a") is the attacker / rescuer; player B ("uid-b") is
- * the defender, Controlled by A after losing, with an open SOS.
+ * the defender (Controlled by A in the SOS/rescue scenarios) with an open
+ * SOS; player C ("uid-c") only receives B's outgoing friend request.
+ *
+ * The same world is used by both contract-test modes: the fake database
+ * answers queries from it, the real-database mode inserts it (in this
+ * key order, which is foreign-key order) before every scenario. Reference
+ * rows (items, quest_definitions) must match the migration seeds — the
+ * real-database mode checks that.
  */
 
 const ids = {
   A: '11111111-1111-4111-8111-111111111111',
   B: '22222222-2222-4222-8222-222222222222',
+  C: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
   battle: '33333333-3333-4333-8333-333333333333',
   sos: '44444444-4444-4444-8444-444444444444',
   mission: '55555555-5555-4555-8555-555555555555',
@@ -32,6 +40,16 @@ function iso(offsetMs) {
 const HOUR = 60 * 60 * 1000;
 const DAY = 24 * HOUR;
 
+// Daily quests are "today" in UTC: assigned at the start of today, expiring
+// at the next UTC midnight — valid whatever time of day the test runs.
+function todayUtc() {
+  const d = new Date();
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate())).toISOString();
+}
+function nextUtcMidnight() {
+  return new Date(Date.parse(todayUtc()) + DAY).toISOString();
+}
+
 function baseWorld() {
   const player = (id, uid, username, classType, extra) => ({
     player_id: id, firebase_uid: uid, username, class_type: classType,
@@ -46,12 +64,13 @@ function baseWorld() {
     players: [
       player(ids.A, 'uid-a', 'alpha_one', 'Scout', {}),
       player(ids.B, 'uid-b', 'bravo_two', 'Titan', { last_lat: 52.5979, last_lng: 9.0855 }),
+      player(ids.C, 'uid-c', 'charlie_c', 'Ranger', { last_lat: 52.6, last_lng: 9.09 }),
     ],
     battles: [{
       battle_id: ids.battle, attacker_id: ids.A, defender_id: ids.B, status: 'in_progress',
       photon_room_name: `battle_${ids.battle}`, started_at: iso(-60 * 1000),
       session_started_at: iso(-60 * 1000), session_expires_at: iso(10 * 60 * 1000),
-      attacker_ready: true, defender_ready: true, location_lat: 52.5978, location_lng: 9.0854,
+      attacker_ready: false, defender_ready: false, location_lat: 52.5978, location_lng: 9.0854,
       host_player_id: ids.A, host_authority_secret: HOST_SECRET, match_nonce: 'nonce-1',
       rules_version: 'v1', last_event_seq: 0, battle_type: 'competitive',
     }],
@@ -82,12 +101,13 @@ function baseWorld() {
       { player_id: ids.A, item_id: ids.consumable, quantity: 2, is_equipped: false },
     ],
     quest_definitions: [{
-      quest_id: ids.quest, title: 'Win 2 Battles', quest_type: 'daily', goal_type: 'win_battles',
+      // Same values as the first quest seeded by migrations/010_quests.sql.
+      quest_id: ids.quest, title: 'اربح معركتين اليوم', quest_type: 'daily', goal_type: 'win_battles',
       goal_target: 2, reward_coins: 100, reward_bp_xp: 30,
     }],
     player_quests: [{
       player_quest_id: ids.playerQuest, player_id: ids.A, quest_id: ids.quest, current_progress: 2,
-      is_completed: true, is_claimed: false, assigned_at: iso(-HOUR), expires_at: iso(6 * HOUR),
+      is_completed: true, is_claimed: false, assigned_at: todayUtc(), expires_at: nextUtcMidnight(),
     }],
     player_devices: [{
       device_id: ids.device, player_id: ids.A, device_key: 'device-key-1', fcm_token: 'fcm-token-1',

@@ -11,6 +11,7 @@
     "dev": "node --watch src/server.js",
     "test": "NODE_ENV=test jest --runInBand",
     "test:contract": "jest --runInBand tests/contract",
+    "test:contract:db": "node tests/contract/db/run.js",
     "migrate": "node scripts/run-migrations.js",
     "lint": "eslint src"
   },
