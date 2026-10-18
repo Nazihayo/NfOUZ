@@ -243,6 +243,12 @@ namespace Nfouz.Social
                     if (!response.success)
                     {
                         Debug.LogWarning($"[SOSManager] SOS poll failed: {response.error?.code}");
+                        if (SosPolling.IsPermanentFailure(response.error))
+                        {
+                            // Gone, or not this player's: it never comes back.
+                            ClearLocalState();
+                            break;
+                        }
                         continue; // transient network issue — keep polling, don't tear down the banner on a blip
                     }
 
