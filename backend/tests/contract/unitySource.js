@@ -340,16 +340,34 @@ function extractApplyMethodReads(sources) {
   return reads;
 }
 
+/**
+ * The client's "refresh the token" rule, read from
+ * AuthSession.IsTokenRejection: the HTTP status and error code it reacts to.
+ */
+function extractTokenRejectionRule(sources, constants) {
+  const src = sources.find((s) => s.rel === 'Networking/AuthSession.cs');
+  if (!src) throw new Error('Networking/AuthSession.cs not found');
+  const m = /static\s+bool\s+IsTokenRejection\s*<\w+>\s*\([^)]*\)\s*\{/.exec(src.text);
+  if (!m) throw new Error('AuthSession.IsTokenRejection not found');
+  const open = m.index + m[0].length - 1;
+  const body = src.text.slice(open + 1, matchBracket(src.text, open));
+  const statuses = [...body.matchAll(/statusCode\s*==\s*(\d{3})/g)].map((x) => Number(x[1]));
+  const codes = [...body.matchAll(/Constants\.ErrorCodes\.(\w+)/g)].map((x) => constants[x[1]]);
+  return { statuses, codes };
+}
+
 function loadUnityContract() {
   if (!fs.existsSync(SCRIPTS_DIR)) {
     throw new Error(`Unity scripts not found at ${SCRIPTS_DIR} — the contract test needs the full repository checkout.`);
   }
   const sources = loadSources();
+  const errorCodes = extractErrorCodes(sources);
   return {
     dtos: extractDtos(sources),
     calls: extractApiCalls(sources),
-    errorCodes: extractErrorCodes(sources),
+    errorCodes,
     applyReads: extractApplyMethodReads(sources),
+    tokenRejection: extractTokenRejectionRule(sources, errorCodes.constants),
   };
 }
 

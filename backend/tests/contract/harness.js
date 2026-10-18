@@ -104,4 +104,42 @@ function backendErrorCodes() {
   return codes;
 }
 
-module.exports = { installRecorder, startRecording, routeExists, backendErrorCodes };
+/**
+ * HTTP status(es) each backend error code is sent with: `new ApiError(code,
+ * message[, status])` (default 400) and `res.status(n).json(errorEnvelope(code, ...))`.
+ * `unattributed401` counts 401 responses whose code could not be read,
+ * so a new kind of 401 cannot slip past the check.
+ */
+function backendErrorStatuses() {
+  const statuses = new Map();
+  const add = (code, status) => {
+    if (!statuses.has(code)) statuses.set(code, new Set());
+    statuses.get(code).add(status);
+  };
+  let all401 = 0;
+  let attributed401 = 0;
+  const STRING = String.raw`(?:'[^']*'|"[^"]*"|\`[^\`]*\`)`;
+  const apiError = new RegExp(String.raw`new ApiError\(\s*'([A-Z][A-Z0-9_]+)'\s*,\s*${STRING}\s*(?:,\s*(\d{3})\s*)?\)`, 'g');
+  const envelope = /\.status\((\d{3})\)\s*\.json\(\s*errorEnvelope\(\s*'([A-Z][A-Z0-9_]+)'/g;
+  (function list(dir) {
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, e.name);
+      if (e.isDirectory()) { list(full); continue; }
+      if (!e.name.endsWith('.js')) continue;
+      const text = fs.readFileSync(full, 'utf8');
+      for (const m of text.matchAll(apiError)) {
+        const status = Number(m[2] || 400);
+        add(m[1], status);
+        if (status === 401) attributed401++;
+      }
+      for (const m of text.matchAll(envelope)) {
+        add(m[2], Number(m[1]));
+        if (m[1] === '401') attributed401++;
+      }
+      all401 += (text.match(/\.status\(401\)|,\s*401\s*\)/g) || []).length;
+    }
+  })(SRC_DIR);
+  return { statuses, unattributed401: all401 - attributed401 };
+}
+
+module.exports = { installRecorder, startRecording, routeExists, backendErrorCodes, backendErrorStatuses };

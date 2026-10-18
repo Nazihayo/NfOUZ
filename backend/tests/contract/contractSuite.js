@@ -15,7 +15,7 @@ const request = require('supertest');
 
 const { loadSchema } = require('./schema');
 const { loadUnityContract } = require('./unitySource');
-const { startRecording, routeExists, backendErrorCodes } = require('./harness');
+const { startRecording, routeExists, backendErrorCodes, backendErrorStatuses } = require('./harness');
 const { compareToDto, requestFieldPaths, buildRequestBody } = require('./compare');
 const scenarios = require('./scenarios');
 const allowlist = require('./allowlist');
@@ -305,6 +305,40 @@ function createContractSuite({ mode, getApp, prepare, takeLog, inspect }) {
       ];
       const problems = [];
       for (const [expected, res] of responses) problems.push(...envelopeProblems(expected, res.body));
+      expect(problems).toEqual([]);
+    });
+
+    test('token failures answer 401 INVALID_TOKEN, exactly what the client refreshes on', async () => {
+      // The client (AuthSession.IsTokenRejection) refreshes the Firebase ID
+      // token and retries once on this status + code, and on nothing else.
+      const problems = [];
+      const rule = unity.tokenRejection;
+      if (JSON.stringify(rule) !== JSON.stringify({ statuses: [401], codes: ['INVALID_TOKEN'] })) {
+        problems.push(`AuthSession.IsTokenRejection reacts to ${JSON.stringify(rule)}, expected status 401 + INVALID_TOKEN`);
+      }
+      const { statuses, unattributed401 } = backendErrorStatuses();
+      const tokenStatuses = [...(statuses.get('INVALID_TOKEN') || [])];
+      if (JSON.stringify(tokenStatuses) !== '[401]') problems.push(`backend sends INVALID_TOKEN with HTTP ${tokenStatuses}, the client expects only 401`);
+      for (const [code, set] of statuses) {
+        if (set.has(401) && code !== 'INVALID_TOKEN') problems.push(`backend sends ${code} with 401: the client would treat it as an expired token`);
+      }
+      if (unattributed401 !== 0) problems.push(`${unattributed401} backend 401 response(s) whose error code the contract test cannot read`);
+
+      await prepare({});
+      const app = getApp();
+      const attempts = [
+        ['no Authorization header', null],
+        ['not a Bearer token', 'Basic dXNlcjpwYXNz'],
+        ['empty Bearer token', 'Bearer '],
+        ['token Firebase rejects (expired)', 'Bearer rejected-expired-token'],
+      ];
+      for (const [label, header] of attempts) {
+        let req = request(app).get('/auth/me');
+        if (header !== null) req = req.set('Authorization', header);
+        const res = await req;
+        if (res.status !== 401) problems.push(`${label}: HTTP ${res.status}, expected 401`);
+        problems.push(...envelopeProblems('INVALID_TOKEN', res.body).map((p) => `${label}: ${p}`));
+      }
       expect(problems).toEqual([]);
     });
 
