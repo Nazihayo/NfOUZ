@@ -43,9 +43,9 @@ namespace Nfouz.Social
         [SerializeField] private FriendRequestItem friendRequestItemPrefab;
 
         [Header("Send request")]
-        [SerializeField] private UnityEngine.UI.InputField targetPlayerIdInput;
+        [SerializeField] private TMPro.TMP_InputField targetPlayerIdInput;
         [SerializeField] private UnityEngine.UI.Button sendRequestButton;
-        [SerializeField] private UnityEngine.UI.Text statusLabel;
+        [SerializeField] private TMPro.TMP_Text statusLabel;
 
         private ApiClient _apiClient;
         private readonly List<GameObject> _spawnedRows = new List<GameObject>();

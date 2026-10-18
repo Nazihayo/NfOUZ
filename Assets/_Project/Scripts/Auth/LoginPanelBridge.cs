@@ -1,5 +1,5 @@
+using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace Nfouz.Auth
 {
@@ -15,16 +15,16 @@ namespace Nfouz.Auth
         [SerializeField] private AuthController authController;
 
         [Header("Login panel")]
-        [SerializeField] private InputField loginEmailInput;
-        [SerializeField] private InputField loginPasswordInput;
+        [SerializeField] private TMP_InputField loginEmailInput;
+        [SerializeField] private TMP_InputField loginPasswordInput;
 
         [Header("Register panel")]
-        [SerializeField] private InputField registerEmailInput;
-        [SerializeField] private InputField registerPasswordInput;
-        [SerializeField] private InputField registerConfirmPasswordInput;
+        [SerializeField] private TMP_InputField registerEmailInput;
+        [SerializeField] private TMP_InputField registerPasswordInput;
+        [SerializeField] private TMP_InputField registerConfirmPasswordInput;
 
         [Header("Errors")]
-        [SerializeField] private Text errorMessageText;
+        [SerializeField] private TMP_Text errorMessageText;
 
         private void OnEnable()
         {

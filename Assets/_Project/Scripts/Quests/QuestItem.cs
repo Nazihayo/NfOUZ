@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -11,10 +12,10 @@ namespace Nfouz.Quests
     /// </summary>
     public class QuestItem : MonoBehaviour
     {
-        [SerializeField] private Text titleLabel;
+        [SerializeField] private TMP_Text titleLabel;
         [SerializeField] private Slider progressSlider;
-        [SerializeField] private Text progressLabel;
-        [SerializeField] private Text rewardLabel;
+        [SerializeField] private TMP_Text progressLabel;
+        [SerializeField] private TMP_Text rewardLabel;
         [SerializeField] private Button claimButton;
         [SerializeField] private GameObject claimedBadge;
 

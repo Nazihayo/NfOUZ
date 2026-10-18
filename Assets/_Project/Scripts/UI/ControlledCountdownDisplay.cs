@@ -1,6 +1,6 @@
 using Nfouz.Core;
+using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace Nfouz.UI
 {
@@ -17,7 +17,7 @@ namespace Nfouz.UI
     public class ControlledCountdownDisplay : MonoBehaviour
     {
         [SerializeField] private GameObject root; // parent panel/icon shown only while Controlled
-        [SerializeField] private Text countdownLabel; // Text/TMP_Text per project convention
+        [SerializeField] private TMP_Text countdownLabel;
 
         private void OnEnable()
         {

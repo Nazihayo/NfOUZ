@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using Nfouz.Localization;
+using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace Nfouz.UI.Screens
 {
@@ -21,8 +21,8 @@ namespace Nfouz.UI.Screens
     /// </summary>
     public class ShopScreen : MonoBehaviour
     {
-        [SerializeField] private Text titleLabel;
-        [SerializeField] private Text comingSoonLabel;
+        [SerializeField] private TMP_Text titleLabel;
+        [SerializeField] private TMP_Text comingSoonLabel;
         [SerializeField] private Transform placeholderItemContainer;
         [SerializeField] private ShopPlaceholderItem placeholderItemPrefab;
 

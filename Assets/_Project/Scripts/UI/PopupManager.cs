@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Nfouz.Core;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -45,12 +46,12 @@ namespace Nfouz.UI
 
         [Header("Scene refs")]
         [SerializeField] private GameObject panelRoot;
-        [SerializeField] private Text titleLabel;
-        [SerializeField] private Text messageLabel;
+        [SerializeField] private TMP_Text titleLabel;
+        [SerializeField] private TMP_Text messageLabel;
         [SerializeField] private Button confirmButton;
-        [SerializeField] private Text confirmButtonLabel;
+        [SerializeField] private TMP_Text confirmButtonLabel;
         [SerializeField] private Button cancelButton;
-        [SerializeField] private Text cancelButtonLabel;
+        [SerializeField] private TMP_Text cancelButtonLabel;
 
         private readonly PopupStack _stack = new PopupStack();
 

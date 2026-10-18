@@ -1,4 +1,5 @@
 using System;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -11,8 +12,8 @@ namespace Nfouz.Social
     /// </summary>
     public class FriendListItem : MonoBehaviour
     {
-        [SerializeField] private Text usernameLabel;
-        [SerializeField] private Text classLabel;
+        [SerializeField] private TMP_Text usernameLabel;
+        [SerializeField] private TMP_Text classLabel;
         [SerializeField] private Button removeButton;
         [SerializeField] private Button blockButton;
 

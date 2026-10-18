@@ -19,10 +19,10 @@ namespace Nfouz.Quests
         [SerializeField] private QuestTracker questTracker;
         [SerializeField] private Transform questListContainer;
         [SerializeField] private QuestItem questItemPrefab;
-        [SerializeField] private UnityEngine.UI.Text statusLabel;
+        [SerializeField] private TMPro.TMP_Text statusLabel;
 
         [Header("Battle Pass XP display")]
-        [SerializeField] private UnityEngine.UI.Text battlePassXpLabel;
+        [SerializeField] private TMPro.TMP_Text battlePassXpLabel;
 
         private ApiClient _apiClient;
         private readonly List<GameObject> _spawnedRows = new List<GameObject>();

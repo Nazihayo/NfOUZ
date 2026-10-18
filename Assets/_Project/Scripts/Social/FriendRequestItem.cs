@@ -1,4 +1,5 @@
 using System;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -13,9 +14,9 @@ namespace Nfouz.Social
     /// </summary>
     public class FriendRequestItem : MonoBehaviour
     {
-        [SerializeField] private Text usernameLabel;
-        [SerializeField] private Text classLabel;
-        [SerializeField] private Text statusLabel; // e.g. "بانتظار الرد" for outgoing rows
+        [SerializeField] private TMP_Text usernameLabel;
+        [SerializeField] private TMP_Text classLabel;
+        [SerializeField] private TMP_Text statusLabel; // e.g. "بانتظار الرد" for outgoing rows
         [SerializeField] private Button acceptButton;
         [SerializeField] private Button declineButton;
 

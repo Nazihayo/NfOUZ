@@ -1,6 +1,7 @@
 using Nfouz.Core;
 using Nfouz.Localization;
 using Nfouz.Quests;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -31,8 +32,8 @@ namespace Nfouz.UI.Screens
         private const int AssumedTierXp = 1000;
 
         [SerializeField] private QuestTracker questTracker;
-        [SerializeField] private Text titleLabel;
-        [SerializeField] private Text xpLabel;
+        [SerializeField] private TMP_Text titleLabel;
+        [SerializeField] private TMP_Text xpLabel;
         [SerializeField] private Slider xpProgressSlider;
 
         private void Awake()

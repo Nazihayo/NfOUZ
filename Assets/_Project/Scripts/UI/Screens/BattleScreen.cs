@@ -1,6 +1,7 @@
 using Nfouz.Combat;
 using Nfouz.Networking;
 using Nfouz.Utils;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -34,7 +35,7 @@ namespace Nfouz.UI.Screens
         [SerializeField] private HUDController hud;
 
         [Header("Match timer")]
-        [SerializeField] private Text matchTimerLabel;
+        [SerializeField] private TMP_Text matchTimerLabel;
         [SerializeField] private Slider matchTimerSlider;
         [SerializeField] private GameObject overtimeBanner;
 

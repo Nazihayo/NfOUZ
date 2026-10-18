@@ -2,6 +2,7 @@ using Nfouz.Core;
 using Nfouz.Map;
 using Nfouz.Networking;
 using Nfouz.Utils;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -47,8 +48,8 @@ namespace Nfouz.Combat
         [SerializeField] private GameObject unknownResultPanel; // shown if the resolve call itself failed
 
         [Header("Labels")]
-        [SerializeField] private Text influenceChangeLabel; // Text/TMP_Text per project convention
-        [SerializeField] private Text rankTransitionLabel; // Sprint 7 continuation — shown only on an actual rank change
+        [SerializeField] private TMP_Text influenceChangeLabel;
+        [SerializeField] private TMP_Text rankTransitionLabel; // Sprint 7 continuation — shown only on an actual rank change
         [SerializeField] private Button returnToMainMapButton;
 
         [Header("Behavior")]

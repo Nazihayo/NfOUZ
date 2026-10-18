@@ -27,7 +27,7 @@ namespace Nfouz.Inventory
         [SerializeField] private EquipmentManager equipmentManager;
         [SerializeField] private Transform itemListContainer;
         [SerializeField] private InventoryItem itemPrefab;
-        [SerializeField] private UnityEngine.UI.Text statusLabel;
+        [SerializeField] private TMPro.TMP_Text statusLabel;
 
         private ApiClient _apiClient;
         private readonly List<GameObject> _spawnedRows = new List<GameObject>();

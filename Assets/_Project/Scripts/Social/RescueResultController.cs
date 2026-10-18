@@ -1,5 +1,6 @@
 using Nfouz.Core;
 using Nfouz.Utils;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
@@ -25,7 +26,7 @@ namespace Nfouz.Social
         [SerializeField] private GameObject failurePanel;
 
         [Header("Labels")]
-        [SerializeField] private Text rewardLabel; // shown only when rewarded == true
+        [SerializeField] private TMP_Text rewardLabel; // shown only when rewarded == true
         [SerializeField] private Button returnToMainMapButton;
 
         [Header("Behavior")]

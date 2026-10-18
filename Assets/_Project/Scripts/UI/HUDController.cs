@@ -1,6 +1,7 @@
 using Nfouz.Combat;
 using Nfouz.Core;
 using Nfouz.Networking;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -26,13 +27,13 @@ namespace Nfouz.UI
     public class HUDController : MonoBehaviour
     {
         [Header("Stat labels")]
-        [SerializeField] private Text healthLabel;
+        [SerializeField] private TMP_Text healthLabel;
         [SerializeField] private Slider healthSlider;
-        [SerializeField] private Text energyLabel;
+        [SerializeField] private TMP_Text energyLabel;
         [SerializeField] private Slider energySlider;
-        [SerializeField] private Text influenceLabel;
-        [SerializeField] private Text rankLabel;
-        [SerializeField] private Text creditsLabel;
+        [SerializeField] private TMP_Text influenceLabel;
+        [SerializeField] private TMP_Text rankLabel;
+        [SerializeField] private TMP_Text creditsLabel;
 
         private PlayerCombat _localPlayerCombat; // Battle mode only — null on MainMap
 

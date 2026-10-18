@@ -1,6 +1,6 @@
 using Nfouz.Social;
+using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace Nfouz.UI.Screens
 {
@@ -32,7 +32,7 @@ namespace Nfouz.UI.Screens
     /// </summary>
     public class SosScreen : MonoBehaviour
     {
-        [SerializeField] private Text statusLabel;
+        [SerializeField] private TMP_Text statusLabel;
 
         private void OnEnable()
         {

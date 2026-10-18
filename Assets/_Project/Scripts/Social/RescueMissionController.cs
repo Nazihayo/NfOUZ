@@ -37,7 +37,7 @@ namespace Nfouz.Social
         [SerializeField] private GameObject reservationPanel;
         [SerializeField] private GameObject guardBattlePanel;
         [SerializeField] private RescueGuardController guardController;
-        [SerializeField] private UnityEngine.UI.Text statusLabel;
+        [SerializeField] private TMPro.TMP_Text statusLabel;
         [SerializeField] private UnityEngine.UI.Slider guardBattleTimerSlider;
 
         public event Action<RescueOutcomeResponseData> OnMissionResolved;
