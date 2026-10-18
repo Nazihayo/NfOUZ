@@ -68,8 +68,10 @@ function baseWorld() {
     ],
     battles: [{
       battle_id: ids.battle, attacker_id: ids.A, defender_id: ids.B, status: 'in_progress',
-      photon_room_name: `battle_${ids.battle}`, started_at: iso(-60 * 1000),
-      session_started_at: iso(-60 * 1000), session_expires_at: iso(10 * 60 * 1000),
+      // A live battle: challenged 10 s ago, so still inside the 30 s ready
+      // timeout even though nobody is ready yet (utils/battleLifecycle.js).
+      photon_room_name: `battle_${ids.battle}`, started_at: iso(-10 * 1000),
+      session_started_at: iso(-10 * 1000), session_expires_at: iso(80 * 1000),
       attacker_ready: false, defender_ready: false, location_lat: 52.5978, location_lng: 9.0854,
       host_player_id: ids.A, host_authority_secret: HOST_SECRET, match_nonce: 'nonce-1',
       rules_version: 'v1', last_event_seq: 0, battle_type: 'competitive',
@@ -119,12 +121,14 @@ function baseWorld() {
 
 /**
  * Repository lookups that find nothing unless a scenario says otherwise:
- * "is this pair blocked?" and "does this player already have an active
- * battle?" must be false for any success path.
+ * "is this pair blocked?", "does this player already have an active
+ * battle?" and "is any battle stale?" must be false for any success path.
  */
 const DEFAULT_ROW_COUNTS = {
   'friend.isBlockedEitherDirection': 0,
   'battle.findActiveBattleForPlayer': 0,
+  // Battle lifecycle cleanup: no battle in the world is stale.
+  'battle.expireStaleBattles': 0,
 };
 
 /** Player B lost to A: Controlled by A (needed by SOS and rescue). */

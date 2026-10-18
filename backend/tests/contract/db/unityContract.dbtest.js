@@ -32,7 +32,7 @@ const fs = require('fs');
 const path = require('path');
 
 const safety = require('./dbSafety');
-const { createRunDatabase, migrate, dropRunDatabase } = require('./throwawayDatabase');
+const { startRealBackend, stopRealBackend } = require('./realBackend');
 const { reseed, migrationSeedProblems } = require('./seed');
 const { instrumentRepository, currentRepoFn } = require('../repoContext');
 const { installRecorder } = require('../harness');
@@ -51,7 +51,8 @@ try {
   configError = err;
 }
 
-let state = null;     // throwaway database lifecycle state
+const ctx = {};       // throwaway database lifecycle state, backend modules
+let state = null;
 let db = null;        // the backend's own src/config/database (real pg pool)
 let app = null;
 let seedProblems = [];
@@ -130,27 +131,18 @@ if (configError) {
   });
 } else {
   beforeAll(async () => {
-    try {
-      state = await createRunDatabase(target);
-    } catch (err) {
-      state = err.state || null;
-      throw err;
-    }
-    await migrate(state);
-
-    // From here on the backend's own modules load, pointed at the run database only.
-    process.env.DATABASE_URL = state.runUrl;
-    // eslint-disable-next-line global-require
-    db = require('../../../src/config/database');
-    instrumentDatabase(db);
-    const repoDir = path.resolve(__dirname, '../../../src/repositories');
-    for (const file of fs.readdirSync(repoDir).filter((f) => f.endsWith('.repository.js'))) {
-      // eslint-disable-next-line global-require, import/no-dynamic-require
-      instrumentRepository(file.replace('.repository.js', ''), require(path.join(repoDir, file)));
-    }
-    installRecorder();
-    // eslint-disable-next-line global-require
-    app = require('../../../src/app')();
+    await startRealBackend(target, ctx, {
+      beforeAppLoad: (dbModule) => {
+        instrumentDatabase(dbModule);
+        const repoDir = path.resolve(__dirname, '../../../src/repositories');
+        for (const file of fs.readdirSync(repoDir).filter((f) => f.endsWith('.repository.js'))) {
+          // eslint-disable-next-line global-require, import/no-dynamic-require
+          instrumentRepository(file.replace('.repository.js', ''), require(path.join(repoDir, file)));
+        }
+        installRecorder();
+      },
+    });
+    ({ state, db, app } = ctx);
 
     seedProblems = await migrationSeedProblems(db.pool, baseWorld());
     await suite.runAll();
@@ -158,18 +150,7 @@ if (configError) {
 
   afterAll(async () => {
     suite.writeReport();
-    if (db) await db.shutdown().catch(() => {});
-    const cleanup = await dropRunDatabase(state);
-    const name = state && state.createdName;
-    if (process.env.CONTRACT_DB_CLEANUP_REPORT) {
-      fs.writeFileSync(process.env.CONTRACT_DB_CLEANUP_REPORT, JSON.stringify({ database: name, ...cleanup }));
-    }
-    if (cleanup.problems.length) {
-      // Reported in addition to (never instead of) any test failures.
-      // eslint-disable-next-line no-console
-      console.error(`[contract:db] CLEANUP FAILED:\n  ${cleanup.problems.join('\n  ')}`);
-      throw new Error(`cleanup failed: ${cleanup.problems.join('; ')}`);
-    }
+    await stopRealBackend(ctx);
   }, SETUP_TIMEOUT_MS);
 
   describe(`Unity <-> backend contract (${MODE})`, () => {

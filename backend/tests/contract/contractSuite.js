@@ -13,7 +13,7 @@
 const fs = require('fs');
 const request = require('supertest');
 
-const { loadSchema } = require('./schema');
+const { loadSchema, battleStatuses } = require('./schema');
 const { loadUnityContract } = require('./unitySource');
 const { startRecording, routeExists, backendErrorCodes, backendErrorStatuses } = require('./harness');
 const { compareToDto, requestFieldPaths, buildRequestBody } = require('./compare');
@@ -340,6 +340,13 @@ function createContractSuite({ mode, getApp, prepare, takeLog, inspect }) {
         problems.push(...envelopeProblems('INVALID_TOKEN', res.body).map((p) => `${label}: ${p}`));
       }
       expect(problems).toEqual([]);
+    });
+
+    test('the client handles every battle status the database allows', () => {
+      // BattleLifecycle.FromStatus decides whether a polled battle shows a
+      // result, a pending review, or "ended without a result"; a status it
+      // did not name would silently fall into its default branch.
+      expect(unity.battleStatusCases).toEqual(battleStatuses());
     });
 
     test('no allowlist entry is stale', () => {

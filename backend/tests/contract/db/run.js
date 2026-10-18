@@ -23,7 +23,7 @@ const jestBin = require.resolve('jest/bin/jest');
 const backendDir = path.resolve(__dirname, '../../..');
 const result = spawnSync(process.execPath, [
   jestBin, '--runInBand', '--rootDir', backendDir,
-  '--testMatch', '**/tests/contract/db/unityContract.dbtest.js',
+  '--testMatch', '**/tests/contract/db/*.dbtest.js',
   ...process.argv.slice(2),
 ], { stdio: 'inherit', cwd: backendDir });
 process.exit(result.status === null ? 1 : result.status);

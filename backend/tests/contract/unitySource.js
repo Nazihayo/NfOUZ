@@ -356,6 +356,17 @@ function extractTokenRejectionRule(sources, constants) {
   return { statuses, codes };
 }
 
+/** Battle statuses BattleLifecycle.FromStatus names explicitly (its `case "x":` labels). */
+function extractBattleStatusCases(sources) {
+  const src = sources.find((s) => s.rel === 'Networking/BattleLifecycle.cs');
+  if (!src) throw new Error('Networking/BattleLifecycle.cs not found');
+  const m = /static\s+BattleEndKind\s+FromStatus\s*\([^)]*\)\s*\{/.exec(src.text);
+  if (!m) throw new Error('BattleLifecycle.FromStatus not found');
+  const open = m.index + m[0].length - 1;
+  const body = src.text.slice(open + 1, matchBracket(src.text, open));
+  return [...body.matchAll(/case\s+"([a-z_]+)"\s*:/g)].map((x) => x[1]).sort();
+}
+
 function loadUnityContract() {
   if (!fs.existsSync(SCRIPTS_DIR)) {
     throw new Error(`Unity scripts not found at ${SCRIPTS_DIR} — the contract test needs the full repository checkout.`);
@@ -368,6 +379,7 @@ function loadUnityContract() {
     errorCodes,
     applyReads: extractApplyMethodReads(sources),
     tokenRejection: extractTokenRejectionRule(sources, errorCodes.constants),
+    battleStatusCases: extractBattleStatusCases(sources),
   };
 }
 

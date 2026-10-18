@@ -116,4 +116,17 @@ function loadSchema() {
   return tables;
 }
 
-module.exports = { loadSchema, loadNullability, mapType };
+/** The values the latest `battles_status_check` constraint allows, in migration order. */
+function battleStatuses() {
+  let latest = null;
+  for (const file of fs.readdirSync(MIGRATIONS_DIR).filter((f) => f.endsWith('.sql')).sort()) {
+    const sql = fs.readFileSync(path.join(MIGRATIONS_DIR, file), 'utf8').replace(/--[^\n]*/g, '');
+    const tableCheck = /CREATE TABLE\s+(?:IF NOT EXISTS\s+)?battles\s*\([\s\S]*?\bstatus\b[^,]*?CHECK\s*\(\s*status\s+IN\s*\(([^)]*)\)/i.exec(sql);
+    if (tableCheck) latest = tableCheck[1];
+    for (const m of sql.matchAll(/battles_status_check\s+CHECK\s*\(\s*status\s+IN\s*\(([^)]*)\)/gi)) latest = m[1];
+  }
+  if (!latest) throw new Error('battles status CHECK constraint not found in the migrations');
+  return [...latest.matchAll(/'([a-z_]+)'/g)].map((x) => x[1]).sort();
+}
+
+module.exports = { loadSchema, loadNullability, mapType, battleStatuses };
