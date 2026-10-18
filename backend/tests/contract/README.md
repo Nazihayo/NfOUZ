@@ -40,6 +40,7 @@ Both modes need the full repository checkout: they read the Unity C# sources fro
 | Responses handed to a full-session replace (`BattleSession.UpdateFromServer`, `PlayerSession.UpdateFromServer`) carry the fields that define the session | a full-session response losing `attacker_id` |
 | Every error code the client handles (and every `Constants.ErrorCodes` value) is one the backend sends | the client handling a code the backend never sends |
 | Error envelopes match the client's `ApiResponse` / `ApiError` | a changed error envelope |
+| Every token failure answers HTTP 401 `INVALID_TOKEN`, which is the only code sent with 401, and it matches the rule the client refreshes on (`AuthSession.IsTokenRejection`) | a token failure sent as 403, or another 401 that the client would mistake for an expired sign-in |
 | No allowlist entry is stale | an exception that no longer applies |
 
 ## How it works

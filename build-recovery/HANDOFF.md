@@ -182,6 +182,38 @@ tested in the cloud, **not yet checked in Unity**:
       stops `backend/.env` from being loaded during tests.
     - Before this change, a developer's `.env` could change results: a
       hostile one failed 28 tests.
+24. Expired Firebase sign-in (`dd78e99`, `179831b`, `2c1f52f`): recovers
+    without restarting the app.
+    - **Before:** the ID token was fetched once (sign-in or Boot) and never
+      refreshed. After about 1 hour, every API call failed with 401
+      `INVALID_TOKEN`.
+    - **Lifecycle now:**
+      - sign-in, registration or Boot gives `ApiClient` a token
+        (`SetAuthToken`);
+      - every call goes through `Networking/AuthSession.cs`;
+      - on a 401 `INVALID_TOKEN` it forces `TokenAsync(true)` through
+        `FirebaseManager` and retries the same request once with the new
+        token, which is kept for later calls.
+    - **Retry rules:**
+      - only 401 + `INVALID_TOKEN` triggers a refresh; network errors, 403s
+        and all other errors never do;
+      - at most one refresh and one retry per request;
+      - simultaneous failures share one refresh;
+      - cancelled requests, requests sent without a token, and requests
+        from a replaced session are not retried.
+    - **Session end and Login:**
+      - the session ends when Firebase has no user, refuses the refresh
+        (sign-in revoked, disabled or deleted), or the backend rejects the
+        fresh token too;
+      - `GameManager` then signs out, clears `PlayerSession` and loads Login
+        once (not from Boot or Login, which route themselves);
+      - if the refresh fails only temporarily (offline), the session is
+        kept and the call returns `NETWORK_ERROR`, shown as the Arabic
+        network message.
+    - **Tests:** 30 EditMode tests in `AuthSessionTests`. The contract tests
+      now pin the backend rule: every token failure is 401
+      `INVALID_TOKEN`, and that is the only code sent with 401.
+    - Tokens are never logged.
 
 Check in Unity after pulling:
 - EditMode Test Runner: all tests, including the new ones above.
@@ -192,6 +224,11 @@ Check in Unity after pulling:
   (item 15).
 - The result screen's return button in Battle (needs Photon for a real
   match).
+- Expired sign-in (item 24): `AuthSessionTests` in the Test Runner. By hand:
+  sign in, wait more than 1 hour (or revoke the user's tokens in the Firebase
+  Console), then open Friends or Quests.
+  - Expected after waiting: the call succeeds after a silent refresh.
+  - Expected after revoking: a single return to Login.
 
 Notes for the laptop:
 - On an Android phone, `http://localhost:3000` is the phone itself. Point the
@@ -253,9 +290,6 @@ there is no local PostgreSQL yet.
   is currently unused (see item 12).
 - Faction System (see item 14) — new feature.
 - Needs a decision (found in the 2026-10-18 audit):
-  - The Firebase ID token is refreshed only at Boot. After about 1 h of
-    play, every API call returns 401 `INVALID_TOKEN`, and nothing re-signs
-    the player in. Option: refresh the token and retry once on 401.
   - Stale battles: `findActiveBattleForPlayer` ignores `session_expires_at`,
     so an unresolved battle blocks both players from challenging again.
   - The backend accepts only `^[a-zA-Z0-9_]{3,20}$` usernames. Arabic
