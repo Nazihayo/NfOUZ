@@ -60,7 +60,8 @@ namespace Nfouz.Map
                 _playerMarkerInstance.transform.position = map.GeoToWorldPosition(latLng, true);
             }
 #else
-            Debug.Log($"[MapboxManager stub] CenterOnPlayer({lat}, {lng}) — no-op without Mapbox SDK.");
+            // No coordinates in the log: they are the player's location.
+            Debug.Log("[MapboxManager stub] CenterOnPlayer — no-op without Mapbox SDK.");
 #endif
         }
 

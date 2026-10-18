@@ -187,7 +187,7 @@ namespace Nfouz.Networking
                 return first.Response;
             }
 
-            var where = $"{request.Method} {request.Endpoint}";
+            var where = $"{request.Method} {LogRedaction.Endpoint(request.Endpoint)}";
             if (string.IsNullOrEmpty(token) || cancellationToken.IsCancellationRequested || IsOver(generation))
             {
                 _log($"[AuthSession] {where}: INVALID_TOKEN, not retried (no token, cancelled or session over).");
