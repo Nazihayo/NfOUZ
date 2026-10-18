@@ -635,7 +635,19 @@ namespace Nfouz.Combat
             while (waited < ResolutionPollTimeoutSeconds)
             {
                 var response = await _apiClient.GetAsync<BattleSessionData>($"/battle/{BattleSession.Current.battle_id}");
-                if (response.success && response.data != null && response.data.status != "in_progress")
+                var kind = response.success && response.data != null
+                    ? BattleLifecycle.FromStatus(response.data.status)
+                    : BattleEndKind.InProgress;
+                if (kind == BattleEndKind.EndedWithoutResult || (!response.success && BattleLifecycle.IsBattleGone(response.error)))
+                {
+                    // Forfeited, cancelled by the server's lifecycle cleanup, or
+                    // gone: there is no result to show — never present it as a
+                    // draw. The unknown-result panel returns to MainMap.
+                    Debug.LogWarning($"[BattleManager] Battle ended without a result ({response.data?.status ?? response.error?.code}).");
+                    ShowResult("draw", null); // resolveData == null shows the unknown-result panel regardless of the outcome argument
+                    return;
+                }
+                if (kind == BattleEndKind.Resolved || kind == BattleEndKind.PendingReview)
                 {
                     await HandleResolvedFromPollAsync(response.data);
                     return;

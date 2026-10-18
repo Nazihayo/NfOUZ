@@ -21,6 +21,7 @@ namespace Nfouz.Networking
         private ApiClient _apiClient;
         private bool _isAttacker;
         private bool _sessionActive;
+        private bool _returningToMainMap;
 
         private async void Start()
         {
@@ -46,6 +47,20 @@ namespace Nfouz.Networking
             await ConfirmReadyAsync();
         }
 
+        /// <summary>Clears the ended battle and goes back to MainMap, once.
+        /// No match had started, so there is no result to show.</summary>
+        private async Task ReturnToMainMapAsync()
+        {
+            if (_returningToMainMap)
+            {
+                return;
+            }
+
+            _returningToMainMap = true;
+            BattleSession.Clear();
+            await SceneLoader.LoadAsync(Constants.Scenes.MainMap);
+        }
+
         /// <summary>
         /// Notifies the backend this client has finished loading and is
         /// ready (POST /battle/{battleId}/ready — battle.service.js
@@ -64,6 +79,13 @@ namespace Nfouz.Networking
             if (!response.success)
             {
                 Debug.LogWarning($"[BattleLoadingController] Ready confirmation failed: {response.error?.code}");
+                if (BattleLifecycle.IsBattleGone(response.error))
+                {
+                    // The server ended this battle (nobody became ready in time,
+                    // a reconnect deadline passed, or no result can arrive any
+                    // more). Nothing can start here: leave the loading screen.
+                    await ReturnToMainMapAsync();
+                }
                 return;
             }
 
