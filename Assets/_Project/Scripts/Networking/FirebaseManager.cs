@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using Nfouz.Auth;
 using Nfouz.Utils;
 using UnityEngine;
 
@@ -20,11 +21,6 @@ namespace Nfouz.Networking
     public class FirebaseManager : MonoBehaviour
     {
         private const string StoredTokenPrefsKey = "nfouz_firebase_id_token";
-
-#if FIREBASE_AUTH_AVAILABLE
-        // Shown when Login/Register is pressed before (or after a failed) Firebase initialization.
-        private const string NotInitializedMessage = "خدمة تسجيل الدخول غير جاهزة بعد. حاول مرة أخرى.";
-#endif
 
         public bool IsInitialized { get; private set; }
         public string CurrentToken { get; private set; }
@@ -110,7 +106,7 @@ namespace Nfouz.Networking
 #if FIREBASE_AUTH_AVAILABLE
             if (!IsInitialized || _auth == null)
             {
-                return (false, NotInitializedMessage);
+                return (false, AuthErrorMessages.NotReady);
             }
 
             try
@@ -123,12 +119,13 @@ namespace Nfouz.Networking
             }
             catch (Exception ex)
             {
-                Debug.LogWarning($"[FirebaseManager] Sign-in failed: {ex.Message}");
-                return (false, ex.Message);
+                Debug.LogWarning($"[FirebaseManager] Sign-in failed ({GetAuthErrorName(ex) ?? "no AuthError"}): {ex}");
+                return (false, AuthErrorMessages.FromFirebaseAuthError(GetAuthErrorName(ex), isRegistration: false));
             }
 #else
             await Task.CompletedTask;
-            return (false, "Firebase SDK not available in this build.");
+            Debug.LogWarning("[FirebaseManager] Firebase SDK not available in this build.");
+            return (false, AuthErrorMessages.ServiceUnavailable);
 #endif
         }
 
@@ -137,7 +134,7 @@ namespace Nfouz.Networking
 #if FIREBASE_AUTH_AVAILABLE
             if (!IsInitialized || _auth == null)
             {
-                return (false, NotInitializedMessage);
+                return (false, AuthErrorMessages.NotReady);
             }
 
             try
@@ -150,14 +147,39 @@ namespace Nfouz.Networking
             }
             catch (Exception ex)
             {
-                Debug.LogWarning($"[FirebaseManager] Registration failed: {ex.Message}");
-                return (false, ex.Message);
+                Debug.LogWarning($"[FirebaseManager] Registration failed ({GetAuthErrorName(ex) ?? "no AuthError"}): {ex}");
+                return (false, AuthErrorMessages.FromFirebaseAuthError(GetAuthErrorName(ex), isRegistration: true));
             }
 #else
             await Task.CompletedTask;
-            return (false, "Firebase SDK not available in this build.");
+            Debug.LogWarning("[FirebaseManager] Firebase SDK not available in this build.");
+            return (false, AuthErrorMessages.ServiceUnavailable);
 #endif
         }
+
+#if FIREBASE_AUTH_AVAILABLE
+        /// <summary>Firebase.Auth.AuthError name of a failed auth call
+        /// (e.g. "WrongPassword"), or null if the exception carries none.
+        /// Awaited Firebase tasks can surface the FirebaseException directly
+        /// or wrapped in an AggregateException.</summary>
+        private static string GetAuthErrorName(Exception ex)
+        {
+            var current = ex;
+            while (current != null)
+            {
+                if (current is FirebaseException firebaseException)
+                {
+                    return ((AuthError)firebaseException.ErrorCode).ToString();
+                }
+
+                current = current is AggregateException aggregate && aggregate.InnerExceptions.Count > 0
+                    ? aggregate.InnerExceptions[0]
+                    : current.InnerException;
+            }
+
+            return null;
+        }
+#endif
 
         public void SignOut()
         {

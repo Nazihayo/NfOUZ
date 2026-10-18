@@ -62,7 +62,8 @@ namespace Nfouz.Auth
                 return;
             }
 
-            RaiseError(meResponse.error?.message ?? "تعذّر جلب بيانات الحساب.");
+            Debug.LogWarning($"[AuthController] /auth/me failed: {meResponse.error?.code} {meResponse.error?.message}");
+            RaiseError(AuthErrorMessages.FromApiError(meResponse.error));
         }
 
         /// <summary>Called by the "إنشاء حساب" button. Creates the Firebase

@@ -70,6 +70,7 @@ namespace Nfouz.Auth
 
             if (!response.success)
             {
+                Debug.LogWarning($"[OnboardingController] /auth/register failed: {response.error?.code} {response.error?.message}");
                 RaiseError(TranslateError(response.error));
                 return;
             }
@@ -81,18 +82,13 @@ namespace Nfouz.Auth
 
         private static string TranslateError(ApiError error)
         {
-            if (error == null)
-            {
-                return "حدث خطأ غير متوقع.";
-            }
-
-            return error.code switch
+            return error?.code switch
             {
                 "USERNAME_TAKEN" => "اسم المستخدم مُستخدَم بالفعل.",
                 "PLAYER_ALREADY_REGISTERED" => "هذا الحساب مُسجَّل بالفعل.",
                 "INVALID_CLASS_TYPE" => "الفئة المختارة غير صالحة.",
                 "INVALID_USERNAME" => "اسم المستخدم غير صالح.",
-                _ => error.message,
+                _ => AuthErrorMessages.FromApiError(error),
             };
         }
 
