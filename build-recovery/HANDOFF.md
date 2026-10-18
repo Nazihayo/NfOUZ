@@ -99,9 +99,64 @@ yet checked in the Unity Editor** (see "Check in Unity after pulling" below):
     Showing a faction needs the not-yet-built Faction System (assignment +
     name in the API) — a new feature, needs approval.
 
-Check in Unity after pulling: EditMode Test Runner (incl.
-`AuthErrorMessagesTests`), the Login error label in Arabic, and the result
-screen's return button in Battle (needs Photon for a real match).
+Build Recovery audit, 2026-10-18 (cloud). Every Unity API call was run
+against the real backend on a throwaway PostgreSQL, and each response was
+compared with the Unity DTO that parses it. Same status: compiled and
+tested in the cloud, **not yet checked in Unity**:
+
+15. Player session (`5f86c95`) — **critical**. `PlayerSessionData` had
+    PascalCase fields, but the backend sends snake_case keys (`player_id`, …).
+    JsonUtility matches names exactly, so after `/auth/me` or `/auth/register`
+    every field stayed empty: `PlayerSession.HasActiveSession` was false,
+    GPS location / FCM calls were skipped, and HUD/Profile stats were blank.
+    The serialized fields now use the backend names, with PascalCase
+    properties for the existing code. Test: `PlayerSessionDataContractTests`.
+16. Battle session (`0d63d5c`). The `/battle/{id}/ready` and `/reconnect`
+    responses carry only 2–3 fields but replaced the whole `BattleSession`.
+    The host lost its signing secret, so it could not submit a result. After
+    `/ready` the empty status also ended the match before the countdown.
+    Test: `BattleSessionPartialUpdateTests`.
+17. Quest rewards (`3ca2557`, backend). `reward_coins` (BIGINT) was sent as
+    a string (`"100"`); it is now a number.
+18. Culture (`af37336`). On German Windows (and ar-SA/ar-EG devices) the
+    nearby-players URL sent `lat=52,5978`, which the backend reads as NaN.
+    On ar-SA/fa-IR/th-TH devices the battle result's `issued_at` used a
+    non-Gregorian year (e.g. 1448). Both now use the invariant culture. Test:
+    `CultureInvariantRequestTests`, which also pins the C# signature to the
+    backend's HMAC.
+19. `.gitignore` (`d991180`). It now also covers the Admin key's default
+    download name (`*-firebase-adminsdk-*.json`), `*service-account*.json`,
+    `.env.*` (except `.env.example`), `*.p8`, `*.mobileprovision` and
+    `keystore.properties`. The secret scan of tracked files and full history
+    found nothing.
+20. Checked and OK: all 32 Unity endpoints exist with the right method,
+    request bodies match what the backend reads, rescue/inventory/SOS/
+    friends/devices/quests responses match, and every error code Unity
+    handles is one the backend sends. Backend tests: 26 suites / 320 tests.
+
+Check in Unity after pulling:
+- EditMode Test Runner: all tests, including the new ones above.
+  `PlayerSessionDataContractTests.AuthMeEnvelope_ParsesIntoSession` uses
+  JsonUtility, so it runs only in Unity.
+- The Login error label shows Arabic text.
+- After Register → MainMap, the HUD/Profile show the player's stats
+  (item 15).
+- The result screen's return button in Battle (needs Photon for a real
+  match).
+
+Notes for the laptop:
+- On an Android phone, `http://localhost:3000` is the phone itself. Point the
+  Development URL in `Resources/ApiEnvironmentSettings.asset` at the
+  laptop's LAN IP (or `10.0.2.2` on the emulator) for device tests. Don't
+  commit a personal IP.
+- The repo's `ProjectSettings/ProjectSettings.asset` is a 10-line stub; the
+  real Android settings exist only on the laptop. Review that file's diff
+  (package name, min/target SDK, IL2CPP + ARM64, "Allow downloads over HTTP")
+  before committing it. Unity does not store keystore passwords there.
+- A battle that never resolves stays `in_progress` forever, and both players
+  then get `DUPLICATE_CHALLENGE` (nothing expires it; see backlog). In stub
+  mode, clear it in the local DB with
+  `UPDATE battles SET status = 'cancelled' WHERE status = 'in_progress';`.
 
 ## Current blocker
 
@@ -148,6 +203,15 @@ there is no local PostgreSQL yet.
 - Decide whether `Result.unity` should be loaded by the flow or retired; it
   is currently unused (see item 12).
 - Faction System (see item 14) — new feature.
+- Needs a decision (found in the 2026-10-18 audit):
+  - The Firebase ID token is refreshed only at Boot. After about 1 h of
+    play, every API call returns 401 `INVALID_TOKEN`, and nothing re-signs
+    the player in. Option: refresh the token and retry once on 401.
+  - Stale battles: `findActiveBattleForPlayer` ignores `session_expires_at`,
+    so an unresolved battle blocks both players from challenging again.
+  - The backend accepts only `^[a-zA-Z0-9_]{3,20}$` usernames. Arabic
+    names are rejected (shown as "اسم المستخدم غير صالح").
+  - Logout: `FirebaseManager.SignOut` exists, but no screen calls it.
 - `npm test` uses POSIX `NODE_ENV=test jest …` syntax, which fails under
   Windows `cmd`; on Windows run `npx jest --runInBand` from `backend/`
   (each test file sets `NODE_ENV=test` itself).
