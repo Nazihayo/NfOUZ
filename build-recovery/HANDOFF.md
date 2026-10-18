@@ -9,7 +9,7 @@ folder; where they differ, this file is current.
 - **Branch:** `claude/sprint-5-photon-multiplayer-5jv8v2` (all work below is pushed)
 - **Phase:** Build Recovery — make the existing Sprint 1–10 code runnable.
   **Do not start Sprint 11. Do not add gameplay features or redesign systems.**
-- **Last updated:** 2026-10-18 (covers commits through `ac4e213`)
+- **Last updated:** 2026-10-18 (covers commits through the pre-Alpha pass; see item 28)
 
 ## Working rules agreed with the developer
 
@@ -326,14 +326,47 @@ in the Unity Editor**:
         Settings scene and prefab, and checks the project font has every
         glyph the UI draws.
 
-Current test counts (cloud, at `ac4e213`; run from `backend/`):
+28. Pre-Alpha pass (cloud; `d268fd1`, `d0bfd0f`, `35c4721`, `431f2b4`,
+    `8f25be0`, `caa311c`, `eab6108`, `79a6426`): compiled and tested in the
+    cloud, **not yet checked in Unity**.
+    - **Backend input:** 22 of 41 malformed-input cases answered 500 against
+      real PostgreSQL. Non-UUID path ids now answer the resource's existing
+      not-found code, non-UUID body ids and an over-long inventory
+      `request_id` answer 400, malformed JSON 400, a body over 1 MB 413
+      `PAYLOAD_TOO_LARGE`; a client `X-Request-Id` is kept only if it is a
+      short plain id. Tests: `inputValidation.test.js`,
+      `contract/db/inputRobustness.dbtest.js`.
+    - **Challenge race:** simultaneous challenges (a double tap, or two
+      players challenging each other) created several battles. Challenge
+      creation now holds per-player advisory locks in one transaction;
+      proven against real PostgreSQL (and the test fails without the lock).
+    - **Onboarding regression from item 27:** the class cards' names were set
+      through prefab overrides of the legacy `m_Text` field and would have
+      shown "Class"; they now set `originalText`/`m_text`, and
+      `uiText.test.js` checks every text override names a real field.
+    - **Privacy:** endpoints written to the device log end at the path (the
+      nearby query carries coordinates); the Mapbox stub no longer logs them.
+    - **Unity flow:** Login, Register, Onboarding Confirm and Challenge ignore
+      a second tap while in flight; a refused challenge shows an Arabic
+      reason; a failed room join clears `BattleSession`; the Battle loading
+      screen re-checks the battle every 1.5 s and leaves after the server's
+      30 s ready timeout instead of waiting forever; entering Battle without
+      a session no longer dead-ends; a refused location permission or GPS
+      failure shows "الموقع غير متاح"; the SOS poll stops for an SOS that is
+      gone or not this player's.
+    - **Repository:** `.gitignore` adds `obj/`, `desktop.ini` and Office lock
+      files. A full-history secret scan (62 commits; values never printed)
+      found only placeholders and test fixtures.
+    - Laptop/phone checklists: `build-recovery/PRE_ALPHA_CHECKLISTS.md`.
+
+Current test counts (cloud, after item 28; run from `backend/`):
 
 | Command | Result |
 |---|---|
-| `npm test` (same as `npx jest --runInBand`; includes the fake-database contract test and the Unity UI checks) | 30 suites / 388 tests |
+| `npm test` (same as `npx jest --runInBand`; includes the fake-database contract test and the Unity UI checks) | 31 suites / 408 tests |
 | `npm run test:contract` | 50 tests |
-| `npm run test:contract:db` (needs `CONTRACT_TEST_DATABASE_URL`, item 22) | 71 tests: 53 contract + 18 battle lifecycle |
-| Unity EditMode, run under .NET in the cloud | `AuthErrorMessagesTests` 17, `AuthSessionTests` 30, `BattleLifecycleTests` 15, `ArabicRtlTextTests` 27, `PlayerSessionDataContractTests` + `BattleSessionPartialUpdateTests` + `CultureInvariantRequestTests` 13 of 14 (the 14th needs Unity's JsonUtility) |
+| `npm run test:contract:db` (needs `CONTRACT_TEST_DATABASE_URL`, item 22) | 117 tests: 53 contract + 20 battle lifecycle + 44 input robustness |
+| Unity EditMode, run under .NET in the cloud | `AuthErrorMessagesTests` 17, `AuthSessionTests` 30, `BattleLifecycleTests` 24, `ActionGateTests` 2, `ChallengeErrorMessagesTests` 11, `LogRedactionTests` 4, `SosPollingTests` 7, `ArabicRtlTextTests` 27, `PlayerSessionDataContractTests` + `BattleSessionPartialUpdateTests` + `CultureInvariantRequestTests` 13 of 14 (the 14th needs Unity's JsonUtility) |
 
 Check in Unity after pulling:
 - EditMode Test Runner: all tests, including the new ones above.
@@ -371,6 +404,13 @@ Check in Unity after pulling:
   - Battle and Result panels (stub mode): titles and the return button.
   - No text overlaps or runs outside its panel; the ⚙ Settings button and
     the ✓ quest badge show a glyph, not a box.
+- Pre-Alpha fixes (item 28):
+  - Onboarding: the three cards read Scout, Ranger and Titan.
+  - Double-tap Login, Register and Confirm: one request each (backend log),
+    one scene change.
+  - MainMap in the Editor: a "الموقع غير متاح" popup (the Editor has no GPS).
+  - Battle in stub mode: challenge, stay on the loading screen — after about
+    31 s it returns to MainMap and the same player can be challenged again.
 
 Notes for the laptop:
 - On an Android phone, `http://localhost:3000` is the phone itself. Point the
@@ -481,6 +521,37 @@ Setup steps used:
    and username → Confirm → MainMap must load. A 401 `INVALID_TOKEN` means the
    Admin key belongs to a different Firebase project than Unity.
 
+## PRE-ALPHA ROADMAP
+
+In priority order. Done means compiled and tested in the cloud unless it
+says "verified on the laptop".
+
+1. **Already complete.**
+   - Verified on the laptop: Unity 6000.0.58f2 project; Boot → Login →
+     Register → Onboarding → MainMap; PostgreSQL 16 with `nfouz_db`;
+     backend `/health` 200; Firebase Admin; `127.0.0.1:3000` instead of
+     `localhost` (Curl error 56); TMP Essential Resources imported.
+   - Cloud only: items 11–25 and 27–28 (API contract fixes, contract tests
+     in both modes, token refresh, battle lifecycle, Arabic/TMP/RTLTMPro,
+     the pre-Alpha fixes).
+2. **Laptop reconciliation:** Next steps 1 (commit TMP Essentials and the
+   127.0.0.1 URL, then pull). Unity downloads RTLTMPro.
+3. **Arabic font and visual validation:** Next steps 2, then
+   `PRE_ALPHA_CHECKLISTS.md` §1 and "Check in Unity after pulling".
+4. **Decide the defender flow** (backlog, critical): until then two players
+   cannot meet in a battle.
+5. **Photon:** account and App ID, Fusion 2 SDK, the five code items and the
+   two-device test — `PRE_ALPHA_CHECKLISTS.md` §2.
+6. **Mapbox/GPS:** SDK decision, token, phone test — §3.
+7. **Android build and signing:** §4.
+8. **Full gameplay test** on two phones: register, find each other on the
+   map, challenge, fight, result and rewards, reconnect, SOS/rescue between
+   friends, quests and inventory.
+9. **Deferred past Alpha:** Sprint 11, Faction System, Battle Pass, the Shop
+   backend, the AYAZ backend, FCM on iOS, production deployment and HTTPS,
+   server-authoritative combat (see the host-authority decision), Arabic
+   usernames, logout UI.
+
 ## Backlog after the Register → MainMap test (do not start without approval)
 
 Completed work is items 1–27 above; nothing completed is listed here.
@@ -495,6 +566,26 @@ Needs the laptop:
   touches `nfouz_db`.
 
 Needs a decision or approval:
+- **Defender flow (critical for Alpha):** after `POST /battle/challenge`
+  nothing reaches the defender — no push type, no polling, no accept/decline
+  route — so the defender never joins the room (the battle is cancelled at
+  the 30 s ready timeout). Decide: automatic join, accept/decline, push
+  and/or in-app polling. Not in the repository's documents (no GDD in Git).
+- **Host authority:** the attacker's client is the Photon host and holds the
+  result-signing secret, so a modified attacker client can sign any outcome
+  (results are still bound to the battle, nonce, sequence and time, checked
+  for plausibility, and suspicious ones are held for review). Accept for
+  Alpha, or plan server-side/Photon-server authority.
+- **Usernames are case-sensitive:** "Player" and "player" can both exist
+  (look-alike names).
+- **Error fallback text** shows the server code ("حدث خطأ: CODE",
+  "تعذّر إرسال نداء الاستغاثة: CODE"); `SosStatusMessagesTests` pin that.
+  Keep for Alpha debugging or replace with a generic Arabic message.
+- **Editor location:** the Editor has no GPS, so MainMap shows no nearby
+  players there. A dev-only simulated location would be a new tool.
+- **Mapbox SDK:** the code uses the Mapbox Maps SDK for Unity v2.x API;
+  confirm it supports Unity 6 before buying into it.
+- **Safe area / orientation** for notched phones (no handling yet).
 - Arabic font family (Next steps 2): which OFL font NFOUZ uses.
 - ⚙ (Settings button) and ✓ (quest "claimed" badge) are text symbols. If
   the chosen fonts lack them: add an OFL symbol font as a fallback, or
