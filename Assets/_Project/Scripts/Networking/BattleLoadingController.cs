@@ -67,7 +67,7 @@ namespace Nfouz.Networking
                 return;
             }
 
-            BattleSession.UpdateFromServer(response.data);
+            BattleSession.ApplyReadyState(response.data);
 
             if (response.data.attacker_ready && response.data.defender_ready)
             {

@@ -165,9 +165,58 @@ namespace Nfouz.Networking
             }
 
             Current = serverData;
+            NotifyUpdated();
+        }
+
+        /// <summary>
+        /// Applies a POST /battle/{battleId}/ready response, which carries
+        /// only battle_id, attacker_ready and defender_ready
+        /// (battle.controller.js). Replacing Current with it
+        /// would wipe the participants, status and host-signing material.
+        /// </summary>
+        public static void ApplyReadyState(BattleSessionData readyData)
+        {
+            if (!IsUpdateForCurrent(readyData))
+            {
+                return;
+            }
+
+            Current.attacker_ready = readyData.attacker_ready;
+            Current.defender_ready = readyData.defender_ready;
+            NotifyUpdated();
+        }
+
+        /// <summary>
+        /// Applies a POST /battle/{battleId}/reconnect response, which
+        /// carries only battle_id and status (battle.controller.js).
+        /// </summary>
+        public static void ApplyStatus(BattleSessionData statusData)
+        {
+            if (!IsUpdateForCurrent(statusData) || string.IsNullOrEmpty(statusData.status))
+            {
+                return;
+            }
+
+            Current.status = statusData.status;
+            NotifyUpdated();
+        }
+
+        private static bool IsUpdateForCurrent(BattleSessionData partial)
+        {
+            if (partial == null || !HasActiveSession || partial.battle_id != Current.battle_id)
+            {
+                Debug.LogWarning("[BattleSession] Ignoring a partial update that does not belong to the active session.");
+                return false;
+            }
+
+            return true;
+        }
+
+        private static void NotifyUpdated()
+        {
             OnSessionUpdated?.Invoke(Current);
 
-            if (serverData.status != "in_progress")
+            if (Current.status != "in_progress")
             {
                 OnSessionEnded?.Invoke();
             }

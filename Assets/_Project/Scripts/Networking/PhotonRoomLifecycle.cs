@@ -168,7 +168,7 @@ namespace Nfouz.Networking
 
                 if (response.success)
                 {
-                    BattleSession.UpdateFromServer(response.data);
+                    BattleSession.ApplyStatus(response.data);
                 }
                 else
                 {
