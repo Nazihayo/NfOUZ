@@ -9,7 +9,7 @@ folder; where they differ, this file is current.
 - **Branch:** `claude/sprint-5-photon-multiplayer-5jv8v2` (all work below is pushed)
 - **Phase:** Build Recovery — make the existing Sprint 1–10 code runnable.
   **Do not start Sprint 11. Do not add gameplay features or redesign systems.**
-- **Last updated:** 2026-10-19 (covers commits through the Alpha defender flow; see item 29)
+- **Last updated:** 2026-10-19 (covers commits through the first laptop Unity test run; see item 30)
 
 ## Working rules agreed with the developer
 
@@ -461,6 +461,46 @@ in the Unity Editor**:
         Photon-server authority.
     - **Deferred:** a push notification for a new challenge (needs FCM).
 
+Verified on the real laptop on 2026-10-19 (a Claude session running on the
+laptop; Unity 6000.0.58f2, Android target):
+
+30. **Laptop synced; first real Unity test run** (`3e599ce`, `126a0e4`,
+    `81e8898`, `d61649d`, `7323427`, `b138b94`).
+    - Next steps 1 done: TMP Essentials and the `127.0.0.1` URL committed,
+      then merged with the branch. A duplicate Firebase Android config named
+      `.json` in the repo root was deleted (the real one is
+      `Assets/google-services.json`, ignored). The old
+      `Packages/packages-lock.json` is kept in `stash@{0}`.
+    - Unity opened the project with no compile errors and downloaded
+      RTLTMPro.
+    - EditMode: 339 tests, 36 failed. The failing tests had never run in
+      Unity before.
+      - 26 used `AddComponent` without `Awake`/`OnEnable`, which EditMode
+        does not call. The tests now call them through a helper; no script
+        changed (`81e8898`).
+      - 9 depend on time passing and moved to PlayMode, unchanged
+        (`Tests/PlayMode`, own asmdef; `d61649d`).
+      - The Bulwark test expected 120 health, but its own comments describe
+        130 (first hit fully absorbed). The expectation is now 130.
+    - **Bug found and fixed:** energy never regenerated above 10 FPS.
+      `PlayerCombat.RegenerateEnergy` rounded each frame's `5 × deltaTime`
+      to an integer (0 at normal frame rates). It now accumulates the
+      fraction, restoring the approved +5/s (`7323427`). No other script
+      rounds a per-frame `deltaTime` value.
+    - Result: EditMode 329 of 330 pass; the one failure is
+      `ArabicUiAssetTests.ProjectFont_HasEveryGlyphTheUiDraws` (no Arabic
+      font yet, Next steps 2). PlayMode 9 of 9 pass.
+    - Still untracked or modified on the laptop, not decided:
+      `Assets/Firebase/`, `ExternalDependencyManager/`, `Plugins/`,
+      `GeneratedLocalRepo/`, `Editor Default Resources/`,
+      `StreamingAssets.meta`, `csc.rsp` (+ `.meta`), new
+      `ProjectSettings/*` files, `ProjectSettings.asset`,
+      `ProjectVersion.txt` (revision line only), `packages-lock.json`,
+      `backend/package-lock.json`.
+    - The project lives under OneDrive
+      (`OneDrive\Documents\GitHub\NfOUZ`); moving it out is recommended
+      (sync conflicts with `Library/`).
+
 Current test counts (cloud, after item 29; run from `backend/`):
 
 | Command | Result |
@@ -468,6 +508,7 @@ Current test counts (cloud, after item 29; run from `backend/`):
 | `npm test` (same as `npx jest --runInBand`; includes the fake-database contract test and the Unity UI checks) | 32 suites / 433 tests |
 | `npm run test:contract` | 53 tests |
 | `npm run test:contract:db` (needs `CONTRACT_TEST_DATABASE_URL`, item 22) | 133 tests: 58 contract + 11 challenge answer + 20 battle lifecycle + 44 input robustness |
+| Unity EditMode / PlayMode in the real Editor (laptop, item 30) | 329 of 330 / 9 of 9 |
 | Unity EditMode, run under .NET in the cloud | `AuthErrorMessagesTests` 17, `AuthSessionTests` 30, `BattleLifecycleTests` 33, `IncomingChallengeFlowTests` 23, `IncomingChallengeMessagesTests` 19, `PopupStackTests` 13, `ActionGateTests` 2, `ChallengeErrorMessagesTests` 11, `LogRedactionTests` 4, `SosPollingTests` 7, `ArabicRtlTextTests` 27, `PlayerSessionDataContractTests` + `BattleSessionPartialUpdateTests` + `CultureInvariantRequestTests` 13 of 14 (the 14th needs Unity's JsonUtility) |
 
 Check in Unity after pulling:
@@ -539,6 +580,8 @@ None since 2026-10-18 (item 26). The resolved blocker is kept under "Local
 setup reference" below.
 
 ## Next steps (in order)
+
+Step 1 was done on 2026-10-19 (item 30); kept below for a new machine.
 
 1. Bring this branch to the laptop without losing local work. In PowerShell
    at the repo root, run `git status` first. Expected local changes:
@@ -645,8 +688,8 @@ says "verified on the laptop".
    - Cloud only: items 11–25 and 27–28 (API contract fixes, contract tests
      in both modes, token refresh, battle lifecycle, Arabic/TMP/RTLTMPro,
      the pre-Alpha fixes).
-2. **Laptop reconciliation:** Next steps 1 (commit TMP Essentials and the
-   127.0.0.1 URL, then pull). Unity downloads RTLTMPro.
+2. **Laptop reconciliation:** done on 2026-10-19 (item 30). Remaining:
+   decide the untracked files listed there.
 3. **Arabic font and visual validation:** Next steps 2, then
    `PRE_ALPHA_CHECKLISTS.md` §1 and "Check in Unity after pulling".
 4. **Defender flow:** decided on 2026-10-19 and built in the cloud
