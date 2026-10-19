@@ -753,7 +753,11 @@ Needs a decision or approval:
 - **Mapbox SDK:** the code uses the Mapbox Maps SDK for Unity v2.x API;
   confirm it supports Unity 6 before buying into it.
 - **Safe area / orientation** for notched phones (no handling yet).
-- Arabic font family (Next steps 2): which OFL font NFOUZ uses.
+- Arabic font family (Next steps 2): **decided on 2026-10-19: Noto Sans
+  Arabic** (Google Fonts, OFL 1.1). Use the static
+  `NotoSansArabic-Regular.ttf` from the download's `static/` folder, not the
+  variable font, and confirm its cmap covers U+FE70–U+FEFF before
+  generating the SDF asset.
 - ⚙ (Settings button) and ✓ (quest "claimed" badge) are text symbols. If
   the chosen fonts lack them: add an OFL symbol font as a fallback, or
   replace them with icons.
