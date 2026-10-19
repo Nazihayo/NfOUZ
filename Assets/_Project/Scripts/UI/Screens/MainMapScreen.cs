@@ -1,6 +1,7 @@
 using System;
 using Nfouz.Core;
 using Nfouz.Localization;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -26,11 +27,11 @@ namespace Nfouz.UI.Screens
     public class MainMapScreen : MonoBehaviour
     {
         [Header("Stats")]
-        [SerializeField] private Text healthLabel;
-        [SerializeField] private Text energyLabel;
-        [SerializeField] private Text influenceLabel;
-        [SerializeField] private Text rankLabel;
-        [SerializeField] private Text creditsLabel;
+        [SerializeField] private TMP_Text healthLabel;
+        [SerializeField] private TMP_Text energyLabel;
+        [SerializeField] private TMP_Text influenceLabel;
+        [SerializeField] private TMP_Text rankLabel;
+        [SerializeField] private TMP_Text creditsLabel;
 
         [Header("Control state")]
         [SerializeField] private GameObject controlledBadge;

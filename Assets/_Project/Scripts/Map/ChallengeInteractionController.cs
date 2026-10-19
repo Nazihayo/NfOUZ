@@ -1,6 +1,7 @@
 using System;
 using Nfouz.Core;
 using Nfouz.Utils;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -21,8 +22,8 @@ namespace Nfouz.Map
 
         [Header("Mini profile popup")]
         [SerializeField] private GameObject miniProfilePopup;
-        [SerializeField] private Text usernameLabel; // UnityEngine.UI.Text or swap for TMP_Text per project convention
-        [SerializeField] private Text classLabel;
+        [SerializeField] private TMP_Text usernameLabel;
+        [SerializeField] private TMP_Text classLabel;
         [SerializeField] private Button challengeButton;
 
         [Header("Rules")]

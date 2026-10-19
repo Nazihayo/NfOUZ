@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -11,12 +12,12 @@ namespace Nfouz.Inventory
     /// </summary>
     public class InventoryItem : MonoBehaviour
     {
-        [SerializeField] private Text nameLabel;
-        [SerializeField] private Text quantityLabel;
-        [SerializeField] private Text typeLabel;
+        [SerializeField] private TMP_Text nameLabel;
+        [SerializeField] private TMP_Text quantityLabel;
+        [SerializeField] private TMP_Text typeLabel;
         [SerializeField] private GameObject equippedBadge;
         [SerializeField] private Button actionButton; // "Equip" for a weapon, "Use" for a consumable
-        [SerializeField] private Text actionButtonLabel;
+        [SerializeField] private TMP_Text actionButtonLabel;
 
         private InventoryItemData _data;
         private System.Action<InventoryItemData> _onActionPressed;

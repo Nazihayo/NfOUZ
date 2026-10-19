@@ -1,5 +1,5 @@
+using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace Nfouz.Social
 {
@@ -12,7 +12,7 @@ namespace Nfouz.Social
     public class SOSBannerOverlay : MonoBehaviour
     {
         [SerializeField] private GameObject bannerRoot;
-        [SerializeField] private Text bannerLabel;
+        [SerializeField] private TMP_Text bannerLabel;
         [SerializeField] private float rescuedBannerDisplaySeconds = 4f;
         [SerializeField] private float expiredBannerDisplaySeconds = 4f;
 

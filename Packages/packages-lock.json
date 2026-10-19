@@ -1,5 +1,12 @@
 {
   "dependencies": {
+    "com.nosuchstudio.rtltmpro": {
+      "version": "https://github.com/hk1ll3r/RTLTMPro.git?path=/UPMPackage#v4.0.0",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "69c9193fc27218f17679cc57382a61ac4a717b2b"
+    },
     "com.unity.ext.nunit": {
       "version": "2.0.3",
       "depth": 1,

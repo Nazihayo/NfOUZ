@@ -3,6 +3,7 @@
 const playerRepo = require('../repositories/player.repository');
 const rescueService = require('../services/rescue.service');
 const { success, ApiError } = require('../utils/responseEnvelope');
+const { isUuid } = require('../utils/ids');
 
 /**
  * Resolves the authenticated caller's own player row from req.firebaseUid.
@@ -24,6 +25,9 @@ async function acceptMission(req, res, next) {
     const sosId = req.body.sos_id;
     if (!sosId || typeof sosId !== 'string') {
       throw new ApiError('INVALID_REQUEST', 'sos_id is required.', 400);
+    }
+    if (!isUuid(sosId)) {
+      throw new ApiError('INVALID_REQUEST', 'sos_id must be an SOS id.', 400);
     }
     const mission = await rescueService.acceptMission(sosId, self.player_id);
     return res.status(200).json(

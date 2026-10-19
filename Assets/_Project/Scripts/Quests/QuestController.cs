@@ -19,10 +19,10 @@ namespace Nfouz.Quests
         [SerializeField] private QuestTracker questTracker;
         [SerializeField] private Transform questListContainer;
         [SerializeField] private QuestItem questItemPrefab;
-        [SerializeField] private UnityEngine.UI.Text statusLabel;
+        [SerializeField] private TMPro.TMP_Text statusLabel;
 
         [Header("Battle Pass XP display")]
-        [SerializeField] private UnityEngine.UI.Text battlePassXpLabel;
+        [SerializeField] private TMPro.TMP_Text battlePassXpLabel;
 
         private ApiClient _apiClient;
         private readonly List<GameObject> _spawnedRows = new List<GameObject>();
@@ -106,7 +106,7 @@ namespace Nfouz.Quests
 
             try
             {
-                SetStatus($"جارٍ استلام مكافأة \"{quest.title}\"...");
+                SetStatus($"جارٍ استلام مكافأة \"{quest.title}\"\u200F...");
 
                 var token = _lifetimeCts.Token;
                 var requestId = QuestTracker.NewRequestId();
@@ -128,7 +128,7 @@ namespace Nfouz.Quests
 
                 SetStatus(response.data.already_claimed
                     ? "تم استلام هذه المكافأة مسبقاً."
-                    : $"تم استلام +{response.data.reward_coins} عملة و +{response.data.reward_bp_xp} XP!");
+                    : $"تم استلام +{response.data.reward_coins} عملة و +{response.data.reward_bp_xp} XP\u200F!");
 
                 if (questTracker != null)
                 {

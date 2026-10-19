@@ -43,9 +43,9 @@ namespace Nfouz.Social
         [SerializeField] private FriendRequestItem friendRequestItemPrefab;
 
         [Header("Send request")]
-        [SerializeField] private UnityEngine.UI.InputField targetPlayerIdInput;
+        [SerializeField] private TMPro.TMP_InputField targetPlayerIdInput;
         [SerializeField] private UnityEngine.UI.Button sendRequestButton;
-        [SerializeField] private UnityEngine.UI.Text statusLabel;
+        [SerializeField] private TMPro.TMP_Text statusLabel;
 
         private ApiClient _apiClient;
         private readonly List<GameObject> _spawnedRows = new List<GameObject>();
@@ -312,7 +312,7 @@ namespace Nfouz.Social
                 case Constants.ErrorCodes.AlreadyFriends:
                     return "أنتما صديقان بالفعل.";
                 case Constants.ErrorCodes.FriendLimitReached:
-                    return "تم الوصول للحد الأقصى لعدد الأصدقاء (100).";
+                    return "تم الوصول للحد الأقصى لعدد الأصدقاء (100)\u200F.";
                 case Constants.ErrorCodes.PlayerBlocked:
                     return "لا يمكن التفاعل مع هذا اللاعب.";
                 case Constants.ErrorCodes.FriendRequestNotFound:

@@ -206,6 +206,7 @@ namespace Nfouz.Utils
             public const string InvalidToken = "INVALID_TOKEN";
             public const string PlayerNotFound = "PLAYER_NOT_FOUND";
             public const string PlayerIsControlled = "PLAYER_IS_CONTROLLED";
+            public const string PlayerIsProtected = "PLAYER_IS_PROTECTED";
             public const string TargetOutOfRange = "TARGET_OUT_OF_RANGE";
             public const string RateLimited = "RATE_LIMITED";
             public const string InvalidLocation = "INVALID_LOCATION";
@@ -220,6 +221,11 @@ namespace Nfouz.Utils
             public const string SessionExpired = "SESSION_EXPIRED";
             public const string ReconnectWindowExpired = "RECONNECT_WINDOW_EXPIRED";
             public const string Forbidden = "FORBIDDEN";
+
+            // Alpha defender flow — explicit Accept/Decline (migration 021)
+            public const string ChallengeAlreadyAnswered = "CHALLENGE_ALREADY_ANSWERED";
+            public const string NotChallengeDefender = "NOT_CHALLENGE_DEFENDER";
+            public const string ChallengeNotAccepted = "CHALLENGE_NOT_ACCEPTED";
 
             // Sprint 6 — Full Combat System
             public const string InvalidResolution = "INVALID_RESOLUTION";

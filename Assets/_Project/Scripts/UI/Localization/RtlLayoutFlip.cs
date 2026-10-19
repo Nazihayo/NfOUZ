@@ -1,22 +1,18 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace Nfouz.Localization
 {
     /// <summary>
-    /// Sprint 10 — flips a horizontal layout/alignment for Arabic. The
-    /// project's own UI is split between UnityEngine.UI.Text (14 of the 15
-    /// existing UI scripts referencing a text component) and TMPro
-    /// (NearbyPlayerMarkerUi.cs only) — this component targets
-    /// UnityEngine.UI.Text/HorizontalLayoutGroup to match the majority
-    /// convention every Sprint 10 screen otherwise follows (see the sprint
-    /// report's "existing localization/RTL/test infra" section for this
-    /// judgment call). A TMP_Text variant is a small, mechanical follow-up
-    /// if a scene built with TMPro ever needs one.
+    /// Sprint 10 — flips a horizontal layout/alignment for Arabic. Targets
+    /// a TMP_Text (all UI text is TextMeshPro / RTLTMPro since the Arabic UI
+    /// migration) and a HorizontalLayoutGroup. Only the horizontal
+    /// alignment changes; the vertical alignment set in the scene is kept.
     /// </summary>
     public class RtlLayoutFlip : MonoBehaviour
     {
-        [SerializeField] private Text targetText;
+        [SerializeField] private TMP_Text targetText;
         [SerializeField] private HorizontalLayoutGroup targetLayoutGroup;
 
         private void OnEnable()
@@ -39,7 +35,7 @@ namespace Nfouz.Localization
         {
             if (targetText != null)
             {
-                targetText.alignment = rightToLeft ? TextAnchor.MiddleRight : TextAnchor.MiddleLeft;
+                targetText.horizontalAlignment = rightToLeft ? HorizontalAlignmentOptions.Right : HorizontalAlignmentOptions.Left;
             }
 
             if (targetLayoutGroup != null)

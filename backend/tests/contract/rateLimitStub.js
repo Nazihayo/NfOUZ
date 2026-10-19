@@ -10,4 +10,6 @@ module.exports = {
   battleChallengeLimiter: passThrough,
   friendRequestLimiter: passThrough,
   sosCreateLimiter: passThrough,
+  incomingChallengeLimiter: passThrough,
+  challengeResponseLimiter: passThrough,
 };

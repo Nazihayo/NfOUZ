@@ -48,8 +48,8 @@ const battleRepo = require('../src/repositories/battle.repository');
 // PostgreSQL (tests/contract/db/battleLifecycle.dbtest.js).
 let expireStaleBattlesSpy;
 
-const ATTACKER = { player_id: 'attacker-id', firebase_uid: 'fb-attacker' };
-const DEFENDER = { player_id: 'defender-id', firebase_uid: 'fb-defender' };
+const ATTACKER = { player_id: '0a000000-0000-4000-8000-00000000000a', firebase_uid: 'fb-attacker' };
+const DEFENDER = { player_id: '0d000000-0000-4000-8000-00000000000d', firebase_uid: 'fb-defender' };
 
 const HOST_SECRET = 'test-host-secret';
 const RULES_VERSION = '6.1.0'; // matches env.COMBAT_RULES_VERSION's default
@@ -57,10 +57,11 @@ const MATCH_NONCE = 'test-match-nonce';
 
 function baseBattleRow(overrides = {}) {
   return {
-    battle_id: 'battle-1',
+    battle_id: '0b000000-0000-4000-8000-000000000001',
     attacker_id: ATTACKER.player_id,
     defender_id: DEFENDER.player_id,
     status: 'in_progress',
+    accepted_at: new Date().toISOString(), // the defender accepted (migration 021)
     photon_room_name: 'battle_battle-1',
     winner_id: null,
     loser_id: null,
@@ -76,7 +77,7 @@ function baseBattleRow(overrides = {}) {
 
 function baseResult(overrides = {}) {
   return {
-    battle_id: 'battle-1',
+    battle_id: '0b000000-0000-4000-8000-000000000001',
     room_name: 'battle_battle-1',
     rules_version: RULES_VERSION,
     match_nonce: MATCH_NONCE,
@@ -98,7 +99,7 @@ function sign(result, secret = HOST_SECRET) {
 
 async function postResolve(app, result, signature) {
   return request(app)
-    .post('/battle/battle-1/resolve')
+    .post('/battle/0b000000-0000-4000-8000-000000000001/resolve')
     .set('Authorization', 'Bearer valid-token')
     .send({ result, signature });
 }
@@ -117,7 +118,7 @@ describe('POST /battle/{battleId}/resolve — Sprint 6 final security correction
   it('rejects requests with no Authorization header', async () => {
     const result = baseResult();
     const response = await request(app)
-      .post('/battle/battle-1/resolve')
+      .post('/battle/0b000000-0000-4000-8000-000000000001/resolve')
       .send({ result, signature: sign(result) });
 
     expect(response.status).toBe(401);
@@ -165,15 +166,15 @@ describe('POST /battle/{battleId}/resolve — Sprint 6 final security correction
 
     const [resolveSql, resolveParams] = txClient.query.mock.calls[0];
     expect(resolveSql).toMatch(/UPDATE battles/);
-    expect(resolveParams).toEqual(['battle-1', ATTACKER.player_id, DEFENDER.player_id, 42, 1, 'resolved']);
+    expect(resolveParams).toEqual(['0b000000-0000-4000-8000-000000000001', ATTACKER.player_id, DEFENDER.player_id, 42, 1, 'resolved']);
 
     // Sprint 7 continuation: influence_log gets the ACTUAL applied_delta
     // (not the nominal +15/-10 env constants) as its `delta` param, plus
     // the nominal constant as the trailing nominalDelta param.
     const [, winnerLogParams] = txClient.query.mock.calls[8];
-    expect(winnerLogParams).toEqual([ATTACKER.player_id, 15, 'battle_win', 'battle-1', 15]);
+    expect(winnerLogParams).toEqual([ATTACKER.player_id, 15, 'battle_win', '0b000000-0000-4000-8000-000000000001', 15]);
     const [, loserLogParams] = txClient.query.mock.calls[9];
-    expect(loserLogParams).toEqual([DEFENDER.player_id, -10, 'battle_loss', 'battle-1', -10]);
+    expect(loserLogParams).toEqual([DEFENDER.player_id, -10, 'battle_loss', '0b000000-0000-4000-8000-000000000001', -10]);
 
     // Sprint 8 correction — control_relationships is written alongside the
     // players-table control columns: outgoing relationships closed, any
@@ -191,7 +192,7 @@ describe('POST /battle/{battleId}/resolve — Sprint 6 final security correction
     expect(createRelSql).toMatch(/INSERT INTO control_relationships/);
     expect(createRelParams[0]).toBe(DEFENDER.player_id); // controlled
     expect(createRelParams[1]).toBe(ATTACKER.player_id); // controller
-    expect(createRelParams[2]).toBe('battle-1'); // source_battle_id
+    expect(createRelParams[2]).toBe('0b000000-0000-4000-8000-000000000001'); // source_battle_id
 
     // releaseOutgoingControl(loser) must run BEFORE applyIncomingControl
     // for the same loser — verified by call order (index 3 then 4).
@@ -229,7 +230,7 @@ describe('POST /battle/{battleId}/resolve — Sprint 6 final security correction
     expect(response.status).toBe(200);
     expect(response.body.data.result).toBe('defender_win');
     const [, resolveParams] = txClient.query.mock.calls[0];
-    expect(resolveParams).toEqual(['battle-1', DEFENDER.player_id, ATTACKER.player_id, 42, 1, 'resolved']);
+    expect(resolveParams).toEqual(['0b000000-0000-4000-8000-000000000001', DEFENDER.player_id, ATTACKER.player_id, 42, 1, 'resolved']);
   });
 
   it('Sprint 7 continuation: logs the ACTUAL post-floor delta, not the nominal -10, when the loser\'s Influence is below 10', async () => {
@@ -259,7 +260,7 @@ describe('POST /battle/{battleId}/resolve — Sprint 6 final security correction
 
     const [, loserLogParams] = txClient.query.mock.calls[9];
     // delta = -5 (actual applied), nominalDelta = -10 (the env constant)
-    expect(loserLogParams).toEqual([DEFENDER.player_id, -5, 'battle_loss', 'battle-1', -10]);
+    expect(loserLogParams).toEqual([DEFENDER.player_id, -5, 'battle_loss', '0b000000-0000-4000-8000-000000000001', -10]);
   });
 
   it('Sprint 7 continuation: when the LOSER was themselves controlling other players, those outgoing relationships are released before the new incoming one is applied', async () => {
@@ -368,7 +369,7 @@ describe('POST /battle/{battleId}/resolve — Sprint 6 final security correction
     expect(txClient.query).toHaveBeenCalledTimes(1);
     const [resolveSql, resolveParams] = txClient.query.mock.calls[0];
     expect(resolveSql).toMatch(/UPDATE battles/);
-    expect(resolveParams).toEqual(['battle-1', ATTACKER.player_id, DEFENDER.player_id, 1, 1, 'pending_review']);
+    expect(resolveParams).toEqual(['0b000000-0000-4000-8000-000000000001', ATTACKER.player_id, DEFENDER.player_id, 1, 1, 'pending_review']);
   });
 
   it('marks a result with implausibly high (but not hard-capped) final health pending_review', async () => {
@@ -695,7 +696,7 @@ describe('POST /battle/{battleId}/resolve — Sprint 6 final security correction
   });
 
   it('rejects a non-participant caller with FORBIDDEN, before signature verification even runs', async () => {
-    const stranger = { player_id: 'stranger-id', firebase_uid: 'fb-stranger' };
+    const stranger = { player_id: '05000000-0000-4000-8000-000000000005', firebase_uid: 'fb-stranger' };
     verifyIdToken.mockResolvedValue({ uid: stranger.firebase_uid });
 
     db.query
@@ -718,7 +719,7 @@ describe('POST /battle/{battleId}/resolve — Sprint 6 final security correction
       });
 
     const response = await request(app)
-      .get('/battle/battle-1')
+      .get('/battle/0b000000-0000-4000-8000-000000000001')
       .set('Authorization', 'Bearer valid-token');
 
     expect(response.status).toBe(200);

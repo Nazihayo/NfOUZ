@@ -1,7 +1,7 @@
 using Nfouz.Core;
 using Nfouz.Localization;
+using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace Nfouz.UI.Screens
 {
@@ -27,14 +27,14 @@ namespace Nfouz.UI.Screens
     /// </summary>
     public class ProfileScreen : MonoBehaviour
     {
-        [SerializeField] private Text usernameLabel;
-        [SerializeField] private Text classLabel;
-        [SerializeField] private Text factionLabel;
-        [SerializeField] private Text levelLabel;
-        [SerializeField] private Text rankLabel;
-        [SerializeField] private Text influenceLabel;
-        [SerializeField] private Text xpLabel;
-        [SerializeField] private Text creditsLabel;
+        [SerializeField] private TMP_Text usernameLabel;
+        [SerializeField] private TMP_Text classLabel;
+        [SerializeField] private TMP_Text factionLabel;
+        [SerializeField] private TMP_Text levelLabel;
+        [SerializeField] private TMP_Text rankLabel;
+        [SerializeField] private TMP_Text influenceLabel;
+        [SerializeField] private TMP_Text xpLabel;
+        [SerializeField] private TMP_Text creditsLabel;
 
         private void OnEnable()
         {

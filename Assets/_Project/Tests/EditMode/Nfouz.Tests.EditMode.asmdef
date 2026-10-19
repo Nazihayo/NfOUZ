@@ -3,6 +3,8 @@
     "rootNamespace": "Nfouz.Tests.EditMode",
     "references": [
         "Nfouz.Runtime",
+        "Unity.TextMeshPro",
+        "RTLTMPro",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

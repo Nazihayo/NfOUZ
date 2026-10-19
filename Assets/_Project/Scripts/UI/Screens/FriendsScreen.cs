@@ -1,6 +1,6 @@
 using Nfouz.Social;
+using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace Nfouz.UI.Screens
 {
@@ -43,10 +43,10 @@ namespace Nfouz.UI.Screens
 
         [Header("Blocked Players — no backing endpoint yet (see class doc comment)")]
         [SerializeField] private GameObject blockedPlayersSection;
-        [SerializeField] private Text blockedPlayersUnavailableLabel;
+        [SerializeField] private TMP_Text blockedPlayersUnavailableLabel;
 
         [Header("Active SOS — local player's own SOS only")]
-        [SerializeField] private Text activeSosLabel;
+        [SerializeField] private TMP_Text activeSosLabel;
 
         private void OnEnable()
         {
@@ -57,7 +57,7 @@ namespace Nfouz.UI.Screens
 
             if (blockedPlayersUnavailableLabel != null)
             {
-                blockedPlayersUnavailableLabel.text = "قائمة اللاعبين المحظورين غير متاحة بعد (لا يوجد نقطة نهاية في الخادم لعرضها).";
+                blockedPlayersUnavailableLabel.text = "قائمة اللاعبين المحظورين غير متاحة بعد (لا يوجد نقطة نهاية في الخادم لعرضها)\u200F.";
             }
 
             if (SOSManager.Instance != null)

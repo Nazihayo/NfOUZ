@@ -52,6 +52,7 @@ async function setup({ startedSecondsAgo, ready = [false, false], extra = {}, wo
     await sql(
       `UPDATE battles SET started_at = now() - $2 * interval '1 second',
               session_started_at = now() - $2 * interval '1 second',
+              accepted_at = now() - $2 * interval '1 second',
               session_expires_at = now() - ($2 - 90) * interval '1 second',
               attacker_ready = $3, defender_ready = $4
        WHERE battle_id = $1`,
@@ -360,6 +361,35 @@ if (configError) {
 
       expect((await oldBattle()).status).toBe('cancelled');
       expect(await snapshot()).toEqual(before);
+    });
+
+    describe('simultaneous challenges between the same players', () => {
+      async function activeBattlesOf(playerIds) {
+        return sql(
+          `SELECT battle_id FROM battles WHERE status = 'in_progress'
+             AND (attacker_id = ANY($1::uuid[]) OR defender_id = ANY($1::uuid[]))`,
+          [playerIds]
+        );
+      }
+
+      beforeEach(async () => {
+        await setup();
+        await sql("UPDATE battles SET status = 'resolved', ended_at = now() WHERE battle_id = $1", [OLD_BATTLE]);
+      });
+
+      test('a double-tapped challenge creates exactly one battle', async () => {
+        const responses = await Promise.all([challenge('uid-a', ids.C), challenge('uid-a', ids.C), challenge('uid-a', ids.C)]);
+        expect(responses.map((r) => r.status).sort()).toEqual([200, 409, 409]);
+        expect(responses.filter((r) => r.status !== 200).map((r) => r.body.error.code)).toEqual(['DUPLICATE_CHALLENGE', 'DUPLICATE_CHALLENGE']);
+        expect(await activeBattlesOf([ids.A, ids.C])).toHaveLength(1);
+      });
+
+      test('two players challenging each other at the same time get exactly one battle', async () => {
+        const responses = await Promise.all([challenge('uid-a', ids.C), challenge('uid-c', ids.A)]);
+        // Statuses only: a failure must not print response bodies (they carry host secrets).
+        expect(responses.map((r) => r.status).sort()).toEqual([200, 409]);
+        expect(await activeBattlesOf([ids.A, ids.C])).toHaveLength(1);
+      });
     });
   });
 }

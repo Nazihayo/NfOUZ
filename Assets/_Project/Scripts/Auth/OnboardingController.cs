@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Nfouz.Core;
 using Nfouz.Networking;
 using Nfouz.Utils;
@@ -29,6 +30,7 @@ namespace Nfouz.Auth
 
         private ApiClient _apiClient;
         private string _selectedClassType;
+        private readonly ActionGate _gate = new ActionGate();
 
         private void Awake()
         {
@@ -53,15 +55,34 @@ namespace Nfouz.Auth
         /// <summary>Called by the "تأكيد" button after class + username are chosen.</summary>
         public async void OnConfirmButtonPressed(string username)
         {
-            if (string.IsNullOrEmpty(_selectedClassType))
+            // One request at a time: a second tap while the first is in
+            // flight would otherwise send POST /auth/register twice.
+            if (!_gate.TryBegin())
             {
-                RaiseError("اختر فئة أولاً (Scout / Ranger / Titan).");
                 return;
             }
 
-            if (string.IsNullOrWhiteSpace(username) || username.Length < 3 || username.Length > 20)
+            try
             {
-                RaiseError("اسم المستخدم يجب أن يكون بين 3 و20 حرفاً.");
+                await ConfirmAsync(username);
+            }
+            finally
+            {
+                _gate.End();
+            }
+        }
+
+        private async Task ConfirmAsync(string username)
+        {
+            if (string.IsNullOrEmpty(_selectedClassType))
+            {
+                RaiseError("اختر فئة أولاً: Scout أو Ranger أو Titan\u200F.");
+                return;
+            }
+
+            if (!UsernameRules.IsValid(username))
+            {
+                RaiseError(UsernameRules.InvalidMessage);
                 return;
             }
 
@@ -87,7 +108,7 @@ namespace Nfouz.Auth
                 "USERNAME_TAKEN" => "اسم المستخدم مُستخدَم بالفعل.",
                 "PLAYER_ALREADY_REGISTERED" => "هذا الحساب مُسجَّل بالفعل.",
                 "INVALID_CLASS_TYPE" => "الفئة المختارة غير صالحة.",
-                "INVALID_USERNAME" => "اسم المستخدم غير صالح.",
+                "INVALID_USERNAME" => UsernameRules.InvalidMessage,
                 _ => AuthErrorMessages.FromApiError(error),
             };
         }

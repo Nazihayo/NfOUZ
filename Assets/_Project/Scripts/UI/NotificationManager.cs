@@ -3,8 +3,8 @@ using Nfouz.Core;
 using Nfouz.Networking;
 using Nfouz.Quests;
 using Nfouz.Social;
+using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace Nfouz.UI
 {
@@ -40,7 +40,7 @@ namespace Nfouz.UI
     public class NotificationManager : MonoBehaviour
     {
         [SerializeField] private GameObject toastRoot;
-        [SerializeField] private Text toastLabel;
+        [SerializeField] private TMP_Text toastLabel;
         [SerializeField] private float toastDisplaySeconds = 4f;
 
         [Header("Optional scene refs (wired where present in this scene)")]
@@ -138,7 +138,7 @@ namespace Nfouz.UI
             var newlyCompleted = QuestDiff.FindNewlyCompleted(_previousQuests, data?.quests);
             foreach (var quest in newlyCompleted)
             {
-                Show($"اكتملت المهمة: {quest.title}!");
+                Show($"اكتملت المهمة: {quest.title}\u200F!");
             }
 
             _previousQuests = data?.quests != null ? new List<QuestData>(data.quests) : null;

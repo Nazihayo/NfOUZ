@@ -9,7 +9,7 @@ folder; where they differ, this file is current.
 - **Branch:** `claude/sprint-5-photon-multiplayer-5jv8v2` (all work below is pushed)
 - **Phase:** Build Recovery — make the existing Sprint 1–10 code runnable.
   **Do not start Sprint 11. Do not add gameplay features or redesign systems.**
-- **Last updated:** 2026-10-18 (covers commits through `64f274a`)
+- **Last updated:** 2026-10-19 (covers commits through the Alpha defender flow; see item 29)
 
 ## Working rules agreed with the developer
 
@@ -255,14 +255,220 @@ tested in the cloud, **not yet checked in Unity**:
       contract tests check that Unity handles every battle status.
     - Docs: `64f274a`.
 
-Current test counts (cloud, at `64f274a`; run from `backend/`):
+Verified on the real laptop on 2026-10-18:
+
+26. **Boot → Login → Register → Onboarding → MainMap works end to end**
+    (Unity 6000.0.58f2).
+    - Local PostgreSQL 16, the backend, Firebase Admin and `/health` all
+      work: the former blocker and its setup steps are done (kept below for
+      a new machine).
+    - `UnityWebRequest` to `http://localhost:3000` failed with Curl error 56;
+      `http://127.0.0.1:3000` works. The laptop's
+      `Resources/ApiEnvironmentSettings.asset` Development URL was changed to
+      `http://127.0.0.1:3000` locally; the repository still says `localhost`
+      (item 5). Commit that change from the laptop (Next steps 1). Cloud
+      sessions don't touch the file, so it can't conflict.
+    - TMP Essential Resources were imported (`Assets/TextMesh Pro/`, not yet
+      in Git) and the Console is clean.
+
+Done in the cloud after that — compiled and tested there, **not yet checked
+in the Unity Editor**:
+
+27. Arabic UI on TextMeshPro + RTLTMPro (`6d4035b`, `d45f25d`, `eead30b`,
+    `ac4e213`): Arabic letters are joined and laid out right-to-left.
+    - **Package:** `com.nosuchstudio.rtltmpro` 4.0.0, RTLTMPro's Unity 6
+      release, installed the way its README documents (git URL
+      `https://github.com/hk1ll3r/RTLTMPro.git?path=/UPMPackage#v4.0.0`,
+      locked to commit `69c9193`). Unity downloads it with git on first
+      open. Its demo `.unitypackage` (sample scenes, Segoe UI fonts) is not
+      imported; Segoe UI is not redistributable.
+    - **Before:** 145 legacy `Text` and 7 `InputField` components in the 6
+      scenes and 10 UI prefabs (Boot has none), 3 world-space `TextMeshPro`
+      labels, and 68 `Text`/`InputField` fields in 28 scripts.
+      - By role: 37 static labels, 30 button labels, 46 player-data/number
+        labels, 15 status/error/message labels, 3 other dynamic labels, 14
+        input text/placeholder components.
+      - By content: 64 static Arabic texts, 41 Latin/number-only, 40 empty
+        until code fills them; no static text mixes Arabic with Latin.
+    - **After:** 0 legacy components.
+      - Labels: 138 `RTLTextMeshPro` (Farsi off, numbers kept as typed) and
+        3 `RTLTextMeshPro3D`. Latin-only text (numbers, emails, usernames)
+        passes through unchanged.
+      - Inputs: 7 `TMP_InputField`, each with a left-to-right
+        `TextMeshProUGUI` for the typed text (email, password, username and
+        player id are Latin) and an `RTLTextMeshPro` placeholder.
+      - Converted in place with the same fileIDs, so references, layout,
+        sizes, colours and button wiring are unchanged. Scripts use
+        `TMP_Text` / `TMP_InputField`; `RtlLayoutFlip` sets the TMP
+        horizontal alignment.
+      - Text overflow is now "Overflow" (always visible) instead of the
+        legacy "Truncate", because the new font's metrics differ.
+    - **Font:** every text uses the project default font (TMP Settings →
+      Default Font Asset). The repository has no Arabic font yet; see Next
+      steps 2.
+    - **Messages:** 11 Arabic messages put U+200F (right-to-left mark)
+      before punctuation that follows a Latin word, number or value;
+      RTLTMPro otherwise draws it on the wrong side. The class-choice
+      message no longer puts parentheses around Latin words. All 145 script
+      messages and 52 scene texts were checked against the Unicode bidi
+      algorithm.
+    - **Usernames:** Onboarding checks the backend's rule
+      (`Auth/UsernameRules.cs`, the same pattern as `auth.service.js`)
+      before calling the server, and shows "اسم المستخدم يجب أن يكون من 3
+      إلى 20 حرفاً، ويستخدم الحروف الإنجليزية والأرقام و _ فقط." for it and
+      for `INVALID_USERNAME`. The backend rule is unchanged.
+    - **Tests:**
+      - `backend/tests/unity/uiText.test.js` (14 checks, part of `npm test`)
+        reads every scene, prefab and script.
+      - EditMode `ArabicRtlTextTests` (27): joining, tashkeel, digits, Latin
+        pass-through and punctuation order.
+      - EditMode `ArabicUiAssetTests` (Editor only): loads every Build
+        Settings scene and prefab, and checks the project font has every
+        glyph the UI draws.
+
+28. Pre-Alpha pass (cloud; `d268fd1`, `d0bfd0f`, `35c4721`, `431f2b4`,
+    `8f25be0`, `caa311c`, `eab6108`, `79a6426`): compiled and tested in the
+    cloud, **not yet checked in Unity**.
+    - **Backend input:** 22 of 41 malformed-input cases answered 500 against
+      real PostgreSQL. Non-UUID path ids now answer the resource's existing
+      not-found code, non-UUID body ids and an over-long inventory
+      `request_id` answer 400, malformed JSON 400, a body over 1 MB 413
+      `PAYLOAD_TOO_LARGE`; a client `X-Request-Id` is kept only if it is a
+      short plain id. Tests: `inputValidation.test.js`,
+      `contract/db/inputRobustness.dbtest.js`.
+    - **Challenge race:** simultaneous challenges (a double tap, or two
+      players challenging each other) created several battles. Challenge
+      creation now holds per-player advisory locks in one transaction;
+      proven against real PostgreSQL (and the test fails without the lock).
+    - **Onboarding regression from item 27:** the class cards' names were set
+      through prefab overrides of the legacy `m_Text` field and would have
+      shown "Class"; they now set `originalText`/`m_text`, and
+      `uiText.test.js` checks every text override names a real field.
+    - **Privacy:** endpoints written to the device log end at the path (the
+      nearby query carries coordinates); the Mapbox stub no longer logs them.
+    - **Unity flow:** Login, Register, Onboarding Confirm and Challenge ignore
+      a second tap while in flight; a refused challenge shows an Arabic
+      reason; a failed room join clears `BattleSession`; the Battle loading
+      screen re-checks the battle every 1.5 s and leaves after the server's
+      30 s ready timeout instead of waiting forever; entering Battle without
+      a session no longer dead-ends; a refused location permission or GPS
+      failure shows "الموقع غير متاح"; the SOS poll stops for an SOS that is
+      gone or not this player's.
+    - **Repository:** `.gitignore` adds `obj/`, `desktop.ini` and Office lock
+      files. A full-history secret scan (62 commits; values never printed)
+      found only placeholders and test fixtures.
+    - Laptop/phone checklists: `build-recovery/PRE_ALPHA_CHECKLISTS.md`.
+
+29. Alpha defender flow (cloud; `481f484`, `94e06e3`, `67f5b26`): from the
+    approved product decision of 2026-10-19. Compiled and tested in the
+    cloud, **not yet checked in Unity, never run with the Photon SDK**.
+    - **Lifecycle** (migration `021_battle_challenge_response.sql`): the
+      existing `battles.status` values plus `accepted_at` / `declined_at`
+      (at most one is set).
+
+      | State | Stored as | Blocks both players |
+      |---|---|---|
+      | pending | `in_progress`, both NULL | yes |
+      | accepted | `in_progress`, `accepted_at` set | yes, until the battle ends |
+      | declined | `cancelled`, `declined_at` set | no |
+      | expired | `cancelled`, both NULL | no |
+
+      - A pending challenge expires 30 s after it was sent (the existing
+        ready timeout, `BATTLE_READY_TIMEOUT_SECONDS`).
+      - On accept, the ready timeout and the 298 s no-result cutoff restart
+        from `accepted_at`.
+      - Expiry is the existing lazy cleanup (`expireStaleBattles`), which
+        runs before every battle call, so it is deterministic.
+      - History rows are kept. Rows from before the migration are recorded
+        as accepted at their start time. Rescue is unchanged.
+    - **Endpoints:** all need the Firebase token. The player id always comes
+      from the token, never from the body.
+      - `GET /battle/incoming`: only the defender sees the challenge, and
+        only these attacker details. Limit: 3 per 5 s.
+        - No challenge: `{challenges: []}`.
+        - One challenge: one entry with `battle_id`, `attacker_id`,
+          `attacker_username`, `attacker_class_type`, `attacker_rank` and
+          `expires_at`.
+      - `POST /battle/{id}/accept` and `/decline`: limit 3 per 5 s.
+        - Answer: `battle_id`, `attacker_id`, `defender_id`, `status`,
+          `challenge_state`, `photon_room_name`, `session_expires_at`.
+        - Never `host_authority_secret` or `match_nonce`.
+        - A non-UUID id answers 404 `BATTLE_NOT_FOUND`.
+      - Errors:
+        - the attacker answering: 403 `NOT_CHALLENGE_DEFENDER`;
+        - anyone else answering: 403 `FORBIDDEN`;
+        - a second answer: 409 `CHALLENGE_ALREADY_ANSWERED`;
+        - expired, declined, resolved or forfeited: 409 `SESSION_EXPIRED`;
+        - ready, disconnect, reconnect or resolve before an accept: 409
+          `CHALLENGE_NOT_ACCEPTED`.
+      - `GET /battle/{id}` and the challenge response also carry
+        `challenge_state` and `accepted_at`.
+    - **Concurrency:** accept and decline are each one guarded `UPDATE`.
+      - The guard: `status = 'in_progress'`, `accepted_at IS NULL`,
+        `declined_at IS NULL` and `defender_id` = the caller. Accept also
+        requires the 30 s window.
+      - PostgreSQL's row lock lets exactly one answer win. The loser re-reads
+        the row and reports what won.
+      - Proven against real PostgreSQL: simultaneous accept/decline, and
+        accept racing expiry. Removing each guard makes its test fail.
+    - **Unity, defender:** `Map/IncomingChallengeCoordinator` is on MainMap
+      → Managers. The rules are in the Unity-free `IncomingChallengeFlow`
+      and `IncomingChallengeMessages`.
+      - It polls `GET /battle/incoming` every 5 s while MainMap is enabled:
+        one loop, one request at a time, cancelled in `OnDisable`.
+      - It shows one Arabic prompt ("تحدٍّ جديد", "قبول" / "رفض"). The prompt
+        closes when the challenge expires or is replaced.
+      - A second tap sends nothing.
+      - A network or rate-limit failure may offer the same challenge again;
+        a final refusal never does.
+      - Accept stores `BattleSession` without signing material and calls
+        `PhotonRoomLifecycle.JoinAsDefenderAsync` (Photon Client).
+      - Decline leaves MainMap as it was.
+      - Another account signing in closes the prompt and drops late answers
+        for the previous player.
+    - **Unity, attacker:** after `POST /battle/challenge`,
+      `PhotonRoomLifecycle` shows "بانتظار الخصم" and polls
+      `GET /battle/{id}` every 1.5 s (`BattleLifecycle.NextOutgoingStep`).
+      - It joins as Photon Host only after reading `accepted`.
+      - Declined: shows "رفض الخصم التحدي.".
+      - No answer, or past 30 s plus one poll: shows "لم يرد الخصم على
+        التحدي في الوقت المحدد.".
+      - In both cases `BattleSession` is cleared.
+    - **Popups:** `PopupManager` shows one popup at a time. Its buttons now
+      act on the popup on screen; they used to pop the newest queued one.
+      `Dismiss(key)` closes a popup that is no longer valid.
+    - **Photon boundary:** `PhotonConnectionManager.JoinRoomAsync(roomName,
+      asHost)`.
+      - The attacker calls it with `asHost: true` after the accept and
+        starts `GameMode.Host`.
+      - The defender calls it with `asHost: false` and starts
+        `GameMode.Client`.
+      - Both use `SessionName = photon_room_name` (`battle_<battle_id>`,
+        from the server) and `PlayerCount = 2`.
+      - Without `PHOTON_FUSION_AVAILABLE`, the stub only logs the role and
+        reports success. No room exists, so stub mode proves nothing about
+        Photon. The SDK branch has never been compiled.
+      - The defender joins right after accepting; the attacker notices the
+        accept on its next poll, up to about 1.5 s later. The Client can
+        therefore arrive before the Host has started the session
+        (`PRE_ALPHA_CHECKLISTS.md` §2).
+    - **Accepted Alpha debt (host authority):** the attacker is the Photon
+      host and alone holds `host_authority_secret`, so a modified attacker
+      client can sign any outcome.
+      - Results stay bound to the battle, nonce, sequence and time, are
+        checked for plausibility, and suspicious ones are held for review.
+      - Approved to keep for Alpha on 2026-10-19. After Alpha, plan server or
+        Photon-server authority.
+    - **Deferred:** a push notification for a new challenge (needs FCM).
+
+Current test counts (cloud, after item 29; run from `backend/`):
 
 | Command | Result |
 |---|---|
-| `npm test` (same as `npx jest --runInBand`; includes the fake-database contract test) | 29 suites / 374 tests |
-| `npm run test:contract` | 50 tests |
-| `npm run test:contract:db` (needs `CONTRACT_TEST_DATABASE_URL`, item 22) | 71 tests: 53 contract + 18 battle lifecycle |
-| Unity EditMode, run under .NET in the cloud | `AuthErrorMessagesTests` 17, `AuthSessionTests` 30, `BattleLifecycleTests` 15, `PlayerSessionDataContractTests` + `BattleSessionPartialUpdateTests` + `CultureInvariantRequestTests` 13 of 14 (the 14th needs Unity's JsonUtility) |
+| `npm test` (same as `npx jest --runInBand`; includes the fake-database contract test and the Unity UI checks) | 32 suites / 433 tests |
+| `npm run test:contract` | 53 tests |
+| `npm run test:contract:db` (needs `CONTRACT_TEST_DATABASE_URL`, item 22) | 133 tests: 58 contract + 11 challenge answer + 20 battle lifecycle + 44 input robustness |
+| Unity EditMode, run under .NET in the cloud | `AuthErrorMessagesTests` 17, `AuthSessionTests` 30, `BattleLifecycleTests` 33, `IncomingChallengeFlowTests` 23, `IncomingChallengeMessagesTests` 19, `PopupStackTests` 13, `ActionGateTests` 2, `ChallengeErrorMessagesTests` 11, `LogRedactionTests` 4, `SosPollingTests` 7, `ArabicRtlTextTests` 27, `PlayerSessionDataContractTests` + `BattleSessionPartialUpdateTests` + `CultureInvariantRequestTests` 13 of 14 (the 14th needs Unity's JsonUtility) |
 
 Check in Unity after pulling:
 - EditMode Test Runner: all tests, including the new ones above.
@@ -283,6 +489,39 @@ Check in Unity after pulling:
   to MainMap and challenge the same player again.
   - Expected: the new challenge is accepted (no `DUPLICATE_CHALLENGE`), and
     the old battle's row reads `cancelled`.
+- Arabic UI (item 27), after Next steps 1–2:
+  - Package Manager lists "RTL Text Mesh Pro" 4.0.0. The Console has no
+    errors and no "missing script" warnings in any scene.
+  - EditMode: `ArabicRtlTextTests` and `ArabicUiAssetTests` pass.
+    `ProjectFont_HasEveryGlyphTheUiDraws` fails until the Arabic font is
+    set, and lists each missing character.
+  - Login/Register: titles, buttons and placeholders read right-to-left with
+    joined letters; a typed email/password runs left-to-right; the password
+    shows asterisks; an error (e.g. a wrong password) shows joined Arabic.
+  - Onboarding: an Arabic or 2-letter username shows the new username
+    message without a server call.
+  - MainMap: HUD numbers, bottom tabs, every screen title, Profile
+    (username, stats), Settings toggles, popups, toasts, the SOS banner, and
+    quest/inventory/friend list items.
+  - Battle and Result panels (stub mode): titles and the return button.
+  - No text overlaps or runs outside its panel; the ⚙ Settings button and
+    the ✓ quest badge show a glyph, not a box.
+- Pre-Alpha fixes (item 28):
+  - Onboarding: the three cards read Scout, Ranger and Titan.
+  - Double-tap Login, Register and Confirm: one request each (backend log),
+    one scene change.
+  - MainMap in the Editor: a "الموقع غير متاح" popup (the Editor has no GPS).
+  - Battle in stub mode: challenge, stay on the loading screen — after about
+    31 s it returns to MainMap and the same player can be challenged again.
+- Defender flow (item 29):
+  - MainMap → Managers has `IncomingChallengeCoordinator` with
+    `Photon Room Lifecycle` assigned; EditMode `IncomingChallengeFlowTests`,
+    `IncomingChallengeMessagesTests`, `PopupStackTests` and
+    `BattleLifecycleTests` pass.
+  - Signed in on MainMap, the backend log shows `GET /battle/incoming` 200
+    about every 5 s, and none after leaving MainMap.
+  - The challenge itself needs two clients with locations (the Editor has
+    no GPS): `PRE_ALPHA_CHECKLISTS.md` §2, "Two-device defender test".
 
 Notes for the laptop:
 - On an Android phone, `http://localhost:3000` is the phone itself. Point the
@@ -296,6 +535,70 @@ Notes for the laptop:
 
 ## Current blocker
 
+None since 2026-10-18 (item 26). The resolved blocker is kept under "Local
+setup reference" below.
+
+## Next steps (in order)
+
+1. Bring this branch to the laptop without losing local work. In PowerShell
+   at the repo root, run `git status` first. Expected local changes:
+   `Assets/TextMesh Pro/` (untracked: TMP Essentials),
+   `Assets/_Project/Resources/ApiEnvironmentSettings.asset` (127.0.0.1),
+   maybe `Packages/packages-lock.json` or `ProjectSettings/*` (written by
+   Unity), and `Assets/csc.rsp` (untracked, item 6).
+   1. Commit TMP Essentials and the URL. No cloud commit touches them, so
+      they can't conflict:
+      ```powershell
+      git add "Assets/TextMesh Pro" Assets/_Project/Resources/ApiEnvironmentSettings.asset
+      git commit -m "Add TMP Essential Resources; use 127.0.0.1 for the local backend"
+      ```
+      Commit the whole `Assets/TextMesh Pro` folder with its `.meta` files
+      (TMP Settings, LiberationSans SDF and `LiberationSans - OFL.txt`,
+      shaders, sprites, style sheets, line-breaking rules): every machine
+      needs the same TMP Settings. Leave out
+      `Assets/TextMesh Pro/Examples & Extras` if it was imported.
+   2. If `Packages/packages-lock.json` is modified, run
+      `git stash push Packages/packages-lock.json`. This branch adds the
+      RTLTMPro entry, and Unity rewrites the file anyway.
+   3. If any file under `Assets/_Project/Scenes` or `Assets/_Project/Prefabs`
+      is modified, stop and ask before pulling: this branch rewrites every
+      text component in them.
+   4. `git pull`. Leave a stashed lock file in the stash unless Unity
+      reports a package error.
+   5. Open the project in Unity 6000.0.58f2. The Package Manager downloads
+      RTLTMPro (needs git on PATH and access to github.com). The Console
+      must be clean.
+2. Arabic font. The repository has no Arabic font, and RTLTMPro's demo
+   Segoe UI fonts may not be redistributed, so a font must be chosen and
+   added on the laptop:
+   1. Pick an Arabic font under the SIL Open Font License whose cmap
+      includes Arabic Presentation Forms-B (U+FE70–U+FEFF): RTLTMPro outputs
+      those code points. Candidates: Noto Naskh Arabic or Noto Sans Arabic
+      (Google Fonts, OFL 1.1). Choosing the family is a product decision.
+   2. Put the `.ttf` and its `OFL.txt` together in
+      `Assets/_Project/Fonts/<Family>/`. `uiText.test.js` rejects a font
+      without a license file next to it.
+   3. Window → TextMeshPro → Font Asset Creator: Source = that `.ttf`,
+      Atlas Resolution 2048×2048, Render Mode SDFAA, Character Set "Unicode
+      Range (Hex)" =
+      `20-7E,A0,2014,2026,2192,200F,060C,061B,061F,0621-063A,0640-065F,0660-0669,0670,FC5E-FC63,FE70-FEFF`.
+      Generate, then save as `Assets/_Project/Fonts/<Family>/<Family> SDF.asset`.
+   4. In the new font asset, add `LiberationSans SDF` (TMP Essentials) under
+      Fallback Font Assets, for Latin letters the Arabic font lacks.
+   5. Project Settings → TextMesh Pro → Settings → Default Font Asset = the
+      new Arabic SDF asset.
+   6. Run EditMode `ArabicUiAssetTests.ProjectFont_HasEveryGlyphTheUiDraws`.
+      It lists every missing code point. ⚙ (U+2699) and ✓ (U+2713) may be
+      missing from both fonts; see the backlog.
+   7. Commit `Assets/_Project/Fonts/**` (font, `OFL.txt`, SDF asset, `.meta`
+      files) and the changed `Assets/TextMesh Pro/Resources/TMP Settings.asset`.
+3. Run "Check in Unity after pulling" above, especially the Arabic UI list.
+4. Optional: the real-database contract test (backlog, "Needs the laptop").
+
+### Local setup reference (done on 2026-10-18; repeat on a new machine)
+
+Resolved blocker, for the record:
+
 Onboarding's `POST /auth/register` fails with "Cannot connect to destination
 host": the local backend at `http://localhost:3000` is not running because
 there is no local PostgreSQL yet.
@@ -308,7 +611,7 @@ there is no local PostgreSQL yet.
 - Chosen path: native PostgreSQL 16 on Windows (no Docker/WSL) via
   `backend/scripts/setup-local-windows.ps1` (`dd6e2c3`).
 
-## Next steps (in order)
+Setup steps used:
 
 1. Firebase Console → project NFOUZ → Project settings → Service accounts →
    Generate new private key. Save the JSON **outside the repository**.
@@ -329,28 +632,84 @@ there is no local PostgreSQL yet.
    and username → Confirm → MainMap must load. A 401 `INVALID_TOKEN` means the
    Admin key belongs to a different Firebase project than Unity.
 
+## PRE-ALPHA ROADMAP
+
+In priority order. Done means compiled and tested in the cloud unless it
+says "verified on the laptop".
+
+1. **Already complete.**
+   - Verified on the laptop: Unity 6000.0.58f2 project; Boot → Login →
+     Register → Onboarding → MainMap; PostgreSQL 16 with `nfouz_db`;
+     backend `/health` 200; Firebase Admin; `127.0.0.1:3000` instead of
+     `localhost` (Curl error 56); TMP Essential Resources imported.
+   - Cloud only: items 11–25 and 27–28 (API contract fixes, contract tests
+     in both modes, token refresh, battle lifecycle, Arabic/TMP/RTLTMPro,
+     the pre-Alpha fixes).
+2. **Laptop reconciliation:** Next steps 1 (commit TMP Essentials and the
+   127.0.0.1 URL, then pull). Unity downloads RTLTMPro.
+3. **Arabic font and visual validation:** Next steps 2, then
+   `PRE_ALPHA_CHECKLISTS.md` §1 and "Check in Unity after pulling".
+4. **Defender flow:** decided on 2026-10-19 and built in the cloud
+   (item 29); checked on devices by the two-device test in step 5.
+5. **Photon:** account and App ID, Fusion 2 SDK, the remaining code items and the
+   two-device test — `PRE_ALPHA_CHECKLISTS.md` §2.
+6. **Mapbox/GPS:** SDK decision, token, phone test — §3.
+7. **Android build and signing:** §4.
+8. **Full gameplay test** on two phones: register, find each other on the
+   map, challenge, fight, result and rewards, reconnect, SOS/rescue between
+   friends, quests and inventory.
+9. **Deferred past Alpha:** Sprint 11, Faction System, Battle Pass, the Shop
+   backend, the AYAZ backend, FCM on iOS, production deployment and HTTPS,
+   server-authoritative combat (see the host-authority decision), Arabic
+   usernames, logout UI.
+
 ## Backlog after the Register → MainMap test (do not start without approval)
 
-Completed work is items 1–25 above; nothing completed is listed here.
+Completed work is items 1–29 above; nothing completed is listed here.
 
 Needs the laptop:
-- "Current blocker" and "Next steps (in order)" above.
+- "Next steps (in order)" above: reconcile and pull, the Arabic font, then
+  the Unity checks.
 - "Check in Unity after pulling" and "Notes for the laptop" above.
-- Optional, once local PostgreSQL works (Next steps 2): create the
+- Optional, now that local PostgreSQL works: create the
   `nfouz_contract_test` role/database (item 22) and run
   `npm run test:contract:db` (README, "Real-database mode"). It never
   touches `nfouz_db`.
 
 Needs a decision or approval:
-- TMP/Arabic migration: 59 `Text` fields + 1 `InputField` in 25
-  scripts (the recovery bridges `LoginPanelBridge` / `OnboardingPanelBridge`
-  add 6 more `InputField`s), an Arabic TMP font asset, and an Arabic shaping
-  solution (e.g. RTLTMPro — third-party, needs approval). Legacy `Text`
-  cannot join Arabic letters.
+- **Host authority (accepted for Alpha on 2026-10-19, item 29):** revisit
+  after Alpha — server-side or Photon-server authority.
+- **Challenge push notification:** deferred until FCM; the defender learns
+  of a challenge only while MainMap is open (item 29).
+- **Usernames are case-sensitive:** "Player" and "player" can both exist
+  (look-alike names).
+- **Error fallback text** shows the server code ("حدث خطأ: CODE",
+  "تعذّر إرسال نداء الاستغاثة: CODE"); `SosStatusMessagesTests` pin that.
+  Keep for Alpha debugging or replace with a generic Arabic message.
+- **Editor location:** the Editor has no GPS, so MainMap shows no nearby
+  players there. A dev-only simulated location would be a new tool.
+- **Mapbox SDK:** the code uses the Mapbox Maps SDK for Unity v2.x API;
+  confirm it supports Unity 6 before buying into it.
+- **Safe area / orientation** for notched phones (no handling yet).
+- Arabic font family (Next steps 2): which OFL font NFOUZ uses.
+- ⚙ (Settings button) and ✓ (quest "claimed" badge) are text symbols. If
+  the chosen fonts lack them: add an OFL symbol font as a fallback, or
+  replace them with icons.
+- Digits: Western digits (0–9) are kept as typed in Arabic text. Showing
+  Arabic-Indic digits (٠–٩) instead would be a one-setting change
+  (`preserveNumbers`), but it is a product choice.
+- RTLTMPro limits found in the migration:
+  - a sign is drawn before the number ("+100", not "100+");
+  - parentheses around Latin words are misplaced (avoided in current
+    messages);
+  - typed Arabic input is not supported in the TMP input fields (all
+    current inputs are Latin; matters only if Arabic usernames are
+    approved).
 - Whether `Result.unity` should be loaded by the flow or retired; it is
   currently unused (see item 12).
 - Usernames: the backend accepts only `^[a-zA-Z0-9_]{3,20}$`. Arabic names
-  are rejected (shown as "اسم المستخدم غير صالح").
+  are rejected; Onboarding now explains the rule before sending (item 27).
+  Supporting Arabic usernames needs a backend rule change and RTL input.
 - Logout: `FirebaseManager.SignOut` is called only when a session ends
   (item 24); no screen offers logout.
 - Battle loading screen: a battle the server cancels while the player
@@ -358,7 +717,8 @@ Needs a decision or approval:
   check while waiting would be a separate change.
 
 Needs the developer's external accounts:
-- Firebase Admin service-account key (Next steps 1).
+- Firebase Admin service-account key: done on the laptop (item 26); a new
+  machine needs it again ("Local setup reference", step 1).
 - Photon Fusion import (Battle has stub mode only), then Mapbox (needs an
   asmdef for its sources). Each needs its account and App ID / token, kept
   out of Git.

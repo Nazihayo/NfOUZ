@@ -67,7 +67,7 @@ namespace Nfouz.Map
             if (Input.location.status != LocationServiceStatus.Running)
             {
                 Debug.LogWarning($"[GPSLocationService] GPS failed to start: {Input.location.status}");
-                OnLocationError?.Invoke("تعذّر تشغيل GPS. تحقق من إعدادات الموقع في جهازك.");
+                OnLocationError?.Invoke("تعذّر تشغيل GPS\u200F. تحقق من إعدادات الموقع في جهازك.");
                 return false;
             }
 

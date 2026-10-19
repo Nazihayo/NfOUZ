@@ -1,5 +1,5 @@
+using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace Nfouz.Auth
 {
@@ -13,8 +13,8 @@ namespace Nfouz.Auth
     public class OnboardingPanelBridge : MonoBehaviour
     {
         [SerializeField] private OnboardingController onboardingController;
-        [SerializeField] private InputField usernameInput;
-        [SerializeField] private Text errorMessageText;
+        [SerializeField] private TMP_InputField usernameInput;
+        [SerializeField] private TMP_Text errorMessageText;
 
         private void OnEnable()
         {

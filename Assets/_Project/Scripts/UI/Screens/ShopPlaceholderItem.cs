@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -8,8 +9,8 @@ namespace Nfouz.UI.Screens
     /// nothing for it to do (see ShopScreen's class doc comment).</summary>
     public class ShopPlaceholderItem : MonoBehaviour
     {
-        [SerializeField] private Text nameLabel;
-        [SerializeField] private Text priceLabel;
+        [SerializeField] private TMP_Text nameLabel;
+        [SerializeField] private TMP_Text priceLabel;
         [SerializeField] private Button buyButton;
 
         public void Bind(string itemName, string price)

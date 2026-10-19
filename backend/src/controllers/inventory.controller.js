@@ -4,6 +4,8 @@ const playerRepo = require('../repositories/player.repository');
 const inventoryService = require('../services/inventory.service');
 const { success, ApiError } = require('../utils/responseEnvelope');
 
+const MAX_REQUEST_ID_LENGTH = 100;
+
 /**
  * Resolves the authenticated caller's own player row from req.firebaseUid.
  * Mirrors rescue.controller.js/friend.controller.js/sos.controller.js — no
@@ -31,6 +33,10 @@ function requireRequestId(body) {
   const value = body.request_id;
   if (!value || typeof value !== 'string') {
     throw new ApiError('INVALID_REQUEST', 'request_id is required.', 400);
+  }
+  // inventory_idempotency.request_id is VARCHAR(100) (019_inventory_idempotency.sql).
+  if (value.length > MAX_REQUEST_ID_LENGTH) {
+    throw new ApiError('INVALID_REQUEST', `request_id must be at most ${MAX_REQUEST_ID_LENGTH} characters.`, 400);
   }
   return value;
 }

@@ -137,7 +137,7 @@ namespace Nfouz.Networking
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[ApiClient] Transport exception calling {method} {endpoint}: {ex.GetType().Name}");
+                Debug.LogError($"[ApiClient] Transport exception calling {method} {LogRedaction.Endpoint(endpoint)}: {ex.GetType().Name}");
                 return Transport(ApiResponse<T>.Failure(Constants.ErrorCodes.NetworkError, "Transport failure.", true));
             }
 
@@ -149,7 +149,7 @@ namespace Nfouz.Networking
             if (request.result == UnityWebRequest.Result.ConnectionError ||
                 request.result == UnityWebRequest.Result.DataProcessingError)
             {
-                Debug.LogWarning($"[ApiClient] Connection error calling {method} {endpoint}: {request.error}");
+                Debug.LogWarning($"[ApiClient] Connection error calling {method} {LogRedaction.Endpoint(endpoint)}: {request.error}");
                 return Transport(ApiResponse<T>.Failure(Constants.ErrorCodes.NetworkError, request.error, true));
             }
 
@@ -179,7 +179,7 @@ namespace Nfouz.Networking
             }
 
             // Only the length: a body can carry secrets (e.g. host_authority_secret).
-            Debug.LogError($"[ApiClient] Failed to parse response body for {method} {endpoint} ({responseText?.Length ?? 0} chars).");
+            Debug.LogError($"[ApiClient] Failed to parse response body for {method} {LogRedaction.Endpoint(endpoint)} ({responseText?.Length ?? 0} chars).");
             return new TransportResult<T>(status, ApiResponse<T>.Failure(Constants.ErrorCodes.InternalError, "Failed to parse server response."));
         }
 

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Nfouz.Core;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -31,8 +32,18 @@ namespace Nfouz.UI
             public readonly string CancelLabel; // null for a single-button (info/error) popup
             public readonly Action OnConfirm;
             public readonly Action OnCancel;
+            /// <summary>Optional: lets the caller close this popup itself
+            /// (Dismiss), e.g. an invitation that expired.</summary>
+            public readonly string Key;
+            /// <summary>Set when queued; identifies this exact popup.</summary>
+            public readonly int Ticket;
 
-            public PopupRequest(string title, string message, string confirmLabel, string cancelLabel, Action onConfirm, Action onCancel)
+            public PopupRequest(string title, string message, string confirmLabel, string cancelLabel, Action onConfirm, Action onCancel, string key = null)
+                : this(title, message, confirmLabel, cancelLabel, onConfirm, onCancel, key, 0)
+            {
+            }
+
+            private PopupRequest(string title, string message, string confirmLabel, string cancelLabel, Action onConfirm, Action onCancel, string key, int ticket)
             {
                 Title = title;
                 Message = message;
@@ -40,19 +51,24 @@ namespace Nfouz.UI
                 CancelLabel = cancelLabel;
                 OnConfirm = onConfirm;
                 OnCancel = onCancel;
+                Key = key;
+                Ticket = ticket;
             }
+
+            public PopupRequest WithTicket(int ticket) =>
+                new PopupRequest(Title, Message, ConfirmLabel, CancelLabel, OnConfirm, OnCancel, Key, ticket);
         }
 
         [Header("Scene refs")]
         [SerializeField] private GameObject panelRoot;
-        [SerializeField] private Text titleLabel;
-        [SerializeField] private Text messageLabel;
+        [SerializeField] private TMP_Text titleLabel;
+        [SerializeField] private TMP_Text messageLabel;
         [SerializeField] private Button confirmButton;
-        [SerializeField] private Text confirmButtonLabel;
+        [SerializeField] private TMP_Text confirmButtonLabel;
         [SerializeField] private Button cancelButton;
-        [SerializeField] private Text cancelButtonLabel;
+        [SerializeField] private TMP_Text cancelButtonLabel;
 
-        private readonly PopupStack _stack = new PopupStack();
+        private readonly PopupQueue _queue = new PopupQueue();
 
         private void Awake()
         {
@@ -91,15 +107,26 @@ namespace Nfouz.UI
         /// <summary>Single-button info/error popup — e.g. an
         /// ApiError.code-driven message already translated by the calling
         /// controller's own DescribeError.</summary>
-        public void ShowInfo(string title, string message, string dismissLabel = "حسناً")
+        public void ShowInfo(string title, string message, string dismissLabel = "حسناً", string key = null)
         {
-            Enqueue(new PopupRequest(title, message, dismissLabel, null, null, null));
+            Enqueue(new PopupRequest(title, message, dismissLabel, null, null, null, key));
         }
 
         /// <summary>Two-button confirmation popup.</summary>
-        public void ShowConfirm(string title, string message, string confirmLabel, string cancelLabel, Action onConfirm, Action onCancel = null)
+        public void ShowConfirm(string title, string message, string confirmLabel, string cancelLabel, Action onConfirm, Action onCancel = null, string key = null)
         {
-            Enqueue(new PopupRequest(title, message, confirmLabel, cancelLabel, onConfirm, onCancel));
+            Enqueue(new PopupRequest(title, message, confirmLabel, cancelLabel, onConfirm, onCancel, key));
+        }
+
+        /// <summary>Closes every queued or visible popup with this key,
+        /// without running its callbacks.</summary>
+        public void Dismiss(string key)
+        {
+            if (_queue.Dismiss(key))
+            {
+                SetVisible(false);
+                PresentNextIfAny();
+            }
         }
 
         /// <summary>Reward popup — same single-button shape as ShowInfo,
@@ -112,11 +139,10 @@ namespace Nfouz.UI
 
         private void Enqueue(PopupRequest request)
         {
-            var wasEmpty = _stack.Count == 0;
-            _stack.Push(request);
-            if (wasEmpty)
+            var toShow = _queue.Enqueue(request);
+            if (toShow.HasValue)
             {
-                Present(request);
+                Present(toShow.Value);
             }
         }
 
@@ -134,23 +160,28 @@ namespace Nfouz.UI
 
         private void HandleConfirmPressed()
         {
-            var current = _stack.Pop();
-            SetVisible(false);
+            var current = TakeCurrent();
             current?.OnConfirm?.Invoke();
             PresentNextIfAny();
         }
 
         private void HandleCancelPressed()
         {
-            var current = _stack.Pop();
-            SetVisible(false);
+            var current = TakeCurrent();
             current?.OnCancel?.Invoke();
             PresentNextIfAny();
         }
 
+        private PopupRequest? TakeCurrent()
+        {
+            SetVisible(false);
+            return _queue.TakeCurrent();
+        }
+
         private void PresentNextIfAny()
         {
-            if (_stack.TryPeek(out var next))
+            var next = _queue.Next();
+            if (next.HasValue)
             {
                 Present(next.Value);
             }
@@ -162,6 +193,78 @@ namespace Nfouz.UI
             {
                 panelRoot.SetActive(visible);
             }
+        }
+    }
+
+    /// <summary>
+    /// Which popup is on screen. One at a time: a popup queued while another
+    /// is visible waits, and the visible one's buttons always act on it,
+    /// never on a popup waiting behind it. Unity-free (PopupStackTests).
+    /// </summary>
+    public class PopupQueue
+    {
+        private readonly PopupStack _stack = new PopupStack();
+        private int _nextTicket;
+
+        public PopupManager.PopupRequest? Current { get; private set; }
+
+        public int Count => _stack.Count;
+
+        /// <summary>Queues a popup; returns it if it should be shown now.</summary>
+        public PopupManager.PopupRequest? Enqueue(PopupManager.PopupRequest request)
+        {
+            var ticketed = request.WithTicket(++_nextTicket);
+            _stack.Push(ticketed);
+            if (Current.HasValue)
+            {
+                return null;
+            }
+
+            Current = ticketed;
+            return ticketed;
+        }
+
+        /// <summary>Removes and returns the popup on screen (a button was pressed).</summary>
+        public PopupManager.PopupRequest? TakeCurrent()
+        {
+            var current = Current;
+            if (current.HasValue)
+            {
+                var ticket = current.Value.Ticket;
+                _stack.RemoveWhere(r => r.Ticket == ticket);
+            }
+
+            Current = null;
+            return current;
+        }
+
+        /// <summary>The next popup to show once none is on screen (null: none, or one is already shown).</summary>
+        public PopupManager.PopupRequest? Next()
+        {
+            if (Current.HasValue || !_stack.TryPeek(out var next))
+            {
+                return null;
+            }
+
+            Current = next;
+            return next;
+        }
+
+        /// <summary>Removes every popup with this key. True if the one on screen was among them.</summary>
+        public bool Dismiss(string key)
+        {
+            if (string.IsNullOrEmpty(key) || _stack.RemoveWhere(r => r.Key == key) == 0)
+            {
+                return false;
+            }
+
+            if (Current.HasValue && Current.Value.Key == key)
+            {
+                Current = null;
+                return true;
+            }
+
+            return false;
         }
     }
 
@@ -185,6 +288,33 @@ namespace Nfouz.UI
         public PopupManager.PopupRequest? Pop()
         {
             return _requests.Count > 0 ? _requests.Pop() : (PopupManager.PopupRequest?)null;
+        }
+
+        /// <summary>Removes every request that matches, keeping the
+        /// others in order. Returns how many were removed.</summary>
+        public int RemoveWhere(Func<PopupManager.PopupRequest, bool> match)
+        {
+            var kept = new List<PopupManager.PopupRequest>();
+            var removed = 0;
+            while (_requests.Count > 0)
+            {
+                var request = _requests.Pop();
+                if (match(request))
+                {
+                    removed++;
+                }
+                else
+                {
+                    kept.Add(request);
+                }
+            }
+
+            for (var i = kept.Count - 1; i >= 0; i--)
+            {
+                _requests.Push(kept[i]);
+            }
+
+            return removed;
         }
 
         public bool TryPeek(out PopupManager.PopupRequest? request)

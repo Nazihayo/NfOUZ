@@ -204,10 +204,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 2793440717490781042}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
+  m_Script: {fileID: 11500000, guid: 95f437e10ab3f2c44bf012dea583cbd1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   m_text: Player
+  m_isRightToLeft: 0
+  m_fontAsset: {fileID: 0}
+  m_sharedMaterial: {fileID: 0}
   m_fontSize: 4
   m_fontSizeBase: 4
   m_fontColor: {r: 1, g: 1, b: 1, a: 1}
@@ -215,6 +218,11 @@ MonoBehaviour:
   m_VerticalAlignment: 512
   m_enableWordWrapping: 0
   m_isOrthographic: 0
+  preserveNumbers: 1
+  farsi: 0
+  originalText: Player
+  fixTags: 1
+  forceFix: 0
 --- !u!1 &866521123042815105
 GameObject:
   m_ObjectHideFlags: 0
@@ -283,10 +291,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 866521123042815105}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
+  m_Script: {fileID: 11500000, guid: 95f437e10ab3f2c44bf012dea583cbd1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   m_text: 0 m
+  m_isRightToLeft: 0
+  m_fontAsset: {fileID: 0}
+  m_sharedMaterial: {fileID: 0}
   m_fontSize: 3
   m_fontSizeBase: 3
   m_fontColor: {r: 1, g: 1, b: 1, a: 1}
@@ -294,6 +305,11 @@ MonoBehaviour:
   m_VerticalAlignment: 512
   m_enableWordWrapping: 0
   m_isOrthographic: 0
+  preserveNumbers: 1
+  farsi: 0
+  originalText: 0 m
+  fixTags: 1
+  forceFix: 0
 --- !u!1 &580297748334958795
 GameObject:
   m_ObjectHideFlags: 0
