@@ -9,7 +9,7 @@ folder; where they differ, this file is current.
 - **Branch:** `claude/sprint-5-photon-multiplayer-5jv8v2` (all work below is pushed)
 - **Phase:** Build Recovery — make the existing Sprint 1–10 code runnable.
   **Do not start Sprint 11. Do not add gameplay features or redesign systems.**
-- **Last updated:** 2026-10-18 (covers commits through the pre-Alpha pass; see item 28)
+- **Last updated:** 2026-10-19 (covers commits through the Alpha defender flow; see item 29)
 
 ## Working rules agreed with the developer
 
@@ -359,14 +359,116 @@ in the Unity Editor**:
       found only placeholders and test fixtures.
     - Laptop/phone checklists: `build-recovery/PRE_ALPHA_CHECKLISTS.md`.
 
-Current test counts (cloud, after item 28; run from `backend/`):
+29. Alpha defender flow (cloud; `481f484`, `94e06e3`, `67f5b26`): from the
+    approved product decision of 2026-10-19. Compiled and tested in the
+    cloud, **not yet checked in Unity, never run with the Photon SDK**.
+    - **Lifecycle** (migration `021_battle_challenge_response.sql`): the
+      existing `battles.status` values plus `accepted_at` / `declined_at`
+      (at most one is set).
+
+      | State | Stored as | Blocks both players |
+      |---|---|---|
+      | pending | `in_progress`, both NULL | yes |
+      | accepted | `in_progress`, `accepted_at` set | yes, until the battle ends |
+      | declined | `cancelled`, `declined_at` set | no |
+      | expired | `cancelled`, both NULL | no |
+
+      - A pending challenge expires 30 s after it was sent (the existing
+        ready timeout, `BATTLE_READY_TIMEOUT_SECONDS`).
+      - On accept, the ready timeout and the 298 s no-result cutoff restart
+        from `accepted_at`.
+      - Expiry is the existing lazy cleanup (`expireStaleBattles`), which
+        runs before every battle call, so it is deterministic.
+      - History rows are kept. Rows from before the migration are recorded
+        as accepted at their start time. Rescue is unchanged.
+    - **Endpoints:** all need the Firebase token. The player id always comes
+      from the token, never from the body.
+      - `GET /battle/incoming`: only the defender sees the challenge, and
+        only these attacker details. Limit: 3 per 5 s.
+        - No challenge: `{challenges: []}`.
+        - One challenge: one entry with `battle_id`, `attacker_id`,
+          `attacker_username`, `attacker_class_type`, `attacker_rank` and
+          `expires_at`.
+      - `POST /battle/{id}/accept` and `/decline`: limit 3 per 5 s.
+        - Answer: `battle_id`, `attacker_id`, `defender_id`, `status`,
+          `challenge_state`, `photon_room_name`, `session_expires_at`.
+        - Never `host_authority_secret` or `match_nonce`.
+        - A non-UUID id answers 404 `BATTLE_NOT_FOUND`.
+      - Errors:
+        - the attacker answering: 403 `NOT_CHALLENGE_DEFENDER`;
+        - anyone else answering: 403 `FORBIDDEN`;
+        - a second answer: 409 `CHALLENGE_ALREADY_ANSWERED`;
+        - expired, declined, resolved or forfeited: 409 `SESSION_EXPIRED`;
+        - ready, disconnect, reconnect or resolve before an accept: 409
+          `CHALLENGE_NOT_ACCEPTED`.
+      - `GET /battle/{id}` and the challenge response also carry
+        `challenge_state` and `accepted_at`.
+    - **Concurrency:** accept and decline are each one guarded `UPDATE`.
+      - The guard: `status = 'in_progress'`, `accepted_at IS NULL`,
+        `declined_at IS NULL` and `defender_id` = the caller. Accept also
+        requires the 30 s window.
+      - PostgreSQL's row lock lets exactly one answer win. The loser re-reads
+        the row and reports what won.
+      - Proven against real PostgreSQL: simultaneous accept/decline, and
+        accept racing expiry. Removing each guard makes its test fail.
+    - **Unity, defender:** `Map/IncomingChallengeCoordinator` is on MainMap
+      → Managers. The rules are in the Unity-free `IncomingChallengeFlow`
+      and `IncomingChallengeMessages`.
+      - It polls `GET /battle/incoming` every 5 s while MainMap is enabled:
+        one loop, one request at a time, cancelled in `OnDisable`.
+      - It shows one Arabic prompt ("تحدٍّ جديد", "قبول" / "رفض"). The prompt
+        closes when the challenge expires or is replaced.
+      - A second tap sends nothing.
+      - A network or rate-limit failure may offer the same challenge again;
+        a final refusal never does.
+      - Accept stores `BattleSession` without signing material and calls
+        `PhotonRoomLifecycle.JoinAsDefenderAsync` (Photon Client).
+      - Decline leaves MainMap as it was.
+      - Another account signing in closes the prompt and drops late answers
+        for the previous player.
+    - **Unity, attacker:** after `POST /battle/challenge`,
+      `PhotonRoomLifecycle` shows "بانتظار الخصم" and polls
+      `GET /battle/{id}` every 1.5 s (`BattleLifecycle.NextOutgoingStep`).
+      - It joins as Photon Host only after reading `accepted`.
+      - Declined: shows "رفض الخصم التحدي.".
+      - No answer, or past 30 s plus one poll: shows "لم يرد الخصم على
+        التحدي في الوقت المحدد.".
+      - In both cases `BattleSession` is cleared.
+    - **Popups:** `PopupManager` shows one popup at a time. Its buttons now
+      act on the popup on screen; they used to pop the newest queued one.
+      `Dismiss(key)` closes a popup that is no longer valid.
+    - **Photon boundary:** `PhotonConnectionManager.JoinRoomAsync(roomName,
+      asHost)`.
+      - The attacker calls it with `asHost: true` after the accept and
+        starts `GameMode.Host`.
+      - The defender calls it with `asHost: false` and starts
+        `GameMode.Client`.
+      - Both use `SessionName = photon_room_name` (`battle_<battle_id>`,
+        from the server) and `PlayerCount = 2`.
+      - Without `PHOTON_FUSION_AVAILABLE`, the stub only logs the role and
+        reports success. No room exists, so stub mode proves nothing about
+        Photon. The SDK branch has never been compiled.
+      - The defender joins right after accepting; the attacker notices the
+        accept on its next poll, up to about 1.5 s later. The Client can
+        therefore arrive before the Host has started the session
+        (`PRE_ALPHA_CHECKLISTS.md` §2).
+    - **Accepted Alpha debt (host authority):** the attacker is the Photon
+      host and alone holds `host_authority_secret`, so a modified attacker
+      client can sign any outcome.
+      - Results stay bound to the battle, nonce, sequence and time, are
+        checked for plausibility, and suspicious ones are held for review.
+      - Approved to keep for Alpha on 2026-10-19. After Alpha, plan server or
+        Photon-server authority.
+    - **Deferred:** a push notification for a new challenge (needs FCM).
+
+Current test counts (cloud, after item 29; run from `backend/`):
 
 | Command | Result |
 |---|---|
-| `npm test` (same as `npx jest --runInBand`; includes the fake-database contract test and the Unity UI checks) | 31 suites / 408 tests |
-| `npm run test:contract` | 50 tests |
-| `npm run test:contract:db` (needs `CONTRACT_TEST_DATABASE_URL`, item 22) | 117 tests: 53 contract + 20 battle lifecycle + 44 input robustness |
-| Unity EditMode, run under .NET in the cloud | `AuthErrorMessagesTests` 17, `AuthSessionTests` 30, `BattleLifecycleTests` 24, `ActionGateTests` 2, `ChallengeErrorMessagesTests` 11, `LogRedactionTests` 4, `SosPollingTests` 7, `ArabicRtlTextTests` 27, `PlayerSessionDataContractTests` + `BattleSessionPartialUpdateTests` + `CultureInvariantRequestTests` 13 of 14 (the 14th needs Unity's JsonUtility) |
+| `npm test` (same as `npx jest --runInBand`; includes the fake-database contract test and the Unity UI checks) | 32 suites / 433 tests |
+| `npm run test:contract` | 53 tests |
+| `npm run test:contract:db` (needs `CONTRACT_TEST_DATABASE_URL`, item 22) | 133 tests: 58 contract + 11 challenge answer + 20 battle lifecycle + 44 input robustness |
+| Unity EditMode, run under .NET in the cloud | `AuthErrorMessagesTests` 17, `AuthSessionTests` 30, `BattleLifecycleTests` 33, `IncomingChallengeFlowTests` 23, `IncomingChallengeMessagesTests` 19, `PopupStackTests` 13, `ActionGateTests` 2, `ChallengeErrorMessagesTests` 11, `LogRedactionTests` 4, `SosPollingTests` 7, `ArabicRtlTextTests` 27, `PlayerSessionDataContractTests` + `BattleSessionPartialUpdateTests` + `CultureInvariantRequestTests` 13 of 14 (the 14th needs Unity's JsonUtility) |
 
 Check in Unity after pulling:
 - EditMode Test Runner: all tests, including the new ones above.
@@ -411,6 +513,15 @@ Check in Unity after pulling:
   - MainMap in the Editor: a "الموقع غير متاح" popup (the Editor has no GPS).
   - Battle in stub mode: challenge, stay on the loading screen — after about
     31 s it returns to MainMap and the same player can be challenged again.
+- Defender flow (item 29):
+  - MainMap → Managers has `IncomingChallengeCoordinator` with
+    `Photon Room Lifecycle` assigned; EditMode `IncomingChallengeFlowTests`,
+    `IncomingChallengeMessagesTests`, `PopupStackTests` and
+    `BattleLifecycleTests` pass.
+  - Signed in on MainMap, the backend log shows `GET /battle/incoming` 200
+    about every 5 s, and none after leaving MainMap.
+  - The challenge itself needs two clients with locations (the Editor has
+    no GPS): `PRE_ALPHA_CHECKLISTS.md` §2, "Two-device defender test".
 
 Notes for the laptop:
 - On an Android phone, `http://localhost:3000` is the phone itself. Point the
@@ -538,9 +649,9 @@ says "verified on the laptop".
    127.0.0.1 URL, then pull). Unity downloads RTLTMPro.
 3. **Arabic font and visual validation:** Next steps 2, then
    `PRE_ALPHA_CHECKLISTS.md` §1 and "Check in Unity after pulling".
-4. **Decide the defender flow** (backlog, critical): until then two players
-   cannot meet in a battle.
-5. **Photon:** account and App ID, Fusion 2 SDK, the five code items and the
+4. **Defender flow:** decided on 2026-10-19 and built in the cloud
+   (item 29); checked on devices by the two-device test in step 5.
+5. **Photon:** account and App ID, Fusion 2 SDK, the remaining code items and the
    two-device test — `PRE_ALPHA_CHECKLISTS.md` §2.
 6. **Mapbox/GPS:** SDK decision, token, phone test — §3.
 7. **Android build and signing:** §4.
@@ -554,7 +665,7 @@ says "verified on the laptop".
 
 ## Backlog after the Register → MainMap test (do not start without approval)
 
-Completed work is items 1–27 above; nothing completed is listed here.
+Completed work is items 1–29 above; nothing completed is listed here.
 
 Needs the laptop:
 - "Next steps (in order)" above: reconcile and pull, the Arabic font, then
@@ -566,16 +677,10 @@ Needs the laptop:
   touches `nfouz_db`.
 
 Needs a decision or approval:
-- **Defender flow (critical for Alpha):** after `POST /battle/challenge`
-  nothing reaches the defender — no push type, no polling, no accept/decline
-  route — so the defender never joins the room (the battle is cancelled at
-  the 30 s ready timeout). Decide: automatic join, accept/decline, push
-  and/or in-app polling. Not in the repository's documents (no GDD in Git).
-- **Host authority:** the attacker's client is the Photon host and holds the
-  result-signing secret, so a modified attacker client can sign any outcome
-  (results are still bound to the battle, nonce, sequence and time, checked
-  for plausibility, and suspicious ones are held for review). Accept for
-  Alpha, or plan server-side/Photon-server authority.
+- **Host authority (accepted for Alpha on 2026-10-19, item 29):** revisit
+  after Alpha — server-side or Photon-server authority.
+- **Challenge push notification:** deferred until FCM; the defender learns
+  of a challenge only while MainMap is open (item 29).
 - **Usernames are case-sensitive:** "Player" and "player" can both exist
   (look-alike names).
 - **Error fallback text** shows the server code ("حدث خطأ: CODE",

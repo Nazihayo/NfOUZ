@@ -48,28 +48,42 @@ the SDK):
   `OnObjectEnterAOI/ExitAOI`; `NetworkString<_32>`, `NetworkBool`,
   `[Networked]` properties, `GetInput`, `Runner.DeltaTime`).
 - **Topology:** Host Mode, 2 players, session name = the server's
-  `photon_room_name` (`battle_<battle_id>`). The attacker is the host by
-  convention, and only the attacker receives `host_authority_secret`.
+  `photon_room_name` (`battle_<battle_id>`). Nobody joins before the
+  defender accepts (HANDOFF item 29). Then
+  `PhotonConnectionManager.JoinRoomAsync(roomName, asHost)` runs on both
+  sides:
+  - the attacker calls it with `asHost: true` → `GameMode.Host`;
+  - the defender calls it with `asHost: false` → `GameMode.Client`.
+  Only the attacker receives `host_authority_secret`. Host authority is
+  accepted Alpha debt (HANDOFF item 29).
 - **Authority split:** Photon carries movement/combat state; the backend
   owns battle existence, ready state, disconnect/reconnect grace (15 s),
   forfeits, the 30 s ready timeout, the 298 s no-result cutoff, result
   validation (HMAC signature, nonce, `event_seq`, timestamps) and all
   rewards.
 
-Code work still needed before two players can meet (not settings; each is
-a change to review and test on the laptop with the SDK present):
-1. **Defender join flow (product decision first):** nothing tells the
-   defender a challenge exists or makes them join the room (no push type,
-   no polling, no accept/decline route). See HANDOFF backlog.
-2. `PhotonConnectionManager.JoinRoomAsync` always starts `GameMode.Host`;
-   the defender must start `GameMode.Client` for the same session.
-3. `NetworkPlayerSpawner` instantiates locally even with the SDK; the host
+Done in the cloud (HANDOFF item 29): the defender's Accept/Decline flow
+on MainMap, the attacker waiting for the answer, and the Host/Client role
+passed to `JoinRoomAsync`.
+
+Code work still needed before two players can meet. These are not settings:
+each is a change to review and test on the laptop with the SDK present.
+1. **Compile the SDK branch.** `JoinRoomAsync`'s `#if PHOTON_FUSION_AVAILABLE`
+   code (including `asHost ? GameMode.Host : GameMode.Client`) has never
+   been compiled.
+2. **Client before Host.** The defender starts its Client right after
+   accepting. The attacker sees the accept on its next poll, up to ~1.5 s
+   later, and only then starts the Host. Check what Fusion 2 does when a
+   Client starts first: if it fails instead of waiting, the defender must
+   retry the join until the session exists (within the 30 s ready
+   timeout).
+3. `NetworkPlayerSpawner` instantiates locally even with the SDK. The host
    must `Runner.Spawn` one `NetworkPlayer` per player (input authority to
-   that player), and despawn on leave.
+   that player) and despawn on leave.
 4. No `OnInput` callback fills `NetworkInputData`, so nobody can move in a
    real session.
-5. The networked `IsReady` flag is unused; readiness is the backend's
-   `/ready` (keep it that way — the server decides).
+5. The networked `IsReady` flag is unused. Readiness is the backend's
+   `/ready`; keep it that way, because the server decides.
 
 Laptop steps:
 1. Photon account: dashboard.photonengine.com → create an app of type
@@ -87,9 +101,8 @@ Laptop steps:
    component; `NetworkPlayerController` becomes a `NetworkBehaviour` under the
    define. Rebuild Fusion's prefab table. Assign the prefab to
    `NetworkPlayerSpawner.networkPlayerPrefab` in Battle (already assigned).
-8. First two-client test (after code items 1–4): two devices or a build plus
-   the Editor, two different accounts within 20 m (or a dev location),
-   attacker challenges → both reach Battle → countdown → both move.
+8. First two-client test (after code items 1–4): the "Two-device defender
+   test" below, then both reach Battle → countdown → both move.
 9. Disconnect/reconnect: kill the defender's app mid-match → host logs
    `OnPlayerLeft` and `POST /battle/{id}/disconnect` answers a deadline;
    restart within 15 s → `POST /reconnect` 200; after 15 s →
@@ -99,6 +112,46 @@ Laptop steps:
     in `/auth/me`. Re-posting the same result answers `DUPLICATE_RESULT`; a
     defender-signed result is impossible (no secret) — confirm the defender
     never sends `/resolve`.
+
+### Two-device defender test
+
+Needs: the backend reachable from both devices; two accounts A (attacker)
+and B (defender) within 20 m with location working; both on MainMap. Watch
+the backend log throughout.
+
+1. **Discovery.** B on MainMap: `GET /battle/incoming` 200 about every 5 s.
+   A taps Challenge on B: `POST /battle/challenge` 201 and A shows "بانتظار
+   الخصم". Within ~5 s B shows "تحدٍّ جديد" with A's username, class and
+   rank, and the buttons "قبول" / "رفض".
+2. **Nobody joins early.** Until B answers, neither device logs a Photon
+   join, and A polls `GET /battle/{id}` about every 1.5 s.
+3. **Accept.** B taps "قبول" twice quickly: exactly one
+   `POST /battle/{id}/accept` 200, and B logs a Client join to
+   `battle_<id>`. Within ~1.5 s A logs a Host join to the same room name.
+   Both reach the Battle loading screen, send `/ready`, and count down.
+   B's polling stops (no more `/battle/incoming` from B).
+4. **Secret check.** The accept response in the backend log or a proxy has
+   no `host_authority_secret` or `match_nonce`. B never sends `/resolve`.
+5. **Decline.** New challenge; B taps "رفض": one `POST …/decline` 200. B's
+   prompt closes and B stays on MainMap. A shows "رفض الخصم التحدي." and
+   can challenge again immediately (no `DUPLICATE_CHALLENGE`).
+6. **Expiry.** New challenge; B does nothing for 30 s. B's prompt closes on
+   its own, and A shows "لم يرد الخصم على التحدي في الوقت المحدد.". The
+   battle row reads `cancelled` with `accepted_at` and `declined_at` NULL.
+7. **Late answer.** New challenge. With the prompt showing, B turns on
+   airplane mode, waits ~35 s (the prompt stays, because failed polls change
+   nothing), turns it off and taps "قبول" before the next poll. B sees
+   "انتهت مهلة هذا التحدي." and no battle starts.
+8. **Leaving MainMap.** With a challenge pending, B opens a scene other
+   than MainMap: `/battle/incoming` stops. Back on MainMap within 30 s, the
+   prompt shows again; after 30 s, nothing shows. (Backgrounding the app is
+   not handled specially; note what happens.)
+9. **Account switch.** With a prompt showing on B, sign B out and sign in
+   as C on the same phone: the prompt closes and C never sees B's
+   challenge.
+10. **Attacker cannot answer.** From A's token, `POST /battle/{id}/accept`
+    answers 403 `NOT_CHALLENGE_DEFENDER`. This is covered by the backend
+    tests; repeat it only if the API is exposed beyond the LAN.
 
 ## 3. Mapbox and GPS (laptop, then phone)
 
