@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7a9a8801a1a249bd9c5e31b4ee97a00d, type: 3}
   m_Name: ApiEnvironmentSettings
   m_EditorClassIdentifier: 
-  developmentBaseUrl: http://localhost:3000
+  developmentBaseUrl: http://127.0.0.1:3000
   stagingBaseUrl: 
   productionBaseUrl: https://api.nfouz-game.com/v1
   editorEnvironment: 0
