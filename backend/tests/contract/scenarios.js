@@ -28,6 +28,11 @@ function noActiveBattle(w) {
   w.battles[0].status = 'resolved';
 }
 
+/** A has challenged B and B has not answered yet (migration 021). */
+function pendingChallenge(w) {
+  w.battles[0].accepted_at = null;
+}
+
 /** A has sent B a friend request that B has not answered yet. */
 function pendingFromAToB(w) {
   Object.assign(w.friendships[0], { status: 'pending', accepted_at: null });
@@ -94,6 +99,39 @@ module.exports = [
     as: 'uid-a',
     path: [ids.battle],
     real: { expect: { status: 'in_progress', attacker_ready: false, winner_id: null, duration_seconds: null } },
+  },
+  {
+    key: 'GET /battle/incoming',
+    as: 'uid-b',
+    world: pendingChallenge,
+    real: {
+      expect: {
+        'challenges.length': 1, 'challenges.0.battle_id': ids.battle, 'challenges.0.attacker_id': ids.A,
+        'challenges.0.attacker_username': 'alpha_one', 'challenges.0.expires_at': isIsoTime,
+      },
+    },
+  },
+  {
+    key: 'POST /battle/{}/accept',
+    as: 'uid-b',
+    path: [ids.battle],
+    world: pendingChallenge,
+    real: {
+      // The room name only: the defender never receives the host secret
+      // (ChallengeAnswerData has no such field, so it would fail as extra).
+      expect: { challenge_state: 'accepted', status: 'in_progress', photon_room_name: `battle_${ids.battle}`, defender_id: ids.B },
+      after: [{ sql: 'SELECT accepted_at IS NOT NULL AS accepted, declined_at IS NULL AS not_declined, status FROM battles WHERE battle_id = $1', params: [ids.battle], rows: [{ accepted: true, not_declined: true, status: 'in_progress' }] }],
+    },
+  },
+  {
+    key: 'POST /battle/{}/decline',
+    as: 'uid-b',
+    path: [ids.battle],
+    world: pendingChallenge,
+    real: {
+      expect: { challenge_state: 'declined', status: 'cancelled' },
+      after: [{ sql: 'SELECT declined_at IS NOT NULL AS declined, accepted_at IS NULL AS not_accepted, status FROM battles WHERE battle_id = $1', params: [ids.battle], rows: [{ declined: true, not_accepted: true, status: 'cancelled' }] }],
+    },
   },
   {
     key: 'POST /battle/{}/ready',
@@ -368,6 +406,17 @@ module.exports.errorScenarios = [
     key: 'POST /battle/challenge', as: 'uid-a', body: { defender_id: ids.C, location: { lat: 52.5978, lng: 9.0854 } },
     world: (w) => { Object.assign(w.players[2], { last_lat: 52.5978, last_lng: 9.0854 }); },
     status: 409, code: 'DUPLICATE_CHALLENGE',
+  },
+  {
+    name: 'the attacker accepting their own challenge',
+    key: 'POST /battle/{}/accept', as: 'uid-a', path: [ids.battle],
+    world: pendingChallenge,
+    status: 403, code: 'NOT_CHALLENGE_DEFENDER',
+  },
+  {
+    name: 'declining a challenge that was already accepted',
+    key: 'POST /battle/{}/decline', as: 'uid-b', path: [ids.battle],
+    status: 409, code: 'CHALLENGE_ALREADY_ANSWERED',
   },
   {
     name: 'ready on a battle that is over',

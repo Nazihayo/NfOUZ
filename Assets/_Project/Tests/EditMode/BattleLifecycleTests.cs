@@ -94,5 +94,46 @@ namespace Nfouz.Tests.EditMode
             Assert.AreEqual(30f, Constants.Battle.ReadyTimeoutSeconds);
             Assert.AreEqual(ReadyWaitStep.LeaveBattle, BattleLifecycle.NextReadyStep(true, "in_progress", true, false, null, 31.5f));
         }
+
+        // Alpha defender flow: the attacker waits for an explicit answer.
+
+        [Test]
+        public void Outgoing_JoinsAsHostOnlyOnceTheDefenderAccepted()
+        {
+            Assert.AreEqual(OutgoingWaitStep.KeepWaiting, BattleLifecycle.NextOutgoingStep(true, "in_progress", "pending", null, 3f));
+            Assert.AreEqual(OutgoingWaitStep.JoinAsHost, BattleLifecycle.NextOutgoingStep(true, "in_progress", "accepted", null, 3f));
+        }
+
+        [Test]
+        public void Outgoing_DeclinedIsReportedAsDeclined()
+        {
+            Assert.AreEqual(OutgoingWaitStep.Declined, BattleLifecycle.NextOutgoingStep(true, "cancelled", "declined", null, 3f));
+        }
+
+        [TestCase("cancelled", "expired")]
+        [TestCase("forfeited", "accepted")]
+        [TestCase("resolved", "accepted")]
+        [TestCase("cancelled", null)]
+        public void Outgoing_AnEndedChallengeIsNoAnswer_NeverAJoin(string status, string challengeState)
+        {
+            Assert.AreEqual(OutgoingWaitStep.NoAnswer, BattleLifecycle.NextOutgoingStep(true, status, challengeState, null, 3f));
+        }
+
+        [TestCase("SESSION_EXPIRED")]
+        [TestCase("BATTLE_NOT_FOUND")]
+        public void Outgoing_AGoneBattleIsNoAnswer(string code)
+        {
+            Assert.AreEqual(OutgoingWaitStep.NoAnswer, BattleLifecycle.NextOutgoingStep(false, null, null, new ApiError { code = code }, 3f));
+        }
+
+        [Test]
+        public void Outgoing_NeverWaitsPastTheServerExpiryPlusOnePoll()
+        {
+            var network = new ApiError { code = Constants.ErrorCodes.NetworkError };
+            var lastChance = Constants.Battle.ReadyTimeoutSeconds + BattleLifecycle.ReadyPollIntervalSeconds;
+            Assert.AreEqual(OutgoingWaitStep.KeepWaiting, BattleLifecycle.NextOutgoingStep(false, null, null, network, lastChance - 0.1f));
+            Assert.AreEqual(OutgoingWaitStep.NoAnswer, BattleLifecycle.NextOutgoingStep(false, null, null, network, lastChance));
+            Assert.AreEqual(OutgoingWaitStep.NoAnswer, BattleLifecycle.NextOutgoingStep(true, "in_progress", "pending", null, lastChance));
+        }
     }
 }

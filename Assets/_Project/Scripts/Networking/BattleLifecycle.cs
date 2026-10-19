@@ -29,6 +29,19 @@ namespace Nfouz.Networking
         LeaveBattle,
     }
 
+    /// <summary>What the attacker does after a check of a challenge that
+    /// waits for the defender's answer (Alpha defender flow).</summary>
+    public enum OutgoingWaitStep
+    {
+        KeepWaiting,
+        /// <summary>The defender accepted: join the room as Host.</summary>
+        JoinAsHost,
+        /// <summary>The defender declined: back to MainMap.</summary>
+        Declined,
+        /// <summary>Nobody answered in time, or the battle ended: back to MainMap.</summary>
+        NoAnswer,
+    }
+
     /// <summary>
     /// How the client reads the server's battle lifecycle. Unity-free so it
     /// is tested directly (BattleLifecycleTests); the contract test checks
@@ -90,6 +103,44 @@ namespace Nfouz.Networking
             return waitedSeconds >= Constants.Battle.ReadyTimeoutSeconds + ReadyPollIntervalSeconds
                 ? ReadyWaitStep.LeaveBattle
                 : ReadyWaitStep.KeepWaiting;
+        }
+
+        /// <summary>
+        /// Next step while the attacker waits for the defender to accept,
+        /// from one GET /battle/{id}. The server ends an unanswered
+        /// challenge at Constants.Battle.ReadyTimeoutSeconds after it was
+        /// sent (backend utils/battleLifecycle.js); one more poll after that
+        /// gives it the chance to say so, and past that the attacker stops
+        /// waiting even if the server could not be reached. Polled at
+        /// ReadyPollIntervalSeconds, like the loading screen.
+        /// </summary>
+        public static OutgoingWaitStep NextOutgoingStep(bool success, string status, string challengeState, ApiError error, float waitedSeconds)
+        {
+            if (success)
+            {
+                if (challengeState == "declined")
+                {
+                    return OutgoingWaitStep.Declined;
+                }
+
+                if (FromStatus(status) != BattleEndKind.InProgress)
+                {
+                    return OutgoingWaitStep.NoAnswer;
+                }
+
+                if (challengeState == "accepted")
+                {
+                    return OutgoingWaitStep.JoinAsHost;
+                }
+            }
+            else if (IsBattleGone(error))
+            {
+                return OutgoingWaitStep.NoAnswer;
+            }
+
+            return waitedSeconds >= Constants.Battle.ReadyTimeoutSeconds + ReadyPollIntervalSeconds
+                ? OutgoingWaitStep.NoAnswer
+                : OutgoingWaitStep.KeepWaiting;
         }
 
         /// <summary>The battle is over or does not exist any more

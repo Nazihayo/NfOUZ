@@ -69,6 +69,56 @@ namespace Nfouz.Networking
         public double lng;
     }
 
+    /// <summary>One challenge waiting for this player's answer (GET
+    /// /battle/incoming): only what the defender may see about the attacker.</summary>
+    [Serializable]
+    public class IncomingChallengeData
+    {
+        public string battle_id;
+        public string attacker_id;
+        public string attacker_username;
+        public string attacker_class_type;
+        public string attacker_rank;
+        public string expires_at; // ISO 8601 UTC; display only, the server decides expiry
+    }
+
+    [Serializable]
+    public class IncomingChallengesResponseData
+    {
+        public IncomingChallengeData[] challenges; // zero or one
+    }
+
+    /// <summary>POST /battle/{id}/accept|decline. Room name and session
+    /// window only: the defender never receives host_authority_secret or
+    /// match_nonce (battle.controller.js answeredChallengeResponse).</summary>
+    [Serializable]
+    public class ChallengeAnswerData
+    {
+        public string battle_id;
+        public string attacker_id;
+        public string defender_id;
+        public string status;
+        public string challenge_state; // accepted | declined
+        public string photon_room_name;
+        public string session_expires_at;
+
+        /// <summary>The defender's BattleSession after an accept: no
+        /// host-signing material, so it can never sign a result.</summary>
+        public BattleSessionData ToSession()
+        {
+            return new BattleSessionData
+            {
+                battle_id = battle_id,
+                attacker_id = attacker_id,
+                defender_id = defender_id,
+                status = status,
+                challenge_state = challenge_state,
+                photon_room_name = photon_room_name,
+                session_expires_at = session_expires_at,
+            };
+        }
+    }
+
     /// <summary>
     /// The signed authoritative battle-result payload — mirrors the
     /// backend's canonicalizeResult field order exactly

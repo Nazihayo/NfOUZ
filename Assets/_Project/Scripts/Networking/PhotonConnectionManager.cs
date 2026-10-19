@@ -86,15 +86,17 @@ namespace Nfouz.Networking
         }
 
         /// <summary>
-        /// Creates (or joins, if it already exists) the Photon room for a
-        /// battle session. `roomName` is always the server-generated
-        /// photon_room_name from POST /battle/challenge — never
-        /// client-generated, so both participants converge on the same
-        /// room deterministically. Uses Fusion Host Mode (see class
-        /// remarks) — the first participant to reach StartGame() becomes
-        /// the authoritative Host for this room.
+        /// Starts or joins the Photon room for a battle session. `roomName`
+        /// is always the server-generated photon_room_name (POST
+        /// /battle/challenge for the attacker, POST /battle/{id}/accept for
+        /// the defender) — never client-generated, so both participants
+        /// converge on the same room. Fusion Host Mode (see class remarks):
+        /// the attacker starts the room as Host (asHost: true; it alone holds
+        /// host_authority_secret) and the defender joins it as Client
+        /// (asHost: false). Accepted Alpha debt: the host's client simulates
+        /// the match, so a modified attacker client can cheat (HANDOFF).
         /// </summary>
-        public async Task<bool> JoinRoomAsync(string roomName)
+        public async Task<bool> JoinRoomAsync(string roomName, bool asHost)
         {
             if (string.IsNullOrEmpty(roomName))
             {
@@ -130,7 +132,7 @@ namespace Nfouz.Networking
                     // Do NOT change to GameMode.Shared or a Dedicated Server
                     // mode without a corresponding update to TDD v1.0 and
                     // Photon & Mapbox Integration v1.0.
-                    GameMode = GameMode.Host,
+                    GameMode = asHost ? GameMode.Host : GameMode.Client,
                     SessionName = roomName,
                     PlayerCount = 2,
                     SceneManager = runnerObject.AddComponent<NetworkSceneManagerDefault>(),
@@ -142,7 +144,7 @@ namespace Nfouz.Networking
                 {
                     CurrentRoomName = roomName;
                     IsConnected = true;
-                    Debug.Log($"[PhotonConnectionManager] Joined room '{roomName}' (Host Mode).");
+                    Debug.Log($"[PhotonConnectionManager] Joined room '{roomName}' as {(asHost ? "Host" : "Client")}.");
                     OnRoomJoined?.Invoke();
                     return true;
                 }
@@ -151,9 +153,11 @@ namespace Nfouz.Networking
                 OnConnectFailed?.Invoke(result.ShutdownReason.ToString());
                 return false;
 #else
+                // Stub only: no Photon connection is made, so this proves
+                // nothing about a real Host/Client session.
                 Debug.LogWarning("[PhotonConnectionManager] PHOTON_FUSION_AVAILABLE not defined — " +
                                   "running in stub mode until the Photon Fusion SDK package is imported. " +
-                                  $"Simulating successful Host Mode join to '{roomName}'.");
+                                  $"Simulating a join to '{roomName}' as {(asHost ? "Host" : "Client")}; no real room exists.");
                 CurrentRoomName = roomName;
                 IsConnected = true;
                 OnRoomJoined?.Invoke();

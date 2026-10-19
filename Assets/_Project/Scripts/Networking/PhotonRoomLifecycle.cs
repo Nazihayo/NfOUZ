@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Nfouz.Core;
 using Nfouz.Map;
@@ -10,7 +11,9 @@ namespace Nfouz.Networking
 {
     /// <summary>
     /// Orchestrates the Sprint 5 target flow end-to-end:
-    /// Player A selects Player B -> Sends Challenge -> Photon Room Created
+    /// Player A selects Player B -> Sends Challenge -> (Alpha defender flow)
+    /// Player B accepts on MainMap (IncomingChallengeCoordinator) -> Photon
+    /// Room Created by A as Host, joined by B as Client
     /// -> Both Players Join -> Both Players Spawn -> Network Synchronization
     /// Works -> Battle Scene Loads -> Ready For Sprint 6 Combat.
     ///
@@ -31,6 +34,10 @@ namespace Nfouz.Networking
         private float _disconnectGraceRemaining = -1f;
         private bool _awaitingReconnect;
         private readonly ActionGate _challengeGate = new ActionGate();
+        private readonly CancellationTokenSource _destroyCts = new CancellationTokenSource();
+
+        /// <summary>PopupManager key of the attacker's "waiting" popup.</summary>
+        private const string WaitingPopupKey = "outgoing-challenge-wait";
 
         private void Awake()
         {
@@ -51,6 +58,9 @@ namespace Nfouz.Networking
 
         private void OnDestroy()
         {
+            // Ends the attacker's wait; its finally closes the waiting popup.
+            _destroyCts.Cancel();
+
             if (challengeInteractionController != null)
             {
                 challengeInteractionController.OnChallengeRequested -= HandleChallengeRequested;
@@ -129,7 +139,96 @@ namespace Nfouz.Networking
             }
 
             BattleSession.UpdateFromServer(response.data);
-            await JoinBattleAsync(response.data.photon_room_name);
+
+            // Alpha defender flow: nobody joins Photon until the defender
+            // accepts (POST /battle/{id}/accept). The challenge gate stays
+            // held while waiting, so no second challenge can be sent.
+            ShowWaitingPopup();
+            OutgoingWaitStep step;
+            try
+            {
+                step = await WaitForAnswerAsync(response.data.battle_id, _destroyCts.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                return; // MainMap is going away
+            }
+            finally
+            {
+                DismissWaitingPopup();
+            }
+
+            switch (step)
+            {
+                case OutgoingWaitStep.JoinAsHost:
+                    await JoinBattleAsync(response.data.photon_room_name, asHost: true);
+                    break;
+                case OutgoingWaitStep.Declined:
+                    BattleSession.Clear();
+                    ShowChallengeError(IncomingChallengeMessages.DeclinedByOpponent);
+                    break;
+                default:
+                    BattleSession.Clear();
+                    ShowChallengeError(IncomingChallengeMessages.NoAnswer);
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// Polls GET /battle/{id} until the defender answers, the server
+        /// ends the challenge, or the client-side cap passes
+        /// (BattleLifecycle.NextOutgoingStep). One request at a time.
+        /// </summary>
+        private async Task<OutgoingWaitStep> WaitForAnswerAsync(string battleId, CancellationToken token)
+        {
+            var waited = 0f;
+            while (true)
+            {
+                await Task.Delay(TimeSpan.FromSeconds(BattleLifecycle.ReadyPollIntervalSeconds), token);
+                waited += BattleLifecycle.ReadyPollIntervalSeconds;
+
+                var poll = await _apiClient.GetAsync<BattleSessionData>($"/battle/{battleId}", token);
+                token.ThrowIfCancellationRequested();
+
+                var step = BattleLifecycle.NextOutgoingStep(
+                    poll.success, poll.data?.status, poll.data?.challenge_state, poll.error, waited);
+                if (step != OutgoingWaitStep.KeepWaiting)
+                {
+                    return step;
+                }
+            }
+        }
+
+        /// <summary>
+        /// The defender accepted (IncomingChallengeCoordinator): keep the
+        /// session (no host-signing material) and join the attacker's room as
+        /// Client. Returns false if the room could not be joined; the
+        /// session is then cleared and MainMap stays usable.
+        /// </summary>
+        public async Task<bool> JoinAsDefenderAsync(ChallengeAnswerData accepted)
+        {
+            if (accepted == null || string.IsNullOrEmpty(accepted.photon_room_name))
+            {
+                return false;
+            }
+
+            if (!_challengeGate.TryBegin())
+            {
+                // This player is waiting on a challenge of their own; the
+                // server refuses that case (DUPLICATE_CHALLENGE), so it
+                // should never happen.
+                return false;
+            }
+
+            try
+            {
+                BattleSession.UpdateFromServer(accepted.ToSession());
+                return await JoinBattleAsync(accepted.photon_room_name, asHost: false);
+            }
+            finally
+            {
+                _challengeGate.End();
+            }
         }
 
         /// <summary>
@@ -138,15 +237,16 @@ namespace Nfouz.Networking
         /// handled by NetworkPlayerSpawner once the scene is active (see
         /// BattleLoadingController for the scene-entry sequencing).
         /// </summary>
-        private async Task JoinBattleAsync(string photonRoomName)
+        private async Task<bool> JoinBattleAsync(string photonRoomName, bool asHost)
         {
             if (_photonConnectionManager == null)
             {
                 Debug.LogError("[PhotonRoomLifecycle] PhotonConnectionManager not available via ServiceLocator.");
-                return;
+                BattleSession.Clear();
+                return false;
             }
 
-            var joined = await _photonConnectionManager.JoinRoomAsync(photonRoomName);
+            var joined = await _photonConnectionManager.JoinRoomAsync(photonRoomName, asHost);
             if (!joined)
             {
                 Debug.LogError("[PhotonRoomLifecycle] Failed to join Photon room — aborting battle entry.");
@@ -155,10 +255,30 @@ namespace Nfouz.Networking
                 // ready timeout passes (backend utils/battleLifecycle.js).
                 BattleSession.Clear();
                 ShowChallengeError(ChallengeErrorMessages.JoinFailed);
-                return;
+                return false;
             }
 
             await SceneLoader.LoadAsync(Constants.Scenes.Battle);
+            return true;
+        }
+
+        private static void ShowWaitingPopup()
+        {
+            var locator = ServiceLocator.Instance;
+            if (locator != null && locator.TryGet<PopupManager>(out var popups))
+            {
+                popups.ShowInfo(IncomingChallengeMessages.WaitingTitle, IncomingChallengeMessages.Waiting,
+                    IncomingChallengeMessages.WaitingDismiss, WaitingPopupKey);
+            }
+        }
+
+        private static void DismissWaitingPopup()
+        {
+            var locator = ServiceLocator.Instance;
+            if (locator != null && locator.TryGet<PopupManager>(out var popups))
+            {
+                popups.Dismiss(WaitingPopupKey);
+            }
         }
 
         /// <summary>

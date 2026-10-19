@@ -2977,6 +2977,7 @@ GameObject:
   - component: {fileID: 3266598198496456288}
   - component: {fileID: 2641302106482529755}
   - component: {fileID: 3089425724909610167}
+  - component: {fileID: 1490000000000000001}
   m_Layer: 0
   m_Name: Managers
   m_TagString: Untagged
@@ -5827,6 +5828,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   challengeInteractionController: {fileID: 954453102559747602}
+--- !u!114 &1490000000000000001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 793999924729334775}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 086141ac08ea43918569bd80df187154, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  photonRoomLifecycle: {fileID: 1485990905089642151}
 --- !u!224 &1503682433350911311
 RectTransform:
   m_ObjectHideFlags: 0
