@@ -98,3 +98,23 @@ desktop.ini
 .vscode/
 crashlytics-buildid.txt
 sysinfo.txt
+
+# Firebase Unity SDK + EDM4U: imported per machine from FirebaseAuth.unitypackage (13.17.0)
+/Assets/Firebase/
+/Assets/Firebase.meta
+/Assets/ExternalDependencyManager/
+/Assets/ExternalDependencyManager.meta
+/Assets/GeneratedLocalRepo/
+/Assets/GeneratedLocalRepo.meta
+/Assets/Plugins/iOS/
+/Assets/Plugins/iOS.meta
+/Assets/Plugins/tvOS/
+/Assets/Plugins/tvOS.meta
+/Assets/Editor Default Resources/
+/Assets/Editor Default Resources.meta
+/ProjectSettings/AndroidResolverDependencies.xml
+# Local-only: holds only the ignored google-services-desktop.json
+/Assets/StreamingAssets.meta
+# Local-only define for the imported Firebase SDK (HANDOFF item 6)
+/Assets/csc.rsp
+/Assets/csc.rsp.meta
