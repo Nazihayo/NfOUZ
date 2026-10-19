@@ -31,6 +31,16 @@ namespace Nfouz.Tests.EditMode
             return go;
         }
 
+        // Same as CreateCombatant, but also runs PlayerCombat.Awake, which
+        // EditMode skips for AddComponent — it caches the
+        // NetworkPlayerController that energy/health checks read.
+        private GameObject CreateStartedCombatant(string classType, WeaponStats weapon, int maxHealth, int maxEnergy)
+        {
+            var go = CreateCombatant(classType, weapon, maxHealth, maxEnergy);
+            EditModeLifecycle.Start(go.GetComponent<PlayerCombat>());
+            return go;
+        }
+
         [TearDown]
         public void TearDown()
         {
@@ -53,8 +63,8 @@ namespace Nfouz.Tests.EditMode
         public void BasicAttack_ConsumesEnergy_ForWeaponsThatCostEnergy()
         {
             var titanHammer = WeaponDatabase.GetDefaultStats(WeaponDatabase.TitanHammer); // costs 5 energy on basic attack
-            var attackerGo = CreateCombatant("Titan", titanHammer, maxHealth: 140, maxEnergy: 80);
-            var targetGo = CreateCombatant("Scout", WeaponDatabase.GetDefaultStats(WeaponDatabase.PulseBlade), maxHealth: 80, maxEnergy: 120);
+            var attackerGo = CreateStartedCombatant("Titan", titanHammer, maxHealth: 140, maxEnergy: 80);
+            var targetGo = CreateStartedCombatant("Scout", WeaponDatabase.GetDefaultStats(WeaponDatabase.PulseBlade), maxHealth: 80, maxEnergy: 120);
 
             targetGo.transform.position = attackerGo.transform.position + Vector3.forward * 1f; // within Titan Hammer's 2.5m range
 
@@ -74,8 +84,8 @@ namespace Nfouz.Tests.EditMode
         public void BasicAttack_RejectedWhenInsufficientEnergy()
         {
             var titanHammer = WeaponDatabase.GetDefaultStats(WeaponDatabase.TitanHammer);
-            var attackerGo = CreateCombatant("Titan", titanHammer, maxHealth: 140, maxEnergy: 80);
-            var targetGo = CreateCombatant("Scout", WeaponDatabase.GetDefaultStats(WeaponDatabase.PulseBlade), maxHealth: 80, maxEnergy: 120);
+            var attackerGo = CreateStartedCombatant("Titan", titanHammer, maxHealth: 140, maxEnergy: 80);
+            var targetGo = CreateStartedCombatant("Scout", WeaponDatabase.GetDefaultStats(WeaponDatabase.PulseBlade), maxHealth: 80, maxEnergy: 120);
             targetGo.transform.position = attackerGo.transform.position + Vector3.forward * 1f;
 
             var attackerCombat = attackerGo.GetComponent<PlayerCombat>();
@@ -92,8 +102,8 @@ namespace Nfouz.Tests.EditMode
         public void BasicAttack_EntersCooldown_AndRejectsASecondImmediateAttack()
         {
             var pulseBlade = WeaponDatabase.GetDefaultStats(WeaponDatabase.PulseBlade); // AttackCycleSeconds 0.65s
-            var attackerGo = CreateCombatant("Scout", pulseBlade, maxHealth: 80, maxEnergy: 120);
-            var targetGo = CreateCombatant("Scout", pulseBlade, maxHealth: 80, maxEnergy: 120);
+            var attackerGo = CreateStartedCombatant("Scout", pulseBlade, maxHealth: 80, maxEnergy: 120);
+            var targetGo = CreateStartedCombatant("Scout", pulseBlade, maxHealth: 80, maxEnergy: 120);
             targetGo.transform.position = attackerGo.transform.position + Vector3.forward * 1f;
 
             var attackerCombat = attackerGo.GetComponent<PlayerCombat>();
@@ -136,7 +146,7 @@ namespace Nfouz.Tests.EditMode
         [Test]
         public void ApplyDamage_ReducesHealth_AndFiresDeathAtZero()
         {
-            var targetGo = CreateCombatant("Scout", WeaponDatabase.GetDefaultStats(WeaponDatabase.PulseBlade), maxHealth: 10, maxEnergy: 100);
+            var targetGo = CreateStartedCombatant("Scout", WeaponDatabase.GetDefaultStats(WeaponDatabase.PulseBlade), maxHealth: 10, maxEnergy: 100);
             var targetCombat = targetGo.GetComponent<PlayerCombat>();
             var targetNetwork = targetGo.GetComponent<NetworkPlayerController>();
             targetNetwork.NetworkedHealth = 10;
@@ -154,7 +164,7 @@ namespace Nfouz.Tests.EditMode
         [Test]
         public void ApplyDamage_DoesNothingAfterDeath()
         {
-            var targetGo = CreateCombatant("Scout", WeaponDatabase.GetDefaultStats(WeaponDatabase.PulseBlade), maxHealth: 10, maxEnergy: 100);
+            var targetGo = CreateStartedCombatant("Scout", WeaponDatabase.GetDefaultStats(WeaponDatabase.PulseBlade), maxHealth: 10, maxEnergy: 100);
             var targetCombat = targetGo.GetComponent<PlayerCombat>();
             var targetNetwork = targetGo.GetComponent<NetworkPlayerController>();
             targetNetwork.NetworkedHealth = 10;
@@ -173,7 +183,7 @@ namespace Nfouz.Tests.EditMode
         [Test]
         public void Dodge_ConsumesEnergy_AndMovesTheDistanceForward()
         {
-            var targetGo = CreateCombatant("Ranger", WeaponDatabase.GetDefaultStats(WeaponDatabase.PulseBlade), 100, 100);
+            var targetGo = CreateStartedCombatant("Ranger", WeaponDatabase.GetDefaultStats(WeaponDatabase.PulseBlade), 100, 100);
             var targetCombat = targetGo.GetComponent<PlayerCombat>();
             var targetNetwork = targetGo.GetComponent<NetworkPlayerController>();
             targetNetwork.NetworkedEnergy = 100;
@@ -193,7 +203,7 @@ namespace Nfouz.Tests.EditMode
         [Test]
         public void Dodge_ScoutPaysReducedEnergyCost()
         {
-            var scoutGo = CreateCombatant("Scout", WeaponDatabase.GetDefaultStats(WeaponDatabase.PulseBlade), 80, 120);
+            var scoutGo = CreateStartedCombatant("Scout", WeaponDatabase.GetDefaultStats(WeaponDatabase.PulseBlade), 80, 120);
             var scoutCombat = scoutGo.GetComponent<PlayerCombat>();
             var scoutNetwork = scoutGo.GetComponent<NetworkPlayerController>();
             scoutNetwork.NetworkedEnergy = 100;
@@ -207,7 +217,7 @@ namespace Nfouz.Tests.EditMode
         [Test]
         public void Dodge_RejectedWhileOnCooldown()
         {
-            var combatGo = CreateCombatant("Ranger", WeaponDatabase.GetDefaultStats(WeaponDatabase.PulseBlade), 100, 100);
+            var combatGo = CreateStartedCombatant("Ranger", WeaponDatabase.GetDefaultStats(WeaponDatabase.PulseBlade), 100, 100);
             var combat = combatGo.GetComponent<PlayerCombat>();
             var network = combatGo.GetComponent<NetworkPlayerController>();
             network.NetworkedEnergy = 100;
@@ -223,7 +233,7 @@ namespace Nfouz.Tests.EditMode
         [Test]
         public void ApplyDamage_IsFullyNegated_WhileInvulnerable()
         {
-            var targetGo = CreateCombatant("Ranger", WeaponDatabase.GetDefaultStats(WeaponDatabase.PulseBlade), 100, 100);
+            var targetGo = CreateStartedCombatant("Ranger", WeaponDatabase.GetDefaultStats(WeaponDatabase.PulseBlade), 100, 100);
             var targetCombat = targetGo.GetComponent<PlayerCombat>();
             var targetNetwork = targetGo.GetComponent<NetworkPlayerController>();
             targetNetwork.NetworkedEnergy = 100;
@@ -296,8 +306,8 @@ namespace Nfouz.Tests.EditMode
             // Blade's BaseDamage(18) — proves the removed
             // SpecialDamageMultiplier model is gone.
             var pulseBlade = WeaponDatabase.GetDefaultStats(WeaponDatabase.PulseBlade);
-            var attackerGo = CreateCombatant("Scout", pulseBlade, maxHealth: 80, maxEnergy: 120);
-            var targetGo = CreateCombatant("Scout", pulseBlade, maxHealth: 200, maxEnergy: 120);
+            var attackerGo = CreateStartedCombatant("Scout", pulseBlade, maxHealth: 80, maxEnergy: 120);
+            var targetGo = CreateStartedCombatant("Scout", pulseBlade, maxHealth: 200, maxEnergy: 120);
             targetGo.transform.position = attackerGo.transform.position + Vector3.forward * 1f;
 
             var attackerCombat = attackerGo.GetComponent<PlayerCombat>();
@@ -320,8 +330,8 @@ namespace Nfouz.Tests.EditMode
         {
             // Every approved weapon's special has a 0.35s recovery.
             var pulseBlade = WeaponDatabase.GetDefaultStats(WeaponDatabase.PulseBlade);
-            var attackerGo = CreateCombatant("Scout", pulseBlade, maxHealth: 80, maxEnergy: 120);
-            var targetGo = CreateCombatant("Scout", pulseBlade, maxHealth: 80, maxEnergy: 120);
+            var attackerGo = CreateStartedCombatant("Scout", pulseBlade, maxHealth: 80, maxEnergy: 120);
+            var targetGo = CreateStartedCombatant("Scout", pulseBlade, maxHealth: 80, maxEnergy: 120);
             targetGo.transform.position = attackerGo.transform.position + Vector3.forward * 1f;
 
             var attackerCombat = attackerGo.GetComponent<PlayerCombat>();
@@ -360,7 +370,7 @@ namespace Nfouz.Tests.EditMode
         [Test]
         public void TryClassAbility_Scout_BlinkStep_MovesForwardAndConsumesEnergy()
         {
-            var combatGo = CreateCombatant("Scout", WeaponDatabase.GetDefaultStats(WeaponDatabase.PulseBlade), 80, 120);
+            var combatGo = CreateStartedCombatant("Scout", WeaponDatabase.GetDefaultStats(WeaponDatabase.PulseBlade), 80, 120);
             var combat = combatGo.GetComponent<PlayerCombat>();
             var network = combatGo.GetComponent<NetworkPlayerController>();
             network.NetworkedEnergy = 120;
@@ -412,7 +422,7 @@ namespace Nfouz.Tests.EditMode
         [Test]
         public void TryClassAbility_Ranger_FocusShot_ArmsABuff_WithNoTargetRequired()
         {
-            var rangerGo = CreateCombatant("Ranger", WeaponDatabase.GetDefaultStats(WeaponDatabase.PulseBlade), 80, 120);
+            var rangerGo = CreateStartedCombatant("Ranger", WeaponDatabase.GetDefaultStats(WeaponDatabase.PulseBlade), 80, 120);
             var combat = rangerGo.GetComponent<PlayerCombat>();
             var network = rangerGo.GetComponent<NetworkPlayerController>();
             network.NetworkedEnergy = 120;
@@ -482,7 +492,7 @@ namespace Nfouz.Tests.EditMode
         [Test]
         public void TryClassAbility_Ranger_FocusShot_DoesNotStack_ItsOwnCooldownPreventsARepeatActivationWhileArmed()
         {
-            var rangerGo = CreateCombatant("Ranger", WeaponDatabase.GetDefaultStats(WeaponDatabase.PulseBlade), 80, 120);
+            var rangerGo = CreateStartedCombatant("Ranger", WeaponDatabase.GetDefaultStats(WeaponDatabase.PulseBlade), 80, 120);
             var combat = rangerGo.GetComponent<PlayerCombat>();
             var network = rangerGo.GetComponent<NetworkPlayerController>();
             network.NetworkedEnergy = 120;
@@ -504,7 +514,7 @@ namespace Nfouz.Tests.EditMode
         [Test]
         public void TryClassAbility_Titan_Bulwark_AbsorbsExactlyTheApprovedTotal_AcrossMultipleHits()
         {
-            var targetGo = CreateCombatant("Titan", WeaponDatabase.GetDefaultStats(WeaponDatabase.TitanHammer), 140, 100);
+            var targetGo = CreateStartedCombatant("Titan", WeaponDatabase.GetDefaultStats(WeaponDatabase.TitanHammer), 140, 100);
             var combat = targetGo.GetComponent<PlayerCombat>();
             var network = targetGo.GetComponent<NetworkPlayerController>();
             network.NetworkedEnergy = 100;
@@ -531,7 +541,7 @@ namespace Nfouz.Tests.EditMode
             // MinimumDamage floor (damage could never round below 1). The
             // new flat-absorption-pool model has NO such floor — a hit
             // fully covered by the pool must apply exactly 0.
-            var targetGo = CreateCombatant("Titan", WeaponDatabase.GetDefaultStats(WeaponDatabase.TitanHammer), 140, 100);
+            var targetGo = CreateStartedCombatant("Titan", WeaponDatabase.GetDefaultStats(WeaponDatabase.TitanHammer), 140, 100);
             var combat = targetGo.GetComponent<PlayerCombat>();
             var network = targetGo.GetComponent<NetworkPlayerController>();
             network.NetworkedEnergy = 100;
@@ -575,8 +585,8 @@ namespace Nfouz.Tests.EditMode
         public void TrySpecial_ShadowLunge_DealsDamage_WhenTheDashLandsWithinContactRange()
         {
             var shadowDagger = WeaponDatabase.GetDefaultStats(WeaponDatabase.ShadowDagger);
-            var attackerGo = CreateCombatant("Scout", shadowDagger, maxHealth: 80, maxEnergy: 120);
-            var targetGo = CreateCombatant("Scout", shadowDagger, maxHealth: 80, maxEnergy: 120);
+            var attackerGo = CreateStartedCombatant("Scout", shadowDagger, maxHealth: 80, maxEnergy: 120);
+            var targetGo = CreateStartedCombatant("Scout", shadowDagger, maxHealth: 80, maxEnergy: 120);
             // Shadow Lunge dashes 3m forward; placing the target 3.5m
             // ahead lands the attacker within the 1.5m contact radius
             // (Shadow Dagger's own approved basic-attack range, reused —
@@ -601,8 +611,8 @@ namespace Nfouz.Tests.EditMode
         public void TrySpecial_ShadowLunge_StillDashes_ButAppliesNoDamage_WhenItMissesContact()
         {
             var shadowDagger = WeaponDatabase.GetDefaultStats(WeaponDatabase.ShadowDagger);
-            var attackerGo = CreateCombatant("Scout", shadowDagger, maxHealth: 80, maxEnergy: 120);
-            var targetGo = CreateCombatant("Scout", shadowDagger, maxHealth: 80, maxEnergy: 120);
+            var attackerGo = CreateStartedCombatant("Scout", shadowDagger, maxHealth: 80, maxEnergy: 120);
+            var targetGo = CreateStartedCombatant("Scout", shadowDagger, maxHealth: 80, maxEnergy: 120);
             // Far enough that the 3m dash still lands well outside the 1.5m contact radius.
             targetGo.transform.position = attackerGo.transform.position + Vector3.forward * 20f;
 
@@ -624,8 +634,8 @@ namespace Nfouz.Tests.EditMode
         public void TrySpecial_ShadowLunge_ClampsTheDashToTheArenaBoundary()
         {
             var shadowDagger = WeaponDatabase.GetDefaultStats(WeaponDatabase.ShadowDagger);
-            var attackerGo = CreateCombatant("Scout", shadowDagger, maxHealth: 80, maxEnergy: 120);
-            var targetGo = CreateCombatant("Scout", shadowDagger, maxHealth: 80, maxEnergy: 120);
+            var attackerGo = CreateStartedCombatant("Scout", shadowDagger, maxHealth: 80, maxEnergy: 120);
+            var targetGo = CreateStartedCombatant("Scout", shadowDagger, maxHealth: 80, maxEnergy: 120);
             // Start near the arena's edge, facing further outward — an
             // unclamped 3m dash would land well beyond ArenaRadiusMeters.
             attackerGo.transform.position = Vector3.forward * (Constants.Battle.ArenaRadiusMeters - 0.5f);
@@ -644,8 +654,8 @@ namespace Nfouz.Tests.EditMode
         public void TrySpecial_GroundBreak_RejectsATargetOutsideTheAoeRadius()
         {
             var titanHammer = WeaponDatabase.GetDefaultStats(WeaponDatabase.TitanHammer);
-            var attackerGo = CreateCombatant("Titan", titanHammer, maxHealth: 140, maxEnergy: 100);
-            var targetGo = CreateCombatant("Scout", WeaponDatabase.GetDefaultStats(WeaponDatabase.PulseBlade), maxHealth: 80, maxEnergy: 100);
+            var attackerGo = CreateStartedCombatant("Titan", titanHammer, maxHealth: 140, maxEnergy: 100);
+            var targetGo = CreateStartedCombatant("Scout", WeaponDatabase.GetDefaultStats(WeaponDatabase.PulseBlade), maxHealth: 80, maxEnergy: 100);
             targetGo.transform.position = attackerGo.transform.position + Vector3.forward * 10f; // well outside the 3m radius
 
             var attackerCombat = attackerGo.GetComponent<PlayerCombat>();
@@ -662,8 +672,8 @@ namespace Nfouz.Tests.EditMode
         public void TrySpecial_GroundBreak_AppliesFullKnockback_ToANonTitanTarget()
         {
             var titanHammer = WeaponDatabase.GetDefaultStats(WeaponDatabase.TitanHammer);
-            var attackerGo = CreateCombatant("Titan", titanHammer, maxHealth: 140, maxEnergy: 100);
-            var targetGo = CreateCombatant("Scout", WeaponDatabase.GetDefaultStats(WeaponDatabase.PulseBlade), maxHealth: 200, maxEnergy: 100);
+            var attackerGo = CreateStartedCombatant("Titan", titanHammer, maxHealth: 140, maxEnergy: 100);
+            var targetGo = CreateStartedCombatant("Scout", WeaponDatabase.GetDefaultStats(WeaponDatabase.PulseBlade), maxHealth: 200, maxEnergy: 100);
             targetGo.transform.position = attackerGo.transform.position + Vector3.forward * 2f; // within the 3m radius
             var targetStartPosition = targetGo.transform.position;
 
@@ -685,8 +695,8 @@ namespace Nfouz.Tests.EditMode
         public void TrySpecial_GroundBreak_ReducesKnockback_ForATitanTarget()
         {
             var titanHammer = WeaponDatabase.GetDefaultStats(WeaponDatabase.TitanHammer);
-            var attackerGo = CreateCombatant("Titan", titanHammer, maxHealth: 140, maxEnergy: 100);
-            var targetGo = CreateCombatant("Titan", titanHammer, maxHealth: 140, maxEnergy: 100);
+            var attackerGo = CreateStartedCombatant("Titan", titanHammer, maxHealth: 140, maxEnergy: 100);
+            var targetGo = CreateStartedCombatant("Titan", titanHammer, maxHealth: 140, maxEnergy: 100);
             targetGo.transform.position = attackerGo.transform.position + Vector3.forward * 2f;
             var targetStartPosition = targetGo.transform.position;
 
@@ -705,8 +715,8 @@ namespace Nfouz.Tests.EditMode
         public void TrySpecial_ChargedPulse_DoesNotApplyDamageSynchronously_ButStillConsumesResourcesImmediately()
         {
             var influenceCannon = WeaponDatabase.GetDefaultStats(WeaponDatabase.InfluenceCannon);
-            var attackerGo = CreateCombatant("Ranger", influenceCannon, maxHealth: 80, maxEnergy: 120);
-            var targetGo = CreateCombatant("Scout", WeaponDatabase.GetDefaultStats(WeaponDatabase.PulseBlade), maxHealth: 200, maxEnergy: 120);
+            var attackerGo = CreateStartedCombatant("Ranger", influenceCannon, maxHealth: 80, maxEnergy: 120);
+            var targetGo = CreateStartedCombatant("Scout", WeaponDatabase.GetDefaultStats(WeaponDatabase.PulseBlade), maxHealth: 200, maxEnergy: 120);
             targetGo.transform.position = attackerGo.transform.position + Vector3.forward * 5f;
 
             var attackerCombat = attackerGo.GetComponent<PlayerCombat>();

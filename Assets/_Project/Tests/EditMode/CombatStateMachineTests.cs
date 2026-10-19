@@ -19,17 +19,33 @@ namespace Nfouz.Tests.EditMode
     {
         private GameObject _go;
         private CombatStateMachine _stateMachine;
+        private bool _lifecycleStarted;
 
         [SetUp]
         public void SetUp()
         {
             _go = new GameObject("TestCombatStateMachine");
             _stateMachine = _go.AddComponent<CombatStateMachine>();
+            _lifecycleStarted = false;
+        }
+
+        // EditMode skips OnEnable for AddComponent, so the state machine
+        // never subscribes to BattleSession's events unless a test runs it.
+        private void StartLifecycle()
+        {
+            EditModeLifecycle.Start(_stateMachine);
+            _lifecycleStarted = true;
         }
 
         [TearDown]
         public void TearDown()
         {
+            if (_lifecycleStarted)
+            {
+                // Unsubscribe from the static events before the object is destroyed.
+                EditModeLifecycle.Stop(_stateMachine);
+            }
+
             Object.DestroyImmediate(_go);
             BattleSession.Clear();
         }
@@ -57,6 +73,7 @@ namespace Nfouz.Tests.EditMode
         [Test]
         public void TransitionsToCountdown_WhenBothSidesReady()
         {
+            StartLifecycle();
             var stateChanges = 0;
             _stateMachine.OnStateChanged += _ => stateChanges++;
 
@@ -94,6 +111,7 @@ namespace Nfouz.Tests.EditMode
         [Test]
         public void EnterOvertime_TransitionsFromBattleToOvertime()
         {
+            StartLifecycle();
             BattleSession.UpdateFromServer(new BattleSessionData
             {
                 battle_id = "b-1",
@@ -163,6 +181,7 @@ namespace Nfouz.Tests.EditMode
         public void SessionEndedEvent_EndsMatch_EvenWithoutExplicitEndMatchCall()
         {
             // Simulates a Sprint 5 forfeit/cancellation arriving mid-battle.
+            StartLifecycle();
             BattleSession.UpdateFromServer(new BattleSessionData
             {
                 battle_id = "b-1",
