@@ -294,6 +294,24 @@ function resolveSide(battle, playerId) {
 }
 
 /**
+ * Where the Alpha defender flow stands (migration 021): pending until the
+ * defender answers, then accepted or declined; an unanswered challenge
+ * the lifecycle cleanup ended is expired.
+ */
+function challengeState(battle) {
+  if (battle.declined_at) return 'declined';
+  if (battle.accepted_at) return 'accepted';
+  return battle.status === 'in_progress' ? 'pending' : 'expired';
+}
+
+/** Ready, disconnect, reconnect and resolve exist only after the defender accepted. */
+function assertAccepted(battle) {
+  if (!battle.accepted_at) {
+    throw new ApiError('CHALLENGE_NOT_ACCEPTED', 'The defender has not accepted this challenge yet.', 409);
+  }
+}
+
+/**
  * Marks the calling player as ready inside the battle session (loading
  * synchronization / ready confirmation, per Sprint 5 Battle Scene spec).
  */
@@ -304,6 +322,7 @@ async function setReady(battleId, playerId) {
   if (battle.status !== 'in_progress') {
     throw new ApiError('SESSION_EXPIRED', 'This battle session is no longer active.', 409);
   }
+  assertAccepted(battle);
 
   return battleRepo.setPlayerReady(battleId, side);
 }
@@ -321,6 +340,7 @@ async function handleDisconnect(battleId, playerId) {
   if (battle.status !== 'in_progress') {
     throw new ApiError('SESSION_EXPIRED', 'This battle session is no longer active.', 409);
   }
+  assertAccepted(battle);
 
   const disconnectedAt = new Date();
   const reconnectDeadline = new Date(disconnectedAt.getTime() + env.BATTLE_DISCONNECT_GRACE_SECONDS * 1000);
@@ -350,6 +370,7 @@ async function handleReconnect(battleId, playerId) {
   if (battle.status !== 'in_progress') {
     throw new ApiError('SESSION_EXPIRED', 'This battle session is no longer active.', 409);
   }
+  assertAccepted(battle);
 
   if (deadline && new Date(deadline).getTime() < Date.now()) {
     throw new ApiError('RECONNECT_WINDOW_EXPIRED', 'The 15-second reconnect grace period has already elapsed.', 409);
@@ -453,6 +474,7 @@ async function resolveBattle(battleId, callerId, { result, signature }) {
   if (battle.status !== 'in_progress') {
     throw new ApiError('SESSION_EXPIRED', 'This battle has already been resolved or ended.', 409);
   }
+  assertAccepted(battle);
 
   // --- Structural validation: reject an unsigned/malformed payload before
   // trusting any of its fields. ---
@@ -685,7 +707,71 @@ async function resolveBattle(battleId, callerId, { result, signature }) {
   });
 }
 
+/**
+ * The caller's newest unanswered incoming challenge (GET /battle/incoming),
+ * as a list of zero or one. Stale battles of the caller are ended first,
+ * so an expired invitation is never offered.
+ */
+async function getIncomingChallenges(playerId) {
+  const limits = battleLifecycleLimits();
+  await battleRepo.expireStaleBattles({ playerIds: [playerId] }, limits);
+  const row = await battleRepo.findIncomingChallenge(playerId);
+  if (!row) return [];
+  return [{
+    battle_id: row.battle_id,
+    attacker_id: row.attacker_id,
+    attacker_username: row.attacker_username,
+    attacker_class_type: row.attacker_class_type,
+    attacker_rank: row.attacker_rank,
+    expires_at: new Date(new Date(row.challenged_at).getTime() + limits.readyTimeoutSeconds * 1000).toISOString(),
+  }];
+}
+
+/** Why an accept/decline changed nothing, from the battle as it is now. */
+function rejectAnswer(battle) {
+  if (battle && battle.status === 'in_progress' && (battle.accepted_at || battle.declined_at)) {
+    throw new ApiError('CHALLENGE_ALREADY_ANSWERED', 'This challenge has already been answered.', 409);
+  }
+  throw new ApiError('SESSION_EXPIRED', 'This challenge is no longer open.', 409);
+}
+
+/** Checks shared by accept and decline: the caller must be this battle's defender. */
+async function loadOpenChallengeForDefender(battleId, playerId) {
+  const battle = await getBattleById(battleId);
+  if (resolveSide(battle, playerId) !== 'defender') {
+    throw new ApiError('NOT_CHALLENGE_DEFENDER', 'Only the challenged player can answer this challenge.', 403);
+  }
+  if (battle.status !== 'in_progress' || battle.accepted_at || battle.declined_at) {
+    rejectAnswer(battle);
+  }
+  return battle;
+}
+
+/**
+ * POST /battle/{battleId}/accept. Starts the ready window (the cleanup's
+ * ready timeout and no-result cutoff now count from accepted_at). Exactly
+ * one of simultaneous accepts/declines/expiries wins (guarded UPDATE).
+ */
+async function acceptChallenge(battleId, playerId) {
+  await loadOpenChallengeForDefender(battleId, playerId);
+  const accepted = await battleRepo.acceptChallenge(battleId, playerId, battleLifecycleLimits().readyTimeoutSeconds);
+  if (!accepted) rejectAnswer(await battleRepo.getById(battleId));
+  return accepted;
+}
+
+/** POST /battle/{battleId}/decline. Ends the battle so both players are free again. */
+async function declineChallenge(battleId, playerId) {
+  await loadOpenChallengeForDefender(battleId, playerId);
+  const declined = await battleRepo.declineChallenge(battleId, playerId);
+  if (!declined) rejectAnswer(await battleRepo.getById(battleId));
+  return declined;
+}
+
 module.exports = {
+  challengeState,
+  getIncomingChallenges,
+  acceptChallenge,
+  declineChallenge,
   generatePhotonRoomName,
   createChallenge,
   getBattleById,

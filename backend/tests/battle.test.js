@@ -31,6 +31,8 @@ jest.mock('../src/middleware/rateLimit.middleware', () => {
     battleChallengeLimiter: passThrough,
     friendRequestLimiter: passThrough,
     sosCreateLimiter: passThrough,
+    incomingChallengeLimiter: passThrough,
+    challengeResponseLimiter: passThrough,
   };
 });
 
@@ -90,6 +92,7 @@ function baseBattleRow(overrides = {}) {
     defender_reconnect_deadline: null,
     forfeited_by: null,
     session_started_at: new Date().toISOString(),
+    accepted_at: new Date().toISOString(), // the defender accepted (migration 021)
     session_expires_at: new Date(Date.now() + 90000).toISOString(),
     ...overrides,
   };

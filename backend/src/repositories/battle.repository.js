@@ -219,7 +219,10 @@ async function expireStaleBattles({ battleId = null, playerIds = null }, limits,
   }
   const attackerGone = 'attacker_disconnected_at IS NOT NULL AND attacker_reconnect_deadline < now()';
   const defenderGone = 'defender_disconnected_at IS NOT NULL AND defender_reconnect_deadline < now()';
-  const startedAt = 'COALESCE(session_started_at, started_at)';
+  // The ready window starts when the defender accepts; a pending challenge
+  // (accepted_at NULL) is measured from the challenge itself, so an
+  // unanswered invitation ends after the same ready timeout.
+  const startedAt = 'COALESCE(accepted_at, session_started_at, started_at)';
   const result = await executor.query(
     `UPDATE battles
      SET status = CASE WHEN (${attackerGone}) OR (${defenderGone}) THEN 'forfeited' ELSE 'cancelled' END,
@@ -237,6 +240,56 @@ async function expireStaleBattles({ battleId = null, playerIds = null }, limits,
     [battleId, playerIds || [], limits.readyTimeoutSeconds, limits.noResultCutoffSeconds]
   );
   return result.rows;
+}
+
+/**
+ * The newest unanswered challenge addressed to this defender, with the
+ * attacker's public profile (username, class, rank) for the prompt.
+ */
+async function findIncomingChallenge(defenderId, executor = db) {
+  const result = await executor.query(
+    `SELECT b.battle_id, b.attacker_id, COALESCE(b.session_started_at, b.started_at) AS challenged_at,
+            p.username AS attacker_username, p.class_type AS attacker_class_type, p.rank AS attacker_rank
+     FROM battles b
+     JOIN players p ON p.player_id = b.attacker_id
+     WHERE b.defender_id = $1 AND b.status = 'in_progress'
+       AND b.accepted_at IS NULL AND b.declined_at IS NULL
+     ORDER BY challenged_at DESC
+     LIMIT 1`,
+    [defenderId]
+  );
+  return result.rows[0] || null;
+}
+
+/**
+ * Records the defender's Accept. Guarded like every other transition: only
+ * the battle's own defender, only while it is still in_progress,
+ * unanswered and inside the response window, so a second accept, an
+ * accept racing a decline or the expiry cleanup, or an accept by anyone
+ * else changes nothing (null).
+ */
+async function acceptChallenge(battleId, defenderId, responseWindowSeconds, executor = db) {
+  const result = await executor.query(
+    `UPDATE battles SET accepted_at = now()
+     WHERE battle_id = $1 AND defender_id = $2 AND status = 'in_progress'
+       AND accepted_at IS NULL AND declined_at IS NULL
+       AND COALESCE(session_started_at, started_at) + $3 * interval '1 second' >= now()
+     RETURNING *`,
+    [battleId, defenderId, responseWindowSeconds]
+  );
+  return result.rows[0] || null;
+}
+
+/** Records the defender's Decline (same guards); the battle ends cancelled. */
+async function declineChallenge(battleId, defenderId, executor = db) {
+  const result = await executor.query(
+    `UPDATE battles SET status = 'cancelled', declined_at = now(), ended_at = now()
+     WHERE battle_id = $1 AND defender_id = $2 AND status = 'in_progress'
+       AND accepted_at IS NULL AND declined_at IS NULL
+     RETURNING *`,
+    [battleId, defenderId]
+  );
+  return result.rows[0] || null;
 }
 
 async function resolveBattle(battleId, { winnerId, loserId, durationSeconds, eventSeq, status = 'resolved' }, executor = db) {
@@ -278,4 +331,7 @@ module.exports = {
   markForfeited,
   cancelBattle,
   resolveBattle,
+  findIncomingChallenge,
+  acceptChallenge,
+  declineChallenge,
 };

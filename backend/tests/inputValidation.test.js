@@ -31,6 +31,8 @@ jest.mock('../src/middleware/rateLimit.middleware', () => {
     battleChallengeLimiter: passThrough,
     friendRequestLimiter: passThrough,
     sosCreateLimiter: passThrough,
+    incomingChallengeLimiter: passThrough,
+    challengeResponseLimiter: passThrough,
   };
 });
 

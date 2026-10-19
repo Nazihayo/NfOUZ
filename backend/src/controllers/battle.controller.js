@@ -57,6 +57,9 @@ async function createChallenge(req, res, next) {
         defender_id: battle.defender_id,
         status: battle.status,
         session_expires_at: battle.session_expires_at,
+        // Alpha defender flow: a new challenge waits for the defender.
+        challenge_state: battleService.challengeState(battle),
+        accepted_at: battle.accepted_at,
         // Sprint 6 final security correction: the attacker's client always
         // creates the Photon room, so it is this battle's Host Mode host
         // by convention — these three fields let it later sign an
@@ -108,6 +111,10 @@ async function getBattle(req, res, next) {
         winner_id: battle.winner_id,
         loser_id: battle.loser_id,
         duration_seconds: battle.duration_seconds,
+        // Alpha defender flow: the attacker waits on this until the
+        // defender accepts (then joins Photon as Host) or declines.
+        challenge_state: battleService.challengeState(battle),
+        accepted_at: battle.accepted_at,
       })
     );
   } catch (err) {
@@ -204,4 +211,64 @@ async function resolveBattle(req, res, next) {
   }
 }
 
-module.exports = { createChallenge, getBattle, markReady, reportDisconnect, reportReconnect, resolveBattle };
+/** GET /battle/incoming — the caller's own unanswered challenge (zero or one). */
+async function listIncomingChallenges(req, res, next) {
+  try {
+    const self = await resolveSelf(req);
+    const challenges = await battleService.getIncomingChallenges(self.player_id);
+    return res.status(200).json(success({ challenges }));
+  } catch (err) {
+    return next(err);
+  }
+}
+
+/**
+ * The battle as the defender sees it after answering. Never includes
+ * host_authority_secret or match_nonce: only the attacker (the Photon
+ * host) signs results.
+ */
+function answeredChallengeResponse(battle) {
+  return {
+    battle_id: battle.battle_id,
+    attacker_id: battle.attacker_id,
+    defender_id: battle.defender_id,
+    status: battle.status,
+    challenge_state: battleService.challengeState(battle),
+    photon_room_name: battle.photon_room_name,
+    session_expires_at: battle.session_expires_at,
+  };
+}
+
+/** POST /battle/{battleId}/accept — the defender joins; the caller is the authenticated player. */
+async function acceptChallenge(req, res, next) {
+  try {
+    const self = await resolveSelf(req);
+    const battle = await battleService.acceptChallenge(req.params.battleId, self.player_id);
+    return res.status(200).json(success(answeredChallengeResponse(battle)));
+  } catch (err) {
+    return next(err);
+  }
+}
+
+/** POST /battle/{battleId}/decline — ends the battle; both players are free again. */
+async function declineChallenge(req, res, next) {
+  try {
+    const self = await resolveSelf(req);
+    const battle = await battleService.declineChallenge(req.params.battleId, self.player_id);
+    return res.status(200).json(success(answeredChallengeResponse(battle)));
+  } catch (err) {
+    return next(err);
+  }
+}
+
+module.exports = {
+  createChallenge,
+  getBattle,
+  markReady,
+  reportDisconnect,
+  reportReconnect,
+  resolveBattle,
+  listIncomingChallenges,
+  acceptChallenge,
+  declineChallenge,
+};

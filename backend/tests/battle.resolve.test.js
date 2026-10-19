@@ -61,6 +61,7 @@ function baseBattleRow(overrides = {}) {
     attacker_id: ATTACKER.player_id,
     defender_id: DEFENDER.player_id,
     status: 'in_progress',
+    accepted_at: new Date().toISOString(), // the defender accepted (migration 021)
     photon_room_name: 'battle_battle-1',
     winner_id: null,
     loser_id: null,

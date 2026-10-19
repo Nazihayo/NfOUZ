@@ -43,6 +43,11 @@ namespace Nfouz.Networking
         public string loser_id;
         public int duration_seconds;
 
+        // Alpha defender flow (migration 021): pending | accepted | declined |
+        // expired. The attacker waits for "accepted" before joining Photon.
+        public string challenge_state;
+        public string accepted_at;
+
         // Sprint 6 final security correction — host-signing material.
         // Attacker-only, challenge-response-only. See class doc comment.
         public string host_authority_secret;

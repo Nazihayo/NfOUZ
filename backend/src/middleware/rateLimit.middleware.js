@@ -73,7 +73,30 @@ const sosCreateLimiter = rateLimit({
   message: standardEnvelope('RATE_LIMITED', 'Too many SOS requests. Try again shortly.'),
 });
 
+// Alpha defender flow: MainMap polls GET /battle/incoming every 5 s; this
+// allows a few retries on top without letting a client hammer it.
+const incomingChallengeLimiter = rateLimit({
+  windowMs: 5 * 1000,
+  max: 3,
+  keyGenerator: keyByFirebaseUid,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: standardEnvelope('RATE_LIMITED', 'Too many incoming-challenge checks. Try again shortly.'),
+});
+
+// Accept/Decline are one tap each; this only stops scripted spam.
+const challengeResponseLimiter = rateLimit({
+  windowMs: 5 * 1000,
+  max: 3,
+  keyGenerator: keyByFirebaseUid,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: standardEnvelope('RATE_LIMITED', 'Too many challenge answers. Try again shortly.'),
+});
+
 module.exports = {
+  incomingChallengeLimiter,
+  challengeResponseLimiter,
   locationUpdateLimiter,
   nearbyQueryLimiter,
   battleChallengeLimiter,

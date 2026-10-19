@@ -52,6 +52,7 @@ async function setup({ startedSecondsAgo, ready = [false, false], extra = {}, wo
     await sql(
       `UPDATE battles SET started_at = now() - $2 * interval '1 second',
               session_started_at = now() - $2 * interval '1 second',
+              accepted_at = now() - $2 * interval '1 second',
               session_expires_at = now() - ($2 - 90) * interval '1 second',
               attacker_ready = $3, defender_ready = $4
        WHERE battle_id = $1`,
