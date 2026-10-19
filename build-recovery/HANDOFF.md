@@ -490,13 +490,32 @@ laptop; Unity 6000.0.58f2, Android target):
     - Result: EditMode 329 of 330 pass; the one failure is
       `ArabicUiAssetTests.ProjectFont_HasEveryGlyphTheUiDraws` (no Arabic
       font yet, Next steps 2). PlayMode 9 of 9 pass.
-    - Still untracked or modified on the laptop, not decided:
-      `Assets/Firebase/`, `ExternalDependencyManager/`, `Plugins/`,
-      `GeneratedLocalRepo/`, `Editor Default Resources/`,
-      `StreamingAssets.meta`, `csc.rsp` (+ `.meta`), new
-      `ProjectSettings/*` files, `ProjectSettings.asset`,
-      `ProjectVersion.txt` (revision line only), `packages-lock.json`,
-      `backend/package-lock.json`.
+    - Laptop-only files sorted (`61d9f23`, `38af2de`, `7eca576`,
+      `1657b7f`, `7ab67bf`, `28ce2d8`); `git status` on the laptop is clean.
+      - Ignored, per machine: the Firebase Unity SDK (231 MB; one file is
+        106.6 MB, over GitHub's 100 MB limit), EDM4U,
+        `GeneratedLocalRepo/`, `Plugins/iOS|tvOS/`,
+        `Editor Default Resources/`, `AndroidResolverDependencies.xml`,
+        `StreamingAssets.meta`, `csc.rsp`.
+      - Committed: Unity's standard `ProjectSettings/*` files,
+        `GvhProjectSettings.xml`, `ProjectVersion.txt`,
+        `Packages/packages-lock.json` (with RTLTMPro), the three Android
+        Gradle templates EDM4U enabled, and `backend/package-lock.json`
+        (580 entries, all from registry.npmjs.org; `npm ci` installs 579
+        packages, `npm test` 433/433).
+      - `ProjectSettings.asset` (real Android Player Settings): package
+        `com.NFOUZ.NFOUZ1`, ARM64 only, "Allow downloads over HTTP" =
+        development builds only, the three Gradle templates enabled, no
+        scripting defines (the misspelled `FIREBASE_ATHU_AVAILABLE` was
+        removed; `csc.rsp` defines `FIREBASE_AUTH_AVAILABLE` locally), no
+        keystore set. IL2CPP was selected in the Editor, but the file
+        stores `scriptingBackend: {}` (Unity's default). Confirm the first
+        Android build log says IL2CPP.
+    - **A new machine** after cloning: import `FirebaseAuth.unitypackage`
+      13.17.0 (Firebase Unity SDK), run EDM4U → Android Resolver → Force
+      Resolve, put `google-services.json` in `Assets/`, and create
+      `Assets/csc.rsp` with the single line
+      `-define:FIREBASE_AUTH_AVAILABLE`. None of these are in Git.
     - The project lives under OneDrive
       (`OneDrive\Documents\GitHub\NfOUZ`); moving it out is recommended
       (sync conflicts with `Library/`).
@@ -688,8 +707,8 @@ says "verified on the laptop".
    - Cloud only: items 11–25 and 27–28 (API contract fixes, contract tests
      in both modes, token refresh, battle lifecycle, Arabic/TMP/RTLTMPro,
      the pre-Alpha fixes).
-2. **Laptop reconciliation:** done on 2026-10-19 (item 30). Remaining:
-   decide the untracked files listed there.
+2. **Laptop reconciliation:** done on 2026-10-19, untracked files sorted
+   (item 30).
 3. **Arabic font and visual validation:** Next steps 2, then
    `PRE_ALPHA_CHECKLISTS.md` §1 and "Check in Unity after pulling".
 4. **Defender flow:** decided on 2026-10-19 and built in the cloud
