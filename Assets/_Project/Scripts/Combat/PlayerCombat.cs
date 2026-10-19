@@ -126,6 +126,10 @@ namespace Nfouz.Combat
         private int _bulwarkAbsorbRemaining;
         private float _bulwarkDurationRemaining;
 
+        // Fractional energy regenerated but not yet applied — one frame's
+        // regen is far below 1 at normal frame rates.
+        private float _energyRegenCarry;
+
         public bool IsDodging => _isDodging;
 
         /// <summary>True for the first Constants.Combat.DodgeInvulnerabilitySeconds
@@ -271,11 +275,16 @@ namespace Nfouz.Combat
         {
             if (_networkController.NetworkedEnergy >= MaxEnergy)
             {
+                _energyRegenCarry = 0f; // nothing is banked while full
                 return;
             }
 
-            var regenThisFrame = Constants.Combat.EnergyRegenPerSecond * Time.deltaTime;
-            var newEnergy = Mathf.Min(MaxEnergy, _networkController.NetworkedEnergy + Mathf.RoundToInt(regenThisFrame));
+            // Accumulate across frames: rounding each frame's 5 * deltaTime
+            // on its own gives 0 at any frame rate above 10 FPS.
+            _energyRegenCarry += Constants.Combat.EnergyRegenPerSecond * Time.deltaTime;
+            var wholeEnergy = Mathf.FloorToInt(_energyRegenCarry);
+            _energyRegenCarry -= wholeEnergy;
+            var newEnergy = Mathf.Min(MaxEnergy, _networkController.NetworkedEnergy + wholeEnergy);
             _networkController.NetworkedEnergy = newEnergy;
         }
 
