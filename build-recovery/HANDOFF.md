@@ -803,6 +803,8 @@ Needs the developer's external accounts:
   out of Git.
 
 Future features (not Build Recovery):
+- Ideas for after Alpha, not approved: `build-recovery/POST_ALPHA_VISION.md`
+  (Arabic; also lists the exact path to the first game on a phone).
 - Faction System (see item 14).
 - Sprint 11 and anything else not already in the Sprint 1–10 code.
 
