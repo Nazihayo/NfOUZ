@@ -82,3 +82,101 @@ Firebase خاص بـiOS. مؤجل إلى ما بعد Alpha.
 3. الأمان ضد الغش (القسم 1).
 4. ميزة واحدة مميزة في كل مرة (القسمان 2 و3)، بعد مراجعتها مقابل الـGDD
    وموافقة صاحب المشروع.
+
+## 6. ما يفتقده اللاعبون: بحث في الألعاب الأخرى (2026-10-20)
+
+بحث سريع في التغطية الصحفية وشكاوى اللاعبين عن Pokémon GO، وMonster Hunter
+Now، وIngress، وOrna، وJurassic World Alive، وClash Royale، وBrawl Stars،
+وعن سوق الألعاب في الخليج.
+
+**حدود هذا البحث:** معظم المصادر مقالات رأي، أو تجميع لشكاوى Reddit وصفحات
+التقييمات، وكثير منها من 2016 إلى 2024. هي تدل على **موضوعات تتكرر**، وليست
+استطلاعات تمثيلية. أي قرار مبني عليها يُراجع مقابل الـGDD.
+
+### 6.1 ما يشتكي منه اللاعبون، وما يقابله في NFOUZ
+
+| ما يفتقده اللاعبون | الدليل | ما يعنيه لـNFOUZ |
+|---|---|---|
+| **قتال حقيقي ضد لاعبين آخرين** | كان الطلب الأول من لاعبي Pokémon GO في تحليل Sensor Tower | هو جوهر NFOUZ. يجب أن يبقى سريعاً وعادلاً |
+| **العدل وعدم الدفع مقابل الفوز** | أكثر الشكاوى تكراراً عن Clash Royale وBrawl Stars: مواجهة لاعبين أقوى بعد الترقية، وتفوّق من يدفع | مطابقة حسب المستوى والرتبة لا حسب الإنفاق، وألا تُباع قوة قتالية |
+| **معاقبة الغشاشين فعلاً** | لاعبو Pokémon GO يشتكون من تزييف الموقع والبوتات، ومن بلاغات بلا رد | إظهار نتيجة البلاغ للمبلِّغ، وكشف التزييف (القسم 1) |
+| **مكافآت تبرّر الخروج من البيت** | قدامى لاعبي Pokémon GO يقولون إن مكافآت اللعب في الخارج تبخّرت | أن تبقى أفضل المكافآت للّقاء الحقيقي: المعركة والإنقاذ |
+| **أحداث لا تحتاج تذكرة مدفوعة** | غضب واسع من الأحداث المدفوعة في Pokémon GO | الأحداث الأساسية مجانية، وما يُدفع ثمنه تجميلي فقط |
+| **لاعبو القرى والأماكن الهادئة** | قلة النقاط والكائنات في الريف، وغلاء «الغارات عن بُعد» في Pokémon GO. والحلول (Routes) جاءت متأخرة وناقصة | NFOUZ تحتاج **لاعباً على بعد 20 م**، فالمناطق الهادئة ستكون فارغة. نحتاج شيئاً يُفعل وحدك (القسم 6.2) |
+| **اللعب من البيت أحياناً** | Orna وJurassic World Alive (الدرون) يسمحان بلعب جزئي من البيت، ويبقى الأندر في الخارج | نشاط محدود من البيت (تدريب، تجهيز، مهام)، والمعارك والإنقاذ في الخارج |
+| **جلسات قصيرة** | الصيد في Monster Hunter Now ثوانٍ معدودة، واحتفاظه باللاعبين أعلى قليلاً من Pokémon GO في بياناته الأولى | المعركة محدودة أصلاً بـ90 ث، فلنحافظ على ذلك |
+| **المكان يغيّر اللعبة** | Monster Hunter Now يربط الوحوش بنوع المكان (biomes)، فيدفع اللاعب إلى التنقل | مكافآت أو مهام حسب نوع المكان: حديقة، سوق، شاطئ |
+| **مجتمع وأرض يُتنافس عليها** | Ingress: حقول تحكّم للفصائل ولقاءات شهرية (First Saturday). Orna: مستوطنات وألقاب يومية | نظام الفصائل المخطط، ومنطقة للحي، ولقاء شهري |
+| **الأمان الشخصي** | حوادث القيادة، والتعدي على الملكيات، والسرقة ليلاً في أماكن معزولة (Pokémon GO) | القسم 6.3، وهو الأهم |
+
+### 6.2 خاص بالخليج والعالم العربي
+
+- **السعودية هي الأكبر في المنطقة:** أكثر من نصف إيرادات الألعاب في
+  السعودية والإمارات ومصر (Niko Partners 2025)، و87% إلى 94% من اللاعبين
+  على الهاتف. الجمهور المستهدف موجود ويلعب على الهاتف.
+- **الدفع المحلي:** نسبة انتشار «مدى» في السعودية 93%، وكثير من اللاعبين
+  يشترون خارج المتاجر. بوابة دفع محلية لاحقاً قد تكون فارقاً.
+- **الحرّ:** لعبة مشي في صيف الخليج مشكلة حقيقية. لم أجد بحثاً عنها، لكن
+  المنطق واضح:
+  - أحداث المساء والليل.
+  - المراكز التجارية كمناطق لعب داخلية.
+  - تنبيه حرارة، وعدم معاقبة من لا يخرج في الظهيرة.
+- **رمضان:** الذروة بعد الإفطار وقبل السحور حسب أكثر من مصدر، مع تعارض في
+  الأرقام. حملة رمضانية للعبة Nida Harb 3 (هدايا يومية وعناصر رمضانية) رفعت
+  اللاعبين اليوميين 6% والمشتريات 48% (2021).
+  - المقترح: أحداث بعد الإفطار، وتحديات جماعية، وتوقيت إشعارات يحترم
+    الصيام.
+- **جودة العربية:** الأبحاث الأكاديمية تصف التعريب في الألعاب بالضعف
+  ونقص السياق. مثال: أكثر من 500 خطأ في النسخة العربية من Cyberpunk 2077.
+  NFOUZ مكتوبة عربياً من الأساس، وهذه ميزة يجب أن تبقى. يُضاف إليها:
+  - مراجع لغوي قبل كل تحديث.
+  - فحص الحروف الموجود (`ProjectFont_HasEveryGlyphTheUiDraws`).
+
+### 6.3 الأمان والخصوصية: قبل أي إطلاق عام
+
+NFOUZ تعرض اللاعبين القريبين على الخريطة (حتى 1000 م) وتدعو إلى لقائهم.
+هذا **أخطر من Pokémon GO**، الذي يجمع الناس حول نقاط ثابتة لا حول بعضهم.
+مقترحات تحتاج قراراً:
+- **لا موقع دقيق للاعبين الآخرين:** موقع تقريبي (ضبابي) حتى تكون على بعد
+  أمتار للتحدي، ولا تحديث فورياً لمكان أحد.
+- **حماية البيت:** لا يظهر اللاعب في دائرة حول منزله. Orna تفصل «مدينة
+  المنشأ» عن مناطق التنافس.
+- **إيقاف عند السرعة:** لا تحدي ولا لعب أثناء القيادة. السرعة تُعرف من
+  تحديثات الموقع.
+- **وضع خفي وقوائم حظر:** الحظر موجود في الأصدقاء، ويُضاف «لا تُظهرني»
+  مؤقتاً.
+- **تنبيه ليلي وأماكن عامة:** تشجيع اللقاء في الأماكن العامة.
+- **حماية القاصرين:** حدّ أدنى للعمر، أو إعدادات أشد للحسابات الصغيرة، حسب
+  قوانين الدول المستهدفة.
+
+### 6.4 أعلى 5 اقتراحات حسب أثرها
+
+1. **الأمان والخصوصية (6.3):** شرط قبل أي تجربة عامة.
+2. **العدل ومكافحة الغش:** قتال يقرّره الخادم، وكشف التزييف، وبلاغات بنتيجة.
+3. **شيء يُفعل حين لا يوجد لاعب قريب:** تدريب، ومهام، وحرّاس، وإنقاذ.
+   `RescueGuardCombat` موجود أصلاً.
+4. **التوقيت المحلي:** المساء، ورمضان، والمراكز التجارية في الصيف.
+5. **مجتمع الحي:** فصائل، ومنطقة للحي، ولقاء شهري.
+
+### المصادر
+- Pokémon GO: [Deltia's Gaming](https://deltiasgaming.com/?p=98619)،
+  [Sensor Tower](https://sensortower.com/blog/pokemon-go-review-analysis)،
+  [Sportskeeda (اللعب في الخارج)](https://sportskeeda.com/pokemon/pokemon-go-player-complains-lack-incentive-playing-game-outside)،
+  [Kotaku (الريف والغارات عن بعد)](https://kotaku.com/pokemon-go-routes-rural-area-remote-raid-passes-niantic-1850531245)،
+  [TheGamer (لاعبو الريف)](https://www.thegamer.com/pokemon-go-help-rural-players/)،
+  [Bulbapedia (الأمان)](https://bulbapedia.bulbagarden.net/wiki/Walkthrough:Pok%C3%A9mon_GO/Safety)
+- Monster Hunter Now: [PocketGamer.biz (الاحتفاظ)](https://www.pocketgamer.biz/news/83655/monster-hunter-now-is-actually-beating-pokmon-go-in-these-key-metrics/)،
+  [NY Game Critics](https://nygamecritics.com/2023/10/17/the-insight-monster-hunter-now-often-left-theresa-craving-the-hunt-more-than-pokemon-go/)
+- Ingress: [ARGN (الأحداث)](https://www.argn.com/2014/04/google_ingress_recursion_anomaly_event/)،
+  [Android Central](https://www.androidcentral.com/app/ingress)
+- Orna: [Massively OP](https://massivelyop.com/2022/01/21/massively-on-the-go-ornas-a-definitive-mmoarg-but-it-keeps-you-at-home/)،
+  [AppSpy](https://www.appspy.com/news/become-the-ultimate-ruler-of-your-neighbourhood-in-orna-the-gps-rpg/)
+- Jurassic World Alive: [Pocket Gamer](https://www.pocketgamer.com/jurassic-world-alive/beginners-guide)،
+  [Deconstructor of Fun](https://www.deconstructoroffun.com/blog/2018/7/11/pokemon-go-vs-jurassic-world-alive)
+- Clash Royale وBrawl Stars: [Kimola](https://kimola.com/reports/insightful-clash-royale-feedback-analysis-report-google-play-en-us-154487)،
+  [Şikayetvar](https://www.sikayetvar.com/en/brawl-stars-us/brawl-stars-matchmaking-is-unbalanced-and-cheaters-ruin-the-competitive-experience)
+- الخليج والعالم العربي: [Niko Partners (MENA-3)](https://substack.nikopartners.com/p/the-future-of-gaming-in-mena-3-understanding)،
+  [Xsolla وNiko](https://gamedevreports.substack.com/p/xsolla-and-niko-partners-mena-3-market)،
+  [Tamatem (رمضان)](https://tamatem.co/news/go-global-at-ramadan-tips-for-engaging-players-during-this-special-month/)،
+  [Arabian Business (رمضان)](https://www.arabianbusiness.com/gcc/uae/how-mena-business-tapped-into-gaming-and-e-sports-to-reach-consumers-during-ramadan)،
+  [Cyberpunk 2077 بالعربية](https://drepo.sdl.edu.sa/items/a726dbb5-08b3-416b-8f42-0813d3869749)
