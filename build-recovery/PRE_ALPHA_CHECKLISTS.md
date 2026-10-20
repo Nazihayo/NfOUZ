@@ -7,8 +7,10 @@ an App ID, token, key, keystore or password while following it.
 
 ## 1. Arabic font and visual validation
 
-Steps are in HANDOFF "Next steps 2". What the font must cover (measured from
-every scene text and every Arabic message in the scripts at `caa311c`):
+Done on 2026-10-20 (HANDOFF item 31): Noto Sans Arabic is the default TMP
+font, with LiberationSans SDF and DejaVuSans SDF (→ ⚙ ✓) as fallbacks, and
+the glyph test passes. What the font had to cover (measured from every scene
+text and every Arabic message in the scripts at `caa311c`):
 
 | Needed | Code points | Why |
 |---|---|---|

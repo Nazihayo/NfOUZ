@@ -9,7 +9,7 @@ folder; where they differ, this file is current.
 - **Branch:** `claude/sprint-5-photon-multiplayer-5jv8v2` (all work below is pushed)
 - **Phase:** Build Recovery — make the existing Sprint 1–10 code runnable.
   **Do not start Sprint 11. Do not add gameplay features or redesign systems.**
-- **Last updated:** 2026-10-19 (covers commits through the first laptop Unity test run; see item 30)
+- **Last updated:** 2026-10-20 (covers commits through the Arabic font; see item 31)
 
 ## Working rules agreed with the developer
 
@@ -516,6 +516,27 @@ laptop; Unity 6000.0.58f2, Android target):
       Resolve, put `google-services.json` in `Assets/`, and create
       `Assets/csc.rsp` with the single line
       `-define:FIREBASE_AUTH_AVAILABLE`. None of these are in Git.
+
+31. **Arabic font, verified on the laptop on 2026-10-20** (`4b46e65`).
+    - Default TMP font (TMP Settings → Default Font Asset):
+      `Assets/_Project/Fonts/NotoSansArabic/NotoSansArabic-Regular SDF`,
+      generated from Noto Sans Arabic (google/fonts, SIL OFL 1.1, `OFL.txt`
+      next to it). The `.ttf` is the variable font (`[wdth,wght]`) saved as
+      `NotoSansArabic-Regular.ttf`; TMP uses its default instance (Regular).
+      Atlas 2048², SDFAA, the Next steps 2 range: 318 of 322 characters
+      (the missing ones are U+FE75, U+FEFD, U+FEFE, which are unassigned,
+      and U+2192).
+    - Fallbacks, in order: `LiberationSans SDF` (TMP Essentials, Latin) and
+      `Assets/_Project/Fonts/DejaVuSans/DejaVuSans SDF` (DejaVu Sans 2.37,
+      Bitstream Vera license with DejaVu changes in the public domain,
+      `LICENSE.txt` next to it; atlas 256², only U+2192 →, U+2699 ⚙,
+      U+2713 ✓). Noto Sans Symbols 2 was tried first and lacks ⚙ and →.
+    - Result: EditMode 330 of 330, including
+      `ArabicUiAssetTests.ProjectFont_HasEveryGlyphTheUiDraws`.
+    - Not yet looked at on screen: the visual checks in
+      `PRE_ALPHA_CHECKLISTS.md` §1 and "Check in Unity after pulling".
+    - Credits screen (later): DejaVu's license asks that its text ship with
+      the font; list both font licenses there.
     - The project lives under OneDrive
       (`OneDrive\Documents\GitHub\NfOUZ`); moving it out is recommended
       (sync conflicts with `Library/`).
@@ -600,7 +621,7 @@ setup reference" below.
 
 ## Next steps (in order)
 
-Step 1 was done on 2026-10-19 (item 30); kept below for a new machine.
+Steps 1 and 2 were done on 2026-10-19/20 (items 30–31); kept below for a new machine.
 
 1. Bring this branch to the laptop without losing local work. In PowerShell
    at the repo root, run `git status` first. Expected local changes:
@@ -709,8 +730,8 @@ says "verified on the laptop".
      the pre-Alpha fixes).
 2. **Laptop reconciliation:** done on 2026-10-19, untracked files sorted
    (item 30).
-3. **Arabic font and visual validation:** Next steps 2, then
-   `PRE_ALPHA_CHECKLISTS.md` §1 and "Check in Unity after pulling".
+3. **Arabic font:** done (item 31). Remaining: the visual checks in
+   `PRE_ALPHA_CHECKLISTS.md` §1 on the Editor and on a phone.
 4. **Defender flow:** decided on 2026-10-19 and built in the cloud
    (item 29); checked on devices by the two-device test in step 5.
 5. **Photon:** account and App ID, Fusion 2 SDK, the remaining code items and the
@@ -753,14 +774,6 @@ Needs a decision or approval:
 - **Mapbox SDK:** the code uses the Mapbox Maps SDK for Unity v2.x API;
   confirm it supports Unity 6 before buying into it.
 - **Safe area / orientation** for notched phones (no handling yet).
-- Arabic font family (Next steps 2): **decided on 2026-10-19: Noto Sans
-  Arabic** (Google Fonts, OFL 1.1). Use the static
-  `NotoSansArabic-Regular.ttf` from the download's `static/` folder, not the
-  variable font, and confirm its cmap covers U+FE70–U+FEFF before
-  generating the SDF asset.
-- ⚙ (Settings button) and ✓ (quest "claimed" badge) are text symbols. If
-  the chosen fonts lack them: add an OFL symbol font as a fallback, or
-  replace them with icons.
 - Digits: Western digits (0–9) are kept as typed in Arabic text. Showing
   Arabic-Indic digits (٠–٩) instead would be a one-setting change
   (`preserveNumbers`), but it is a product choice.
