@@ -803,6 +803,8 @@ Needs the developer's external accounts:
   out of Git.
 
 Future features (not Build Recovery):
+- Next session, step by step (Arabic): `build-recovery/NEXT_SESSION.md`
+  (station 1: the game on an Android emulator).
 - Ideas for after Alpha, not approved: `build-recovery/POST_ALPHA_VISION.md`
   (Arabic; also lists the exact path to the first game on a phone).
 - Faction System (see item 14).
