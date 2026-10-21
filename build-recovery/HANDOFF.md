@@ -9,7 +9,7 @@ folder; where they differ, this file is current.
 - **Branch:** `claude/sprint-5-photon-multiplayer-5jv8v2` (all work below is pushed)
 - **Phase:** Build Recovery — make the existing Sprint 1–10 code runnable.
   **Do not start Sprint 11. Do not add gameplay features or redesign systems.**
-- **Last updated:** 2026-10-20 (covers commits through the Arabic font; see item 31)
+- **Last updated:** 2026-10-22 (first run on an Android emulator; see item 32)
 
 ## Working rules agreed with the developer
 
@@ -537,6 +537,34 @@ laptop; Unity 6000.0.58f2, Android target):
       `PRE_ALPHA_CHECKLISTS.md` §1 and "Check in Unity after pulling".
     - Credits screen (later): DejaVu's license asks that its text ship with
       the font; list both font licenses there.
+
+32. **First run on Android (emulator), laptop, 2026-10-21/22.**
+    - Android Studio Rabbit 1 installed; emulator "Medium Phone API 37.0"
+      (Android 17, x86_64, Google Play image). It warns that it wants 16 GB
+      RAM (the laptop has 16 GB); it runs.
+    - Backend on the laptop: `npm.cmd ci` (PowerShell blocks `npm.ps1`, so
+      use `npm.cmd`), `npm.cmd run migrate` applied 021, `npm.cmd start`;
+      `/health` reports database ok and firebase ok.
+    - Unity: Build Profiles → Android, Development Build, Run Device = the
+      emulator, Build And Run to `C:\NFOUZ-Builds` (outside the repo and
+      OneDrive). Build succeeded in 731 s; the ARM64-only APK installed and
+      launched on the x86_64 emulator.
+    - `adb reverse tcp:3000 tcp:3000` (from
+      `%LOCALAPPDATA%\Android\Sdk\platform-tools`) lets the app reach the
+      laptop backend at `127.0.0.1:3000`; repeat after every emulator
+      restart.
+    - Seen on the emulator: the Arabic Login screen (title, email and
+      password fields, both buttons) renders right-to-left and joined.
+    - **Open:** typing into the Login fields did not work. Not yet known
+      whether this is the emulator (hardware keyboard input disabled in the
+      AVD) or the TMP input fields. Next: tap a field and check whether the
+      Android keyboard appears; if not, enable "keyboard input" in the AVD
+      settings.
+    - **Open:** Unity warns that Active Input Handling is "Both", which is
+      unsupported on Android; the code uses the legacy Input API only.
+      Switch to "Input Manager (Old)" after checking nothing needs the new
+      Input System (checklist §4 item 3).
+    - Not yet checked: whether the build log says IL2CPP (item 30).
     - The project lives under OneDrive
       (`OneDrive\Documents\GitHub\NfOUZ`); moving it out is recommended
       (sync conflicts with `Library/`).
