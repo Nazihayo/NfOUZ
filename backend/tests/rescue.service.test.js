@@ -163,6 +163,8 @@ describe('rescue.service (Sprint 8)', () => {
     rescueRepo.countMissionsForSos.mockResolvedValue(0); // attempt 1 by default
     rescueRepo.getMostRecentFailureForSos.mockResolvedValue(null); // no cooldown by default
     friendService.assertEligibleRescueFriendship.mockResolvedValue({ status: 'accepted' }); // eligible by default
+    rescueRepo.expireReservationIfDue.mockResolvedValue(null); // nothing due by default; clearAllMocks keeps
+    rescueRepo.expireGuardBattleIfDue.mockResolvedValue(null); // a previous test's mockResolvedValue
   });
 
   describe('acceptMission', () => {
@@ -182,6 +184,7 @@ describe('rescue.service (Sprint 8)', () => {
     it('"Others see In Progress" — a second accept while a mission is already reserved/in_progress is rejected up front', async () => {
       sosService.getByIdForUpdate.mockResolvedValue(openSos());
       rescueRepo.getActiveMissionForSos.mockResolvedValue({ mission_id: 'm-1', status: 'reserved', reservation_expires_at: new Date(Date.now() + 30000) });
+      playerRepo.getById.mockResolvedValue(controlledTarget()); // set here, not left over from an earlier test
 
       await expect(rescueService.acceptMission('sos-1', 'RESCUER2')).rejects.toMatchObject({ code: 'RESCUE_ALREADY_IN_PROGRESS' });
       expect(rescueRepo.createReservation).not.toHaveBeenCalled();
