@@ -38,9 +38,16 @@ const db = require('../src/config/database');
 const { verifyIdToken } = require('../src/config/firebase');
 const createApp = require('../src/app');
 
-const SELF = { player_id: 'self-id', username: 'nazih_k' };
 const CENTER_LAT = 52.5978;
 const CENTER_LNG = 9.0854;
+// The search is centred on the requester's stored location, not the query.
+const SELF = {
+  player_id: 'self-id',
+  username: 'nazih_k',
+  last_lat: CENTER_LAT,
+  last_lng: CENTER_LNG,
+  last_location_at: new Date(Date.now() - 10000).toISOString(),
+};
 
 function playerRow(id, latOffsetDeg, extra = {}) {
   return {
@@ -123,7 +130,7 @@ describe('Sprint 4 — Nearby Players System', () => {
   });
 
   it('reports a plausible distance_meters value for each result', async () => {
-    const near = playerRow('near-player', 0.0005);
+    const near = playerRow('near-player', 0.0003); // ~33m, inside the exact zone
 
     db.query
       .mockResolvedValueOnce({ rows: [SELF] })
@@ -134,8 +141,65 @@ describe('Sprint 4 — Nearby Players System', () => {
       .query({ lat: CENTER_LAT, lng: CENTER_LNG, radius: 1000 })
       .set('Authorization', 'Bearer valid-token');
 
-    expect(response.body.data.players[0].distance_meters).toBeGreaterThan(40);
-    expect(response.body.data.players[0].distance_meters).toBeLessThan(70);
+    expect(response.body.data.players[0].distance_meters).toBeGreaterThan(30);
+    expect(response.body.data.players[0].distance_meters).toBeLessThan(40);
+    expect(response.body.data.players[0].lat).toBe(near.last_lat);
+    expect(response.body.data.players[0].lng).toBe(near.last_lng);
+  });
+
+  it('security: beyond 50 m returns only a grid cell and a distance rounded up to 50 m', async () => {
+    const mid = playerRow('mid-player', 0.00312, { last_lng: CENTER_LNG + 0.00047 }); // ~347m
+
+    db.query
+      .mockResolvedValueOnce({ rows: [SELF] })
+      .mockResolvedValueOnce({ rows: [mid] });
+
+    const response = await request(app)
+      .get('/player/nearby')
+      .query({ lat: CENTER_LAT, lng: CENTER_LNG, radius: 1000 })
+      .set('Authorization', 'Bearer valid-token');
+
+    const [player] = response.body.data.players;
+    expect(player.lat).toBeCloseTo(52.6005, 9); // centre of the 0.001-degree cell
+    expect(player.lng).toBeCloseTo(9.0855, 9);
+    expect(player.distance_meters).toBe(350);
+  });
+
+  it('security: centres the search on the stored location, not on the lat/lng in the query', async () => {
+    const nextToSelf = playerRow('next-to-self', 0.0002);
+
+    db.query
+      .mockResolvedValueOnce({ rows: [SELF] })
+      .mockResolvedValueOnce({ rows: [nextToSelf] });
+
+    // A point in Riyadh: the answer is still about the requester's own area.
+    const response = await request(app)
+      .get('/player/nearby')
+      .query({ lat: 24.7136, lng: 46.6753, radius: 1000 })
+      .set('Authorization', 'Bearer valid-token');
+
+    expect(response.status).toBe(200);
+    const [, boxParams] = db.query.mock.calls[1];
+    expect(boxParams[0]).toBeLessThan(CENTER_LAT);
+    expect(boxParams[1]).toBeGreaterThan(CENTER_LAT);
+    expect(response.body.data.players.map((p) => p.player_id)).toEqual(['next-to-self']);
+    expect(response.body.data.players[0].distance_meters).toBeLessThan(30);
+  });
+
+  it.each([
+    ['stale', { last_location_at: new Date(Date.now() - 10 * 60 * 1000).toISOString() }],
+    ['unknown', { last_lat: null, last_lng: null, last_location_at: null }],
+  ])('security: returns no one when the requester\'s own location is %s', async (_label, override) => {
+    db.query.mockResolvedValueOnce({ rows: [{ ...SELF, ...override }] });
+
+    const response = await request(app)
+      .get('/player/nearby')
+      .query({ lat: CENTER_LAT, lng: CENTER_LNG })
+      .set('Authorization', 'Bearer valid-token');
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.players).toEqual([]);
+    expect(db.query).toHaveBeenCalledTimes(1); // never findWithinBoundingBox
   });
 
   it('marks every returned player as online and not blocked (server-guaranteed by SQL filter)', async () => {

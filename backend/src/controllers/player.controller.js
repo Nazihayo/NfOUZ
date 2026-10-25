@@ -127,7 +127,7 @@ async function getNearby(req, res, next) {
     const lat = Number(req.query.lat);
     const lng = Number(req.query.lng);
     const radius = req.query.radius !== undefined ? Number(req.query.radius) : undefined;
-    const result = await locationService.getNearbyPlayers(requestingPlayer.player_id, lat, lng, radius);
+    const result = await locationService.getNearbyPlayers(requestingPlayer, lat, lng, radius);
     return res.status(200).json(success(result));
   } catch (err) {
     return next(err);

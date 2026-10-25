@@ -87,39 +87,75 @@ async function updatePlayerLocation(playerId, lat, lng) {
  * PostgreSQL in a single query. A player who is actively sending GPS
  * updates is, by definition, running the app right now.
  */
-async function getNearbyPlayers(requestingPlayerId, lat, lng, radiusMeters) {
+// Within this distance a player's exact position is returned: the client
+// needs it to gate the 20 m challenge (ChallengeInteractionController.cs).
+// Farther players get only a grid cell and a rounded distance, so nobody
+// can follow a stranger at GPS precision or find where they live.
+const EXACT_LOCATION_WITHIN_METERS = 50;
+const COARSE_CELL_DEGREES = 0.001; // about 110 m north-south
+const COARSE_DISTANCE_STEP_METERS = 50;
+
+function coarseCellCentre(degrees) {
+  return Math.floor(degrees / COARSE_CELL_DEGREES) * COARSE_CELL_DEGREES + COARSE_CELL_DEGREES / 2;
+}
+
+function hasFreshLocation(player, onlineSince) {
+  return typeof player.last_lat === 'number' && typeof player.last_lng === 'number' &&
+    player.last_location_at != null && new Date(player.last_location_at) >= onlineSince;
+}
+
+/**
+ * Lists the visible, online players around the requester's own stored
+ * location. The lat/lng in the request are still validated, but never used
+ * as the centre: otherwise any account could list the players around any
+ * point on earth. Without a fresh stored location the list is empty.
+ */
+async function getNearbyPlayers(requester, lat, lng, radiusMeters) {
   assertValidLatLng(lat, lng);
 
-  const radius = Math.min(radiusMeters || env.NEARBY_DEFAULT_RADIUS_METERS, env.NEARBY_MAX_RADIUS_METERS);
-  const box = boundingBoxDegrees(lat, lng, radius);
   const onlineSince = new Date(Date.now() - env.NEARBY_ONLINE_THRESHOLD_SECONDS * 1000);
+  if (!hasFreshLocation(requester, onlineSince)) {
+    return { players: [] };
+  }
+  const centreLat = requester.last_lat;
+  const centreLng = requester.last_lng;
 
-  const candidates = await playerRepo.findWithinBoundingBox(box, requestingPlayerId, onlineSince);
+  const radius = Math.min(radiusMeters || env.NEARBY_DEFAULT_RADIUS_METERS, env.NEARBY_MAX_RADIUS_METERS);
+  const box = boundingBoxDegrees(centreLat, centreLng, radius);
+
+  const candidates = await playerRepo.findWithinBoundingBox(box, requester.player_id, onlineSince);
 
   const withDistance = candidates
-    .map((row) => ({
-      player_id: row.player_id,
-      username: row.username,
-      class_type: row.class_type,
-      lat: row.last_lat,
-      lng: row.last_lng,
-      // Sprint 7: live, time-based status — the raw is_controlled/
-      // protected_until columns are never cleared on their own once a
-      // window passes (see player.repository.js#isControlActive/
-      // isProtected's doc comments), so
-      // ChallengeInteractionController.cs's client-side eligibility check
-      // must never be fed a stale `true` here.
-      is_controlled: playerRepo.isControlActive(row),
-      is_protected: playerRepo.isProtected(row),
-      // Guaranteed by the SQL filter above — included for defense-in-depth
-      // on the client (see NearbyPlayerData / ChallengeInteractionController.cs).
-      is_online: true,
-      is_blocked: false,
-      distance_meters: haversineDistanceMeters(lat, lng, row.last_lat, row.last_lng),
-    }))
-    .filter((row) => row.distance_meters <= radius)
-    .sort((a, b) => a.distance_meters - b.distance_meters)
-    .slice(0, env.NEARBY_MAX_RESULTS);
+    .map((row) => ({ row, distance: haversineDistanceMeters(centreLat, centreLng, row.last_lat, row.last_lng) }))
+    .filter(({ distance }) => distance <= radius)
+    .sort((a, b) => a.distance - b.distance)
+    .slice(0, env.NEARBY_MAX_RESULTS)
+    .map(({ row, distance }) => {
+      const exact = distance <= EXACT_LOCATION_WITHIN_METERS;
+      return {
+        player_id: row.player_id,
+        username: row.username,
+        class_type: row.class_type,
+        lat: exact ? row.last_lat : coarseCellCentre(row.last_lat),
+        lng: exact ? row.last_lng : coarseCellCentre(row.last_lng),
+        // Sprint 7: live, time-based status — the raw is_controlled/
+        // protected_until columns are never cleared on their own once a
+        // window passes (see player.repository.js#isControlActive/
+        // isProtected's doc comments), so
+        // ChallengeInteractionController.cs's client-side eligibility check
+        // must never be fed a stale `true` here.
+        is_controlled: playerRepo.isControlActive(row),
+        is_protected: playerRepo.isProtected(row),
+        // Guaranteed by the SQL filter above — included for defense-in-depth
+        // on the client (see NearbyPlayerData / ChallengeInteractionController.cs).
+        is_online: true,
+        is_blocked: false,
+        // Farther away: rounded up to the next 50 m ("under 100 m").
+        distance_meters: exact
+          ? distance
+          : Math.ceil(distance / COARSE_DISTANCE_STEP_METERS) * COARSE_DISTANCE_STEP_METERS,
+      };
+    });
 
   return { players: withDistance };
 }
@@ -129,4 +165,5 @@ module.exports = {
   getNearbyPlayers,
   MAX_SPEED_KMH,
   MAX_RADIUS_METERS: env.NEARBY_MAX_RADIUS_METERS,
+  EXACT_LOCATION_WITHIN_METERS,
 };

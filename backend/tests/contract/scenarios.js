@@ -75,7 +75,14 @@ module.exports = [
     // player row: put B first so A sees someone other than themselves.
     world: (w) => { w.players.reverse(); },
     // PostgreSQL applies the bounding box and leaves out the caller.
-    real: { expect: { 'players.length': 2, 'players.0.player_id': ids.B, 'players.1.player_id': ids.C } },
+    // B is ~13 m away (exact position); C is far (grid cell, distance in 50 m steps).
+    real: {
+      expect: {
+        'players.length': 2, 'players.0.player_id': ids.B, 'players.1.player_id': ids.C,
+        'players.0.lat': 52.5979, 'players.0.lng': 9.0855,
+        'players.1.lat': (v) => v !== 52.6, 'players.1.distance_meters': (v) => v % 50 === 0,
+      },
+    },
   },
   {
     key: 'POST /battle/challenge',

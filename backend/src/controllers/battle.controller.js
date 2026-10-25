@@ -21,7 +21,7 @@ async function resolveSelf(req) {
 
 /**
  * POST /battle/challenge
- * Body: { defender_id: string, location: { lat: number, lng: number } }
+ * Body: { defender_id: string } (a location in the body is ignored)
  *
  * attacker_id is NEVER read from the body — the attacker is always the
  * authenticated caller, resolved via Firebase uid. See REST API

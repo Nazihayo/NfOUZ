@@ -65,7 +65,7 @@ const env = {
   // (no separate presence store is queried here — see location.service.js
   // for the reasoning).
   NEARBY_DEFAULT_RADIUS_METERS: toInt(process.env.NEARBY_DEFAULT_RADIUS_METERS, 1000),
-  NEARBY_MAX_RADIUS_METERS: toInt(process.env.NEARBY_MAX_RADIUS_METERS, 5000),
+  NEARBY_MAX_RADIUS_METERS: toInt(process.env.NEARBY_MAX_RADIUS_METERS, 1000),
   NEARBY_MAX_RESULTS: toInt(process.env.NEARBY_MAX_RESULTS, 50),
   NEARBY_ONLINE_THRESHOLD_SECONDS: toInt(process.env.NEARBY_ONLINE_THRESHOLD_SECONDS, 120),
 
