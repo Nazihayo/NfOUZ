@@ -572,11 +572,19 @@ laptop; Unity 6000.0.58f2, Android target):
     - Backend: body-parser 1.20.9 (`ab3897b`, lockfile only). Production
       advisories: 9 left (2 high), all needing firebase-admin 14 or uuid 14
       (major upgrades; a separate, tested change).
-    - **Found, not fixed (needs approval):** the 20 m challenge range is
-      computed from a location the client sends, and Unity sends the
-      defender's own coordinates, so the range is not really enforced.
-      `/player/nearby` returns other players' exact coordinates. Both are
-      in `build-recovery/SAFETY_PRIVACY_PROPOSAL.md`.
+    - **Fixed (`ea44e13`, approved 2026-10-25):** the 20 m challenge range
+      was computed from a location the client sent, and Unity sent the
+      defender's own coordinates, so it was not enforced. The server now
+      measures between both players' stored locations, which must be newer
+      than `NEARBY_ONLINE_THRESHOLD_SECONDS` (120 s), and answers
+      `TARGET_OUT_OF_RANGE` otherwise; Unity sends no location. A player
+      must have MainMap open (location updates every 5 s) to challenge or
+      be challenged.
+    - **Open (needs approval):** `/player/nearby` returns other players'
+      exact coordinates. See `build-recovery/SAFETY_PRIVACY_PROPOSAL.md`.
+    - Owner ideas recorded, not approved: city-wide play and travel between
+      cities with events; an AI avatar generated from a selfie
+      (`POST_ALPHA_VISION.md` §7).
     - The project lives under OneDrive
       (`OneDrive\Documents\GitHub\NfOUZ`); moving it out is recommended
       (sync conflicts with `Library/`).
@@ -585,9 +593,9 @@ Current test counts (cloud, after item 29; run from `backend/`):
 
 | Command | Result |
 |---|---|
-| `npm test` (same as `npx jest --runInBand`; includes the fake-database contract test and the Unity UI checks) | 32 suites / 433 tests |
+| `npm test` (same as `npx jest --runInBand`; includes the fake-database contract test and the Unity UI checks) | 32 suites / 437 tests |
 | `npm run test:contract` | 53 tests |
-| `npm run test:contract:db` (needs `CONTRACT_TEST_DATABASE_URL`, item 22) | 133 tests: 58 contract + 11 challenge answer + 20 battle lifecycle + 44 input robustness |
+| `npm run test:contract:db` (needs `CONTRACT_TEST_DATABASE_URL`, item 22) | 134 tests: 59 contract + 11 challenge answer + 20 battle lifecycle + 44 input robustness |
 | Unity EditMode / PlayMode in the real Editor (laptop, item 30) | 329 of 330 / 9 of 9 |
 | Unity EditMode, run under .NET in the cloud | `AuthErrorMessagesTests` 17, `AuthSessionTests` 30, `BattleLifecycleTests` 33, `IncomingChallengeFlowTests` 23, `IncomingChallengeMessagesTests` 19, `PopupStackTests` 13, `ActionGateTests` 2, `ChallengeErrorMessagesTests` 11, `LogRedactionTests` 4, `SosPollingTests` 7, `ArabicRtlTextTests` 27, `PlayerSessionDataContractTests` + `BattleSessionPartialUpdateTests` + `CultureInvariantRequestTests` 13 of 14 (the 14th needs Unity's JsonUtility) |
 
