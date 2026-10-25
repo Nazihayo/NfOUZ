@@ -1,5 +1,33 @@
 # NFOUZ — خطة الجلسة القادمة (المحطة 1: اللعبة على المحاكي)
 
+> **تحديث 2026-10-25 (مساءً): نكمل من هنا.**
+> - **تم الليلة:** Pull (مع تجاهل مجلد `.utmp`)، والترحيل 022، والخادم
+>   الجديد (`/health` سليم)، وبناء APK جديد (25.10، 22:51) وتثبيته. بعد
+>   Cold Boot للمحاكي فتحت اللعبة شاشة الدخول العربية.
+> - **المفتوح:** الكتابة في خانات الدخول لا تعمل. إعدادات الخانات في المشهد
+>   سليمة. ثلاث تجارب بالترتيب:
+>   1. اضغط مرة على خانة البريد: هل يظهر مؤشر وامض؟ هل تظهر لوحة مفاتيح
+>      Android؟
+>   2. والخانة مختارة: `.\adb.exe shell input text "test"`. هل تظهر test؟
+>   3. اضغط «إنشاء حساب جديد»: هل تتغير الشاشة؟
+> - **دروس الليلة:**
+>   - `EADDRINUSE :3000`: خادم قديم ما زال يعمل. اعرضه بالأمر
+>     `Get-Process -Id (Get-NetTCPConnection -LocalPort 3000 -State Listen).OwningProcess`،
+>     وإن كان node فأوقفه بـ `Stop-Process -Id <الرقم>`.
+>   - Unity لا يرى المحاكي («No Android devices connected»)، لأن نسخة adb
+>     عنده تتعارض مع Android Studio. استعمل **Build** (وليس Build And Run)،
+>     ثم اسحب الـAPK فوق المحاكي. بعدها أعد `adb reverse`.
+>   - `AccessDeniedException … Library\Bee\Android`: سببه OneDrive. أوقف
+>     المزامنة مؤقتاً، وأغلق Unity، ثم
+>     `Get-Process java -ErrorAction SilentlyContinue | Stop-Process`، ثم احذف
+>     `Library\Bee\Android` (ذاكرة بناء مؤقتة، يعيد Unity صنعها). الحل الدائم:
+>     نقل المشروع خارج OneDrive.
+>   - شاشة سوداء، ورسائل «System UI isn't responding»، وتعطّل `system_server`
+>     في `adb logcat -d -b crash`: المحاكي (API 37) مثقل. الحل: أغلق Unity،
+>     ثم Device Manager ← ⋮ ← **Cold Boot Now**. إن تكرر: جهاز جديد على
+>     API 35.
+>   - فتح اللعبة بالأمر: `.\adb.exe shell monkey -p com.NFOUZ.NFOUZ1 1`.
+>
 > **تحديث 2026-10-22:** الأجزاء أ إلى د اكتملت، واللعبة فتحت على المحاكي
 > بشاشة الدخول العربية (HANDOFF البند 32). **نكمل من هنا:**
 > 1. شغّل الخادم: `cd` إلى `backend`، ثم `npm.cmd start` (وليس `npm`).
