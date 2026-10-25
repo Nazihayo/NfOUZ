@@ -408,6 +408,12 @@ module.exports.errorScenarios = [
     status: 409, code: 'DUPLICATE_CHALLENGE',
   },
   {
+    name: 'registering a username that differs from an existing one only by case',
+    key: 'POST /auth/register', as: 'uid-new', body: { username: 'Alpha_One', class_type: 'Ranger' },
+    rowCounts: { 'player.getByFirebaseUid': 0 },
+    status: 409, code: 'USERNAME_TAKEN',
+  },
+  {
     name: 'challenge to a player outside the 20 m range (stored locations only)',
     key: 'POST /battle/challenge', as: 'uid-a', body: { defender_id: ids.C },
     world: noActiveBattle,

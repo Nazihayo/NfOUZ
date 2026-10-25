@@ -81,6 +81,23 @@ describe('Auth routes', () => {
       expect(response.body.error.code).toBe('PLAYER_ALREADY_REGISTERED');
     });
 
+    it('rejects a username that differs from an existing one only by case (USERNAME_TAKEN)', async () => {
+      verifyIdToken.mockResolvedValue({ uid: 'fb-uid-2' });
+      db.query
+        .mockResolvedValueOnce({ rows: [] }) // getByFirebaseUid -> none
+        .mockResolvedValueOnce({ rows: [{ player_id: 'p-1', username: 'nazih_k' }] }); // getByUsername (case-insensitive)
+
+      const response = await request(app)
+        .post('/auth/register')
+        .set('Authorization', 'Bearer valid-token')
+        .send({ username: 'Nazih_K', class_type: 'Scout' });
+
+      expect(response.status).toBe(409);
+      expect(response.body.error.code).toBe('USERNAME_TAKEN');
+      const lookup = db.query.mock.calls.find(([sql]) => /FROM players WHERE .*username/.test(sql));
+      expect(lookup[0]).toMatch(/lower\(username\) = lower\(\$1\)/);
+    });
+
     it('creates a new player on valid input', async () => {
       verifyIdToken.mockResolvedValue({ uid: 'fb-uid-1' });
       db.query

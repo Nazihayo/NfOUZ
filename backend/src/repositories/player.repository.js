@@ -27,8 +27,10 @@ async function getById(playerId, executor = db) {
   return result.rows[0] || null;
 }
 
+/** Case-insensitive: "Admin" and "admin" are the same name, so one
+ * player cannot register a look-alike of another's username. */
 async function getByUsername(username) {
-  const result = await db.query('SELECT * FROM players WHERE username = $1', [username]);
+  const result = await db.query('SELECT * FROM players WHERE lower(username) = lower($1)', [username]);
   return result.rows[0] || null;
 }
 
