@@ -73,6 +73,15 @@ const env = {
   // and session grace-period timing. See Battle System v1.0 section 1 for
   // the 15x15m arena and Sprint 5 spec for the 15s disconnect grace period.
   BATTLE_MAX_CHALLENGE_DISTANCE_METERS: toInt(process.env.BATTLE_MAX_CHALLENGE_DISTANCE_METERS, 20),
+
+  // Driving stop (utils/playerSafety.js): moving faster than this between
+  // two location updates hides the player and blocks challenges for the
+  // cooldown. The 300 km/h anti-spoofing limit in location.service.js is
+  // separate.
+  SAFETY_MAX_PLAY_SPEED_KMH: toInt(process.env.SAFETY_MAX_PLAY_SPEED_KMH, 25),
+  SAFETY_FAST_MOVEMENT_MIN_DISTANCE_METERS: toInt(process.env.SAFETY_FAST_MOVEMENT_MIN_DISTANCE_METERS, 30),
+  SAFETY_FAST_MOVEMENT_MAX_GAP_SECONDS: toInt(process.env.SAFETY_FAST_MOVEMENT_MAX_GAP_SECONDS, 60),
+  SAFETY_FAST_MOVEMENT_COOLDOWN_SECONDS: toInt(process.env.SAFETY_FAST_MOVEMENT_COOLDOWN_SECONDS, 120),
   BATTLE_DISCONNECT_GRACE_SECONDS: toInt(process.env.BATTLE_DISCONNECT_GRACE_SECONDS, 15),
   BATTLE_READY_TIMEOUT_SECONDS: toInt(process.env.BATTLE_READY_TIMEOUT_SECONDS, 30),
   BATTLE_SESSION_MAX_DURATION_SECONDS: toInt(process.env.BATTLE_SESSION_MAX_DURATION_SECONDS, 90),

@@ -16,6 +16,22 @@ namespace Nfouz.Map
         public bool updated;
         public double last_lat;
         public double last_lng;
+        // Driving stop: true while the server treats this player as being
+        // in a vehicle (hidden from others, cannot challenge).
+        public bool moving_too_fast;
+    }
+
+    /// <summary>PATCH /player/{id}/visibility request and response.</summary>
+    [Serializable]
+    public class VisibilityRequest
+    {
+        public bool is_visible;
+    }
+
+    [Serializable]
+    public class VisibilityResponseData
+    {
+        public bool is_visible;
     }
 
     [Serializable]

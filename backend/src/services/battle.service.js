@@ -5,6 +5,8 @@ const env = require('../config/env');
 const db = require('../config/database');
 const battleRepo = require('../repositories/battle.repository');
 const playerRepo = require('../repositories/player.repository');
+const friendRepo = require('../repositories/friend.repository');
+const { isHidden, isMovingFast } = require('../utils/playerSafety');
 const influenceLogRepo = require('../repositories/influenceLog.repository');
 const controlRelationshipRepo = require('../repositories/controlRelationship.repository');
 const { haversineDistanceMeters } = require('../utils/geoUtils');
@@ -214,7 +216,24 @@ async function createChallenge(attackerId, defenderId) {
     throw new ApiError('PLAYER_IS_PROTECTED', 'Target is currently Protected and cannot be challenged.', 403);
   }
 
+  // Safety: a hidden or driving player cannot challenge. A defender who is
+  // hidden, driving or blocked (either direction) gets the same answer, so
+  // the attacker learns nothing about which it was.
+  if (isHidden(attacker)) {
+    throw new ApiError('PLAYER_HIDDEN', 'You are hidden. Turn visibility on to challenge.', 403);
+  }
+  if (isMovingFast(attacker)) {
+    throw new ApiError('PLAYER_MOVING_TOO_FAST', 'You cannot challenge while moving this fast.', 403);
+  }
+  if (isHidden(defender) || isMovingFast(defender)) {
+    throw new ApiError('TARGET_UNAVAILABLE', 'This player cannot be challenged right now.', 403);
+  }
+
   assertWithinChallengeRange(attacker, defender);
+
+  if (await friendRepo.isBlockedEitherDirection(attackerId, defenderId)) {
+    throw new ApiError('TARGET_UNAVAILABLE', 'This player cannot be challenged right now.', 403);
+  }
 
   // Everything from here to the insert runs in one transaction holding
   // both players' challenge locks, so simultaneous challenges between the
@@ -770,6 +789,11 @@ async function loadOpenChallengeForDefender(battleId, playerId) {
  */
 async function acceptChallenge(battleId, playerId) {
   await loadOpenChallengeForDefender(battleId, playerId);
+  // Driving stop: declining stays possible, accepting does not.
+  const defender = await playerRepo.getById(playerId);
+  if (defender && isMovingFast(defender)) {
+    throw new ApiError('PLAYER_MOVING_TOO_FAST', 'You cannot accept a challenge while moving this fast.', 403);
+  }
   const accepted = await battleRepo.acceptChallenge(battleId, playerId, battleLifecycleLimits().readyTimeoutSeconds);
   if (!accepted) rejectAnswer(await battleRepo.getById(battleId));
   return accepted;

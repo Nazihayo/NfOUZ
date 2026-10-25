@@ -85,6 +85,7 @@ function toPublicPlayer(row) {
     controlled_until: controlActive ? row.controlled_until : null,
     is_protected: protectedActive,
     protected_until: protectedActive ? row.protected_until : null,
+    is_visible: row.is_visible !== false, // "don't show me" (PATCH /player/:id/visibility)
   };
 }
 

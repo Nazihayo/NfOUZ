@@ -47,6 +47,7 @@ const db = require('../src/config/database');
 const { verifyIdToken } = require('../src/config/firebase');
 const createApp = require('../src/app');
 const battleRepo = require('../src/repositories/battle.repository');
+const friendRepo = require('../src/repositories/friend.repository');
 
 // The battle lifecycle cleanup (battleRepo.expireStaleBattles) is stubbed
 // to "nothing stale" so these tests keep their existing query sequences;
@@ -107,6 +108,8 @@ describe('Battle routes (Sprint 5 — Photon Multiplayer Foundation)', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     expireStaleBattlesSpy = jest.spyOn(battleRepo, 'expireStaleBattles').mockResolvedValue([]);
+    // Not blocked, so the existing query sequences stay as they were.
+    jest.spyOn(friendRepo, 'isBlockedEitherDirection').mockResolvedValue(false);
     app = createApp();
   });
 

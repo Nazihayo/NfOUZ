@@ -33,7 +33,12 @@ namespace Nfouz.Map
                     return Protected;
                 case Constants.ErrorCodes.InvalidChallenge:
                 case Constants.ErrorCodes.PlayerNotFound:
+                case Constants.ErrorCodes.TargetUnavailable:
                     return NotAvailable;
+                case Constants.ErrorCodes.PlayerHidden:
+                    return SafetyMessages.HiddenChallenge;
+                case Constants.ErrorCodes.PlayerMovingTooFast:
+                    return SafetyMessages.ChallengeWhileDriving;
                 default:
                     return AuthErrorMessages.FromApiError(error);
             }

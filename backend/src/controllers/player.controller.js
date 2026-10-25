@@ -12,7 +12,7 @@ async function assertOwnPlayerId(req) {
     throw new ApiError('PLAYER_NOT_FOUND', 'No player is registered for this account.', 404);
   }
   if (player.player_id !== req.params.id) {
-    throw new ApiError('FORBIDDEN', 'You may only update your own location.', 403);
+    throw new ApiError('FORBIDDEN', 'You may only change your own player.', 403);
   }
   return player;
 }
@@ -134,4 +134,24 @@ async function getNearby(req, res, next) {
   }
 }
 
-module.exports = { updateLocation, getNearby, updateFcmToken, deactivateDevice, deactivateAllDevices };
+/**
+ * PATCH /player/:id/visibility — "don't show me".
+ * Body: { is_visible: boolean } (a real JSON boolean, nothing else).
+ * Hidden players are not listed as nearby, see no one, cannot challenge
+ * and cannot be challenged.
+ */
+async function updateVisibility(req, res, next) {
+  try {
+    const player = await assertOwnPlayerId(req);
+    const isVisible = req.body ? req.body.is_visible : undefined;
+    if (typeof isVisible !== 'boolean') {
+      throw new ApiError('INVALID_VISIBILITY', 'is_visible must be true or false.', 400);
+    }
+    const updated = await playerRepo.setVisibility(player.player_id, isVisible);
+    return res.status(200).json(success({ is_visible: updated.is_visible }));
+  } catch (err) {
+    return next(err);
+  }
+}
+
+module.exports = { updateLocation, getNearby, updateVisibility, updateFcmToken, deactivateDevice, deactivateAllDevices };

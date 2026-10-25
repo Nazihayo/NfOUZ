@@ -16,6 +16,7 @@ namespace Nfouz.Tests.EditMode
         [TestCase("CHALLENGE_ALREADY_ANSWERED", IncomingChallengeMessages.AlreadyAnswered)]
         [TestCase("NOT_CHALLENGE_DEFENDER", IncomingChallengeMessages.NotYours)]
         [TestCase("FORBIDDEN", IncomingChallengeMessages.NotYours)]
+        [TestCase("PLAYER_MOVING_TOO_FAST", SafetyMessages.AcceptWhileDriving)]
         [TestCase("NETWORK_ERROR", AuthErrorMessages.Network)]
         [TestCase("RATE_LIMITED", AuthErrorMessages.TooManyRequests)]
         [TestCase("INVALID_TOKEN", AuthErrorMessages.SessionExpired)]

@@ -85,6 +85,16 @@ module.exports = [
     },
   },
   {
+    key: 'PATCH /player/{}/visibility',
+    as: 'uid-a',
+    path: [ids.A],
+    body: { is_visible: false },
+    real: {
+      expect: { is_visible: false },
+      after: [{ sql: 'SELECT is_visible FROM players WHERE player_id = $1', params: [ids.A], rows: [{ is_visible: false }] }],
+    },
+  },
+  {
     key: 'POST /battle/challenge',
     as: 'uid-a',
     body: { defender_id: ids.B },
@@ -425,6 +435,36 @@ module.exports.errorScenarios = [
     key: 'POST /battle/challenge', as: 'uid-a', body: { defender_id: ids.C },
     world: noActiveBattle,
     status: 400, code: 'TARGET_OUT_OF_RANGE',
+  },
+  {
+    name: 'challenge to a hidden player ("don\'t show me")',
+    key: 'POST /battle/challenge', as: 'uid-a', body: { defender_id: ids.B },
+    world: (w) => { noActiveBattle(w); w.players[1].is_visible = false; },
+    status: 403, code: 'TARGET_UNAVAILABLE',
+  },
+  {
+    name: 'challenge to a player who is driving',
+    key: 'POST /battle/challenge', as: 'uid-a', body: { defender_id: ids.B },
+    world: (w) => { noActiveBattle(w); w.players[1].fast_movement_at = iso(-10 * 1000); },
+    status: 403, code: 'TARGET_UNAVAILABLE',
+  },
+  {
+    name: 'challenge between blocked players',
+    key: 'POST /battle/challenge', as: 'uid-a', body: { defender_id: ids.B },
+    world: (w) => { noActiveBattle(w); Object.assign(w.friendships[0], { player_id: ids.B, friend_id: ids.A, status: 'blocked', accepted_at: null }); },
+    rowCounts: { 'friend.isBlockedEitherDirection': 1 },
+    status: 403, code: 'TARGET_UNAVAILABLE',
+  },
+  {
+    name: 'a hidden player issuing a challenge',
+    key: 'POST /battle/challenge', as: 'uid-a', body: { defender_id: ids.B },
+    world: (w) => { noActiveBattle(w); w.players[0].is_visible = false; },
+    status: 403, code: 'PLAYER_HIDDEN',
+  },
+  {
+    name: 'visibility that is not a JSON boolean',
+    key: 'PATCH /player/{}/visibility', as: 'uid-a', path: [ids.A], body: { is_visible: 'false' },
+    status: 400, code: 'INVALID_VISIBILITY',
   },
   {
     name: 'the attacker accepting their own challenge',

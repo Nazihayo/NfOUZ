@@ -79,7 +79,7 @@ describe('player.repository — updateLocation', () => {
 
     const [sql, params] = db.query.mock.calls[0];
     expect(sql).toMatch(/UPDATE players/);
-    expect(params).toEqual([1.23, 4.56, returnedRow.last_location_at, 'p-1']);
+    expect(params).toEqual([1.23, 4.56, returnedRow.last_location_at, 'p-1', null]); // null keeps fast_movement_at
     expect(result).toEqual(returnedRow);
   });
 });

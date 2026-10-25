@@ -3,6 +3,7 @@ using System.Collections;
 using System.Threading.Tasks;
 using Nfouz.Core;
 using Nfouz.Networking;
+using Nfouz.UI;
 using Nfouz.Utils;
 using UnityEngine;
 
@@ -36,6 +37,7 @@ namespace Nfouz.Map
         private ApiClient _apiClient;
         private float _throttleTimer;
         private bool _permissionGranted;
+        private readonly DrivingNoticeGate _drivingNotice = new DrivingNoticeGate();
 
         private void Awake()
         {
@@ -142,6 +144,11 @@ namespace Nfouz.Map
             var endpoint = $"/player/{PlayerSession.Current.PlayerId}/location";
             var response = await _apiClient.PatchAsync<LocationUpdateResponseData>(endpoint, request);
 
+            if (response.success && response.data != null)
+            {
+                ShowDrivingNotice(_drivingNotice.Update(response.data.moving_too_fast));
+            }
+
             if (!response.success && response.error != null)
             {
                 if (response.error.code == Constants.ErrorCodes.InvalidLocation)
@@ -157,6 +164,29 @@ namespace Nfouz.Map
                 {
                     Debug.LogWarning($"[GPSLocationService] Location update failed: {response.error.message}");
                 }
+            }
+        }
+
+        private static void ShowDrivingNotice(int change)
+        {
+            if (change == 0)
+            {
+                return;
+            }
+
+            var locator = ServiceLocator.Instance;
+            if (locator == null || !locator.TryGet<PopupManager>(out var popups))
+            {
+                return;
+            }
+
+            if (change > 0)
+            {
+                popups.ShowInfo(SafetyMessages.DrivingTitle, SafetyMessages.Driving, key: DrivingNoticeGate.PopupKey);
+            }
+            else
+            {
+                popups.Dismiss(DrivingNoticeGate.PopupKey);
             }
         }
 

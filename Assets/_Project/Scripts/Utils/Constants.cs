@@ -208,6 +208,11 @@ namespace Nfouz.Utils
             public const string PlayerIsControlled = "PLAYER_IS_CONTROLLED";
             public const string PlayerIsProtected = "PLAYER_IS_PROTECTED";
             public const string TargetOutOfRange = "TARGET_OUT_OF_RANGE";
+            // Safety: the defender is hidden, driving or blocked (the server does not say which).
+            public const string TargetUnavailable = "TARGET_UNAVAILABLE";
+            public const string PlayerHidden = "PLAYER_HIDDEN";
+            public const string PlayerMovingTooFast = "PLAYER_MOVING_TOO_FAST";
+            public const string InvalidVisibility = "INVALID_VISIBILITY";
             public const string RateLimited = "RATE_LIMITED";
             public const string InvalidLocation = "INVALID_LOCATION";
             public const string SosAlreadyActive = "SOS_ALREADY_ACTIVE";

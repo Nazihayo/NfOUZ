@@ -35,6 +35,7 @@ namespace Nfouz.Core
         [SerializeField] private bool is_protected;
         [SerializeField] private string protected_until;
         [SerializeField] private int credits;
+        [SerializeField] private bool is_visible = true; // "don't show me" when false
 
         public string PlayerId { get => player_id; set => player_id = value; }
         public string Username { get => username; set => username = value; }
@@ -53,6 +54,7 @@ namespace Nfouz.Core
         public bool IsProtected { get => is_protected; set => is_protected = value; } // Sprint 7 continuation — GDD section 4
         public string ProtectedUntilIso { get => protected_until; set => protected_until = value; } // ISO 8601 UTC string, parsed on demand
         public int Credits { get => credits; set => credits = value; } // Sprint 7 continuation — Control economy foundation
+        public bool IsVisible { get => is_visible; set => is_visible = value; }
     }
 
     /// <summary>

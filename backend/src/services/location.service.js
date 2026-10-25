@@ -6,6 +6,7 @@ const { ApiError } = require('../utils/responseEnvelope');
 const env = require('../config/env');
 const questService = require('./quest.service'); // Sprint 9 — best-effort quest progress hook only, see updatePlayerLocation below.
 const logger = require('../utils/logger');
+const { isHidden, isMovingFast, looksLikeDriving } = require('../utils/playerSafety');
 
 const MAX_SPEED_KMH = 300;
 
@@ -54,7 +55,9 @@ async function updatePlayerLocation(playerId, lat, lng) {
     }
   }
 
-  const updated = await playerRepo.updateLocation(playerId, { lat, lng, timestamp: new Date(now) });
+  // Driving stop: hidden and unable to challenge for a cooldown afterwards.
+  const fastMovementAt = looksLikeDriving(player, lat, lng, now) ? new Date(now) : null;
+  const updated = await playerRepo.updateLocation(playerId, { lat, lng, timestamp: new Date(now), fastMovementAt });
 
   // Sprint 9 — Quest System: server-side "Travel 500 meters" progress,
   // computed from the SAME previous-location values already validated
@@ -70,7 +73,13 @@ async function updatePlayerLocation(playerId, lat, lng) {
     }
   }
 
-  return { updated: true, last_lat: updated.last_lat, last_lng: updated.last_lng };
+  return {
+    updated: true,
+    last_lat: updated.last_lat,
+    last_lng: updated.last_lng,
+    // The client shows "don't play while driving" while this is true.
+    moving_too_fast: isMovingFast({ fast_movement_at: updated.fast_movement_at }, now),
+  };
 }
 
 /**
@@ -109,21 +118,25 @@ function hasFreshLocation(player, onlineSince) {
  * location. The lat/lng in the request are still validated, but never used
  * as the centre: otherwise any account could list the players around any
  * point on earth. Without a fresh stored location the list is empty.
+ *
+ * Also empty while the requester is hidden ("don't show me": who cannot be
+ * seen does not see others either) or moving fast (driving stop).
  */
 async function getNearbyPlayers(requester, lat, lng, radiusMeters) {
   assertValidLatLng(lat, lng);
 
   const onlineSince = new Date(Date.now() - env.NEARBY_ONLINE_THRESHOLD_SECONDS * 1000);
-  if (!hasFreshLocation(requester, onlineSince)) {
+  if (!hasFreshLocation(requester, onlineSince) || isHidden(requester) || isMovingFast(requester)) {
     return { players: [] };
   }
+  const notFastSince = new Date(Date.now() - env.SAFETY_FAST_MOVEMENT_COOLDOWN_SECONDS * 1000);
   const centreLat = requester.last_lat;
   const centreLng = requester.last_lng;
 
   const radius = Math.min(radiusMeters || env.NEARBY_DEFAULT_RADIUS_METERS, env.NEARBY_MAX_RADIUS_METERS);
   const box = boundingBoxDegrees(centreLat, centreLng, radius);
 
-  const candidates = await playerRepo.findWithinBoundingBox(box, requester.player_id, onlineSince);
+  const candidates = await playerRepo.findWithinBoundingBox(box, requester.player_id, onlineSince, notFastSince);
 
   const withDistance = candidates
     .map((row) => ({ row, distance: haversineDistanceMeters(centreLat, centreLng, row.last_lat, row.last_lng) }))

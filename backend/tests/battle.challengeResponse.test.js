@@ -21,6 +21,7 @@ jest.mock('../src/repositories/battle.repository', () => ({
 }));
 
 const battleRepo = require('../src/repositories/battle.repository');
+const playerRepo = require('../src/repositories/player.repository');
 const battleService = require('../src/services/battle.service');
 
 const A = '11111111-1111-4111-8111-111111111111';
@@ -40,6 +41,7 @@ describe('challenge answers', () => {
   beforeEach(() => {
     jest.resetAllMocks();
     battleRepo.expireStaleBattles.mockResolvedValue([]);
+    jest.spyOn(playerRepo, 'getById').mockResolvedValue({ player_id: B, fast_movement_at: null }); // the defender is not driving
   });
 
   test('challengeState maps the stored columns', () => {

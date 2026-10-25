@@ -53,6 +53,8 @@ namespace Nfouz.Map
                 case Constants.ErrorCodes.NotChallengeDefender:
                 case Constants.ErrorCodes.Forbidden:
                     return NotYours;
+                case Constants.ErrorCodes.PlayerMovingTooFast:
+                    return SafetyMessages.AcceptWhileDriving;
                 default:
                     return AuthErrorMessages.FromApiError(error);
             }

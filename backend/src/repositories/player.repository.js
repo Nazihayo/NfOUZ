@@ -10,6 +10,15 @@ const controlRelationshipRepo = require('./controlRelationship.repository');
  * section 4.
  */
 
+/** "Don't show me": the player's own choice, PATCH /player/:id/visibility. */
+async function setVisibility(playerId, isVisible) {
+  const result = await db.query(
+    'UPDATE players SET is_visible = $1, updated_at = now() WHERE player_id = $2 RETURNING player_id, is_visible',
+    [isVisible, playerId]
+  );
+  return result.rows[0] || null;
+}
+
 async function getByFirebaseUid(firebaseUid) {
   const result = await db.query('SELECT * FROM players WHERE firebase_uid = $1', [firebaseUid]);
   return result.rows[0] || null;
@@ -49,13 +58,15 @@ async function create({ firebaseUid, username, classType }) {
  * location.service.js has already validated the speed implied by the
  * previous location — this function trusts its caller and simply writes.
  */
-async function updateLocation(playerId, { lat, lng, timestamp }) {
+/** fastMovementAt: set when this update looked like driving, else null (keeps the stored value). */
+async function updateLocation(playerId, { lat, lng, timestamp, fastMovementAt = null }) {
   const result = await db.query(
     `UPDATE players
-     SET last_lat = $1, last_lng = $2, last_location_at = $3, updated_at = now()
+     SET last_lat = $1, last_lng = $2, last_location_at = $3,
+         fast_movement_at = COALESCE($5, fast_movement_at), updated_at = now()
      WHERE player_id = $4
-     RETURNING player_id, last_lat, last_lng, last_location_at`,
-    [lat, lng, timestamp, playerId]
+     RETURNING player_id, last_lat, last_lng, last_location_at, fast_movement_at`,
+    [lat, lng, timestamp, playerId, fastMovementAt]
   );
   return result.rows[0] || null;
 }
@@ -66,6 +77,7 @@ async function updateLocation(playerId, { lat, lng, timestamp }) {
  * in SQL rather than in application code:
  *   - excludes the requesting player
  *   - excludes players with is_visible = FALSE (ghost mode)
+ *   - excludes players seen moving fast since notFastSince (driving stop)
  *   - excludes players whose last_location_at is older than onlineSince
  *     (the recency-based "online" proxy — see location.service.js)
  *   - excludes any player with a 'blocked' friendship row in either
@@ -73,7 +85,7 @@ async function updateLocation(playerId, { lat, lng, timestamp }) {
  * Exact circular-radius filtering and distance sorting still happen
  * afterward in location.service.js.
  */
-async function findWithinBoundingBox(box, excludePlayerId, onlineSince) {
+async function findWithinBoundingBox(box, excludePlayerId, onlineSince, notFastSince) {
   const result = await db.query(
     `SELECT p.player_id, p.username, p.class_type, p.last_lat, p.last_lng, p.is_controlled, p.controlled_until, p.protected_until
      FROM players p
@@ -84,6 +96,7 @@ async function findWithinBoundingBox(box, excludePlayerId, onlineSince) {
        AND p.player_id <> $5
        AND p.is_visible = TRUE
        AND p.last_location_at >= $6
+       AND (p.fast_movement_at IS NULL OR p.fast_movement_at < $7)
        AND NOT EXISTS (
          SELECT 1 FROM friendships f
          WHERE f.status = 'blocked'
@@ -92,7 +105,7 @@ async function findWithinBoundingBox(box, excludePlayerId, onlineSince) {
              (f.player_id = p.player_id AND f.friend_id = $5)
            )
        )`,
-    [box.minLat, box.maxLat, box.minLng, box.maxLng, excludePlayerId, onlineSince]
+    [box.minLat, box.maxLat, box.minLng, box.maxLng, excludePlayerId, onlineSince, notFastSince]
   );
   return result.rows;
 }
@@ -386,6 +399,7 @@ async function adjustExperience(playerId, delta, executor = db) {
 
 module.exports = {
   getByFirebaseUid,
+  setVisibility,
   getById,
   getByUsername,
   create,

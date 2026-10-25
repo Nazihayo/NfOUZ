@@ -21,6 +21,9 @@ jest.mock('../src/repositories/battle.repository', () => ({
   createBattle: jest.fn(),
   clearDisconnect: jest.fn(),
 }));
+jest.mock('../src/repositories/friend.repository', () => ({
+  isBlockedEitherDirection: jest.fn().mockResolvedValue(false),
+}));
 jest.mock('../src/repositories/player.repository', () => ({
   getById: jest.fn(),
   clearExpiredControl: jest.fn().mockResolvedValue(null),

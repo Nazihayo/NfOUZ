@@ -1,4 +1,7 @@
+using Nfouz.Core;
 using Nfouz.Localization;
+using Nfouz.Map;
+using Nfouz.Networking;
 using Nfouz.Utils;
 using UnityEngine;
 using UnityEngine.UI;
@@ -15,6 +18,10 @@ namespace Nfouz.UI.Screens
     /// same storage the keys' own name already implies) rather than
     /// inventing an audio system this sprint was never asked to build; a
     /// future audio sprint reads the same two keys.
+    ///
+    /// "Show me to nearby players" (PATCH /player/{id}/visibility): the
+    /// server stores and enforces it; the toggle only shows the stored
+    /// value and reverts if saving fails.
     /// </summary>
     public class SettingsScreen : MonoBehaviour
     {
@@ -25,6 +32,12 @@ namespace Nfouz.UI.Screens
         [Header("Volume")]
         [SerializeField] private Slider musicVolumeSlider;
         [SerializeField] private Slider sfxVolumeSlider;
+
+        [Header("Safety")]
+        [SerializeField] private Toggle visibleToggle;
+
+        private bool _savingVisibility;
+        private bool _settingToggle; // set from code: not a player's tap
 
         private void OnEnable()
         {
@@ -51,6 +64,12 @@ namespace Nfouz.UI.Screens
                 sfxVolumeSlider.value = PlayerPrefs.GetFloat(Constants.PlayerPrefsKeys.AudioSfxVolume, 1f);
                 sfxVolumeSlider.onValueChanged.AddListener(HandleSfxVolumeChanged);
             }
+
+            if (visibleToggle != null)
+            {
+                SetVisibleToggle(!PlayerSession.HasActiveSession || PlayerSession.Current.IsVisible);
+                visibleToggle.onValueChanged.AddListener(HandleVisibleToggleChanged);
+            }
         }
 
         private void OnDisable()
@@ -59,6 +78,68 @@ namespace Nfouz.UI.Screens
             if (englishToggle != null) englishToggle.onValueChanged.RemoveListener(HandleEnglishToggleChanged);
             if (musicVolumeSlider != null) musicVolumeSlider.onValueChanged.RemoveListener(HandleMusicVolumeChanged);
             if (sfxVolumeSlider != null) sfxVolumeSlider.onValueChanged.RemoveListener(HandleSfxVolumeChanged);
+            if (visibleToggle != null) visibleToggle.onValueChanged.RemoveListener(HandleVisibleToggleChanged);
+        }
+
+        private void SetVisibleToggle(bool isOn)
+        {
+            _settingToggle = true;
+            visibleToggle.isOn = isOn;
+            _settingToggle = false;
+        }
+
+        private void HandleVisibleToggleChanged(bool isOn)
+        {
+            if (_settingToggle)
+            {
+                return;
+            }
+
+            if (_savingVisibility || !PlayerSession.HasActiveSession)
+            {
+                SetVisibleToggle(!isOn);
+                return;
+            }
+
+            _ = SaveVisibilityAsync(isOn);
+        }
+
+        private async System.Threading.Tasks.Task SaveVisibilityAsync(bool isVisible)
+        {
+            _savingVisibility = true;
+            visibleToggle.interactable = false;
+            var playerId = PlayerSession.Current.PlayerId;
+
+            var locator = ServiceLocator.Instance;
+            ApiResponse<VisibilityResponseData> response = null;
+            if (locator != null && locator.TryGet<ApiClient>(out var apiClient))
+            {
+                response = await apiClient.PatchAsync<VisibilityResponseData>(
+                    $"/player/{playerId}/visibility", new VisibilityRequest { is_visible = isVisible });
+            }
+
+            _savingVisibility = false;
+            if (this == null)
+            {
+                return; // the screen was destroyed while saving
+            }
+
+            visibleToggle.interactable = true;
+            var saved = response != null && response.success && response.data != null;
+            var stillSamePlayer = PlayerSession.HasActiveSession && PlayerSession.Current.PlayerId == playerId;
+
+            if (saved && stillSamePlayer)
+            {
+                PlayerSession.Current.IsVisible = response.data.is_visible;
+                SetVisibleToggle(response.data.is_visible);
+                return;
+            }
+
+            SetVisibleToggle(stillSamePlayer ? PlayerSession.Current.IsVisible : true);
+            if (!saved && locator != null && locator.TryGet<PopupManager>(out var popups))
+            {
+                popups.ShowInfo(SafetyMessages.VisibilityErrorTitle, SafetyMessages.VisibilityError);
+            }
         }
 
         private void HandleArabicToggleChanged(bool isOn)
