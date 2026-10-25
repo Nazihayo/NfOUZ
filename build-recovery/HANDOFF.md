@@ -560,11 +560,23 @@ laptop; Unity 6000.0.58f2, Android target):
       AVD) or the TMP input fields. Next: tap a field and check whether the
       Android keyboard appears; if not, enable "keyboard input" in the AVD
       settings.
-    - **Open:** Unity warns that Active Input Handling is "Both", which is
-      unsupported on Android; the code uses the legacy Input API only.
-      Switch to "Input Manager (Old)" after checking nothing needs the new
-      Input System (checklist §4 item 3).
-    - Not yet checked: whether the build log says IL2CPP (item 30).
+    - **Fixed in the cloud on 2026-10-25 (`81b7105`), needs the next
+      Android build to confirm:** Active Input Handling is now "Input
+      Manager (Old)" (no Input System package; every script and scene uses
+      the legacy Input API / StandaloneInputModule), and `scriptingBackend`
+      names IL2CPP for Android explicitly. The "Unsupported Input Handling"
+      dialog should no longer appear.
+    - The Login input fields were checked in the scene: interactable,
+      plain TextMeshProUGUI, soft keyboard not hidden. The typing problem
+      is most likely the emulator; steps in `NEXT_SESSION.md`.
+    - Backend: body-parser 1.20.9 (`ab3897b`, lockfile only). Production
+      advisories: 9 left (2 high), all needing firebase-admin 14 or uuid 14
+      (major upgrades; a separate, tested change).
+    - **Found, not fixed (needs approval):** the 20 m challenge range is
+      computed from a location the client sends, and Unity sends the
+      defender's own coordinates, so the range is not really enforced.
+      `/player/nearby` returns other players' exact coordinates. Both are
+      in `build-recovery/SAFETY_PRIVACY_PROPOSAL.md`.
     - The project lives under OneDrive
       (`OneDrive\Documents\GitHub\NfOUZ`); moving it out is recommended
       (sync conflicts with `Library/`).
@@ -833,6 +845,8 @@ Needs the developer's external accounts:
 Future features (not Build Recovery):
 - Next session, step by step (Arabic): `build-recovery/NEXT_SESSION.md`
   (station 1: the game on an Android emulator).
+- Safety and privacy proposal (Arabic; includes the challenge-range bug):
+  `build-recovery/SAFETY_PRIVACY_PROPOSAL.md`.
 - Ideas for after Alpha, not approved: `build-recovery/POST_ALPHA_VISION.md`
   (Arabic; also lists the exact path to the first game on a phone).
 - Faction System (see item 14).
