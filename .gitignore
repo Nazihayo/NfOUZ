@@ -7,6 +7,8 @@
 ## Unity — generated/local only
 Library/
 Temp/
+# Android build cache (Gradle/CMake for IL2CPP), written at the project root
+.utmp/
 Obj/
 obj/
 Logs/
