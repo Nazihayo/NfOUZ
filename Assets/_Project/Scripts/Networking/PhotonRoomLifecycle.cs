@@ -126,7 +126,6 @@ namespace Nfouz.Networking
             var payload = new ChallengeRequestPayload
             {
                 defender_id = targetData.player_id,
-                location = new ChallengeLocationPayload { lat = targetData.lat, lng = targetData.lng },
             };
 
             var response = await _apiClient.PostAsync<BattleSessionData>("/battle/challenge", payload);

@@ -60,6 +60,8 @@ const ATTACKER = {
   firebase_uid: 'fb-attacker',
   last_lat: 52.5978,
   last_lng: 9.0854,
+  // The range check uses stored locations reported within the online threshold.
+  last_location_at: new Date().toISOString(),
 };
 
 const DEFENDER = {
@@ -68,6 +70,7 @@ const DEFENDER = {
   firebase_uid: 'fb-defender',
   last_lat: 52.5979,
   last_lng: 9.0855, // ~13m from ATTACKER — within the 20m challenge range
+  last_location_at: new Date().toISOString(),
 };
 
 const FAR_DEFENDER = {
@@ -177,14 +180,59 @@ describe('Battle routes (Sprint 5 — Photon Multiplayer Foundation)', () => {
         .mockResolvedValueOnce({ rows: [ATTACKER] }) // getById(attacker)
         .mockResolvedValueOnce({ rows: [FAR_DEFENDER] }) // getById(defender)
         .mockResolvedValueOnce({ rows: [] }) // Sprint 7: clearExpiredControl(attacker)
-        .mockResolvedValueOnce({ rows: [] }) // Sprint 7: clearExpiredControl(defender)
-        .mockResolvedValueOnce({ rows: [] }) // findActiveBattleForPlayer(attacker)
-        .mockResolvedValueOnce({ rows: [] }); // findActiveBattleForPlayer(defender)
+        .mockResolvedValueOnce({ rows: [] }); // Sprint 7: clearExpiredControl(defender)
+      // The range is checked before the challenge transaction starts.
 
       const response = await request(app)
         .post('/battle/challenge')
         .set('Authorization', 'Bearer valid-token')
         .send({ defender_id: FAR_DEFENDER.player_id, location: { lat: 52.5978, lng: 9.0854 } });
+
+      expect(response.status).toBe(400);
+      expect(response.body.error.code).toBe('TARGET_OUT_OF_RANGE');
+    });
+
+    it('measures the range from the stored locations, ignoring a location in the request body', async () => {
+      // The attacker is stored 5 km away but sends the defender's own
+      // coordinates (what an old or modified client does).
+      const farAttacker = { ...ATTACKER, last_lat: 52.64, last_lng: 9.13 };
+      verifyIdToken.mockResolvedValue({ uid: ATTACKER.firebase_uid });
+      db.query
+        .mockResolvedValueOnce({ rows: [farAttacker] }) // resolveSelf
+        .mockResolvedValueOnce({ rows: [farAttacker] }) // getById(attacker)
+        .mockResolvedValueOnce({ rows: [DEFENDER] }) // getById(defender)
+        .mockResolvedValueOnce({ rows: [] }) // clearExpiredControl(attacker)
+        .mockResolvedValueOnce({ rows: [] }); // clearExpiredControl(defender)
+
+      const response = await request(app)
+        .post('/battle/challenge')
+        .set('Authorization', 'Bearer valid-token')
+        .send({ defender_id: DEFENDER.player_id, location: { lat: DEFENDER.last_lat, lng: DEFENDER.last_lng } });
+
+      expect(response.status).toBe(400);
+      expect(response.body.error.code).toBe('TARGET_OUT_OF_RANGE');
+      expect(db.withTransaction).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ['attacker', { last_location_at: new Date(Date.now() - 10 * 60 * 1000).toISOString() }, {}],
+      ['defender', {}, { last_location_at: new Date(Date.now() - 10 * 60 * 1000).toISOString() }],
+      ['attacker without any location', { last_lat: null, last_lng: null, last_location_at: null }, {}],
+    ])('rejects a challenge when the %s location is stale or unknown', async (_who, attackerPatch, defenderPatch) => {
+      const attacker = { ...ATTACKER, ...attackerPatch };
+      const defender = { ...DEFENDER, ...defenderPatch };
+      verifyIdToken.mockResolvedValue({ uid: ATTACKER.firebase_uid });
+      db.query
+        .mockResolvedValueOnce({ rows: [attacker] }) // resolveSelf
+        .mockResolvedValueOnce({ rows: [attacker] }) // getById(attacker)
+        .mockResolvedValueOnce({ rows: [defender] }) // getById(defender)
+        .mockResolvedValueOnce({ rows: [] }) // clearExpiredControl(attacker)
+        .mockResolvedValueOnce({ rows: [] }); // clearExpiredControl(defender)
+
+      const response = await request(app)
+        .post('/battle/challenge')
+        .set('Authorization', 'Bearer valid-token')
+        .send({ defender_id: DEFENDER.player_id });
 
       expect(response.status).toBe(400);
       expect(response.body.error.code).toBe('TARGET_OUT_OF_RANGE');

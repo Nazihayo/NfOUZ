@@ -122,6 +122,33 @@ function generatePhotonRoomName(battleId) {
 }
 
 /**
+ * The challenge range check, from the server's own stored locations only.
+ * A location older than the nearby-players online threshold does not count:
+ * the player is not known to be there now.
+ */
+function assertWithinChallengeRange(attacker, defender, now = Date.now()) {
+  const freshSince = now - env.NEARBY_ONLINE_THRESHOLD_SECONDS * 1000;
+  const hasFreshLocation = (player) =>
+    typeof player.last_lat === 'number' &&
+    typeof player.last_lng === 'number' &&
+    player.last_location_at != null &&
+    new Date(player.last_location_at).getTime() >= freshSince;
+
+  if (!hasFreshLocation(attacker) || !hasFreshLocation(defender)) {
+    throw new ApiError('TARGET_OUT_OF_RANGE', 'Your or the defender\'s current location is unknown.', 400);
+  }
+
+  const distance = haversineDistanceMeters(attacker.last_lat, attacker.last_lng, defender.last_lat, defender.last_lng);
+  if (distance > env.BATTLE_MAX_CHALLENGE_DISTANCE_METERS) {
+    throw new ApiError(
+      'TARGET_OUT_OF_RANGE',
+      `Defender is ${Math.round(distance)}m away, outside the ${env.BATTLE_MAX_CHALLENGE_DISTANCE_METERS}m challenge range.`,
+      400
+    );
+  }
+}
+
+/**
  * Creates a new battle challenge. Validates, in order:
  *   1. Both players exist.
  *   2. Attacker is not challenging themselves.
@@ -133,13 +160,14 @@ function generatePhotonRoomName(battleId) {
  *   4. Neither player already has an active (in_progress) battle
  *      (duplicate-challenge prevention).
  *   5. The two players are within BATTLE_MAX_CHALLENGE_DISTANCE_METERS
- *      of the claimed location (mirrors the client-side
- *      ChallengeInteractionController.maxChallengeDistanceMeters check —
- *      never trusted from the client alone).
+ *      of each other, measured between their last locations stored by the
+ *      server (PATCH /player/{id}/location, speed-checked) and reported
+ *      within NEARBY_ONLINE_THRESHOLD_SECONDS. No client-sent location is
+ *      used (assertWithinChallengeRange).
  *
  * Movement-synchronization only: this does not touch combat state.
  */
-async function createChallenge(attackerId, defenderId, location) {
+async function createChallenge(attackerId, defenderId) {
   if (attackerId === defenderId) {
     throw new ApiError('INVALID_CHALLENGE', 'A player cannot challenge themselves.', 400);
   }
@@ -186,17 +214,19 @@ async function createChallenge(attackerId, defenderId, location) {
     throw new ApiError('PLAYER_IS_PROTECTED', 'Target is currently Protected and cannot be challenged.', 403);
   }
 
+  assertWithinChallengeRange(attacker, defender);
+
   // Everything from here to the insert runs in one transaction holding
   // both players' challenge locks, so simultaneous challenges between the
   // same players produce exactly one battle (the others get
   // DUPLICATE_CHALLENGE).
   return db.withTransaction(async (client) => {
     await battleRepo.lockPlayersForChallenge([attackerId, defenderId], client);
-    return createChallengeLocked(attackerId, defenderId, defender, location, client);
+    return createChallengeLocked(attackerId, defenderId, attacker, client);
   });
 }
 
-async function createChallengeLocked(attackerId, defenderId, defender, location, client) {
+async function createChallengeLocked(attackerId, defenderId, attacker, client) {
   // Lazy lifecycle cleanup: a stale battle of either player (no result
   // can arrive any more, or a reconnect deadline passed) is ended first,
   // so it cannot block a new challenge forever (utils/battleLifecycle.js).
@@ -210,22 +240,6 @@ async function createChallengeLocked(attackerId, defenderId, defender, location,
   }
   if (defenderActive) {
     throw new ApiError('DUPLICATE_CHALLENGE', 'Defender already has an active battle in progress.', 409);
-  }
-
-  if (location && typeof defender.last_lat === 'number' && typeof defender.last_lng === 'number') {
-    const distance = haversineDistanceMeters(
-      location.lat,
-      location.lng,
-      defender.last_lat,
-      defender.last_lng
-    );
-    if (distance > env.BATTLE_MAX_CHALLENGE_DISTANCE_METERS) {
-      throw new ApiError(
-        'TARGET_OUT_OF_RANGE',
-        `Defender is ${Math.round(distance)}m away, outside the ${env.BATTLE_MAX_CHALLENGE_DISTANCE_METERS}m challenge range.`,
-        400
-      );
-    }
   }
 
   // battle_id is generated here, BEFORE insert, specifically so the
@@ -254,8 +268,10 @@ async function createChallengeLocked(attackerId, defenderId, defender, location,
     attackerId,
     defenderId,
     photonRoomName,
-    locationLat: location ? location.lat : null,
-    locationLng: location ? location.lng : null,
+    // Where the challenge happened: the attacker's stored location, which
+    // assertWithinChallengeRange already confirmed is fresh.
+    locationLat: attacker.last_lat,
+    locationLng: attacker.last_lng,
     sessionExpiresAt,
     hostPlayerId,
     hostAuthoritySecret,

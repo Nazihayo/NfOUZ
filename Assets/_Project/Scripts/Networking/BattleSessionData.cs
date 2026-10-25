@@ -58,15 +58,9 @@ namespace Nfouz.Networking
     [Serializable]
     public class ChallengeRequestPayload
     {
+        // No location: the server measures the challenge range from both
+        // players' stored locations (battle.service.js assertWithinChallengeRange).
         public string defender_id;
-        public ChallengeLocationPayload location;
-    }
-
-    [Serializable]
-    public class ChallengeLocationPayload
-    {
-        public double lat;
-        public double lng;
     }
 
     /// <summary>One challenge waiting for this player's answer (GET

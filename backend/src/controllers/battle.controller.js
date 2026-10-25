@@ -39,15 +39,9 @@ async function createChallenge(req, res, next) {
       throw new ApiError('INVALID_CHALLENGE', 'defender_id must be a player id.', 400);
     }
 
-    let location = null;
-    if (req.body.location) {
-      location = {
-        lat: Number(req.body.location.lat),
-        lng: Number(req.body.location.lng),
-      };
-    }
-
-    const battle = await battleService.createChallenge(attacker.player_id, defenderId, location);
+    // A location in the body is ignored: the range check uses the
+    // server's stored locations (battle.service.js assertWithinChallengeRange).
+    const battle = await battleService.createChallenge(attacker.player_id, defenderId);
 
     return res.status(200).json(
       success({

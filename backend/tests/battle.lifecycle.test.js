@@ -51,7 +51,9 @@ describe('battle lifecycle wiring', () => {
   });
 
   test('a challenge locks both players, then ends their stale battles before the duplicate check, in one transaction', async () => {
-    playerRepo.getById.mockImplementation(async (id) => ({ player_id: id }));
+    playerRepo.getById.mockImplementation(async (id) => ({
+      player_id: id, last_lat: 52.5978, last_lng: 9.0854, last_location_at: new Date().toISOString(),
+    }));
     battleRepo.createBattle.mockImplementation(async (b) => ({ battle_id: b.battleId }));
     const order = [];
     battleRepo.lockPlayersForChallenge.mockImplementation(async () => { order.push('lock'); });

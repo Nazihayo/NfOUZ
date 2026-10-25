@@ -80,7 +80,7 @@ module.exports = [
   {
     key: 'POST /battle/challenge',
     as: 'uid-a',
-    body: { defender_id: ids.B, location: { lat: 52.5978, lng: 9.0854 } },
+    body: { defender_id: ids.B },
     world: noActiveBattle,
     real: {
       expect: {
@@ -403,9 +403,15 @@ module.exports.errorScenarios = [
   },
   {
     name: 'challenge while the attacker is already in a battle',
-    key: 'POST /battle/challenge', as: 'uid-a', body: { defender_id: ids.C, location: { lat: 52.5978, lng: 9.0854 } },
+    key: 'POST /battle/challenge', as: 'uid-a', body: { defender_id: ids.C },
     world: (w) => { Object.assign(w.players[2], { last_lat: 52.5978, last_lng: 9.0854 }); },
     status: 409, code: 'DUPLICATE_CHALLENGE',
+  },
+  {
+    name: 'challenge to a player outside the 20 m range (stored locations only)',
+    key: 'POST /battle/challenge', as: 'uid-a', body: { defender_id: ids.C },
+    world: noActiveBattle,
+    status: 400, code: 'TARGET_OUT_OF_RANGE',
   },
   {
     name: 'the attacker accepting their own challenge',
