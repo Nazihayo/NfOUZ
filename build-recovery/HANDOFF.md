@@ -580,8 +580,39 @@ laptop; Unity 6000.0.58f2, Android target):
       `TARGET_OUT_OF_RANGE` otherwise; Unity sends no location. A player
       must have MainMap open (location updates every 5 s) to challenge or
       be challenged.
-    - **Open (needs approval):** `/player/nearby` returns other players'
-      exact coordinates. See `build-recovery/SAFETY_PRIVACY_PROPOSAL.md`.
+    - **Fixed (`61c5b4b`, the owner asked on 2026-10-25 to fix anything
+      dangerous):** `/player/nearby` searched around whatever lat/lng the
+      client sent (up to 5000 m) and returned everyone's exact
+      coordinates, so any account could track players anywhere. Now:
+      - the search is centred on the requester's own stored location,
+        which must be fresh (else an empty list); the query lat/lng are
+        only validated;
+      - the radius cap is 1000 m (`NEARBY_MAX_RADIUS_METERS`; a laptop
+        `.env` that still says 5000 overrides this, so change it there);
+      - within 50 m the exact position (needed for the 20 m challenge
+        button); farther, the centre of a 0.001° grid cell (about 110 m)
+        and a distance rounded up to 50 m.
+      - Same response shape, so no Unity change. Far markers on the map
+        now sit on the cell centre.
+    - **Fixed (`1f58e94`):** usernames are compared case-insensitively, so
+      "Admin" cannot be registered next to "admin" (impersonation).
+    - **Security review, 2026-10-25, no change needed:** every route needs
+      the Firebase token and takes the player from it; SQL is
+      parameterized; SOS and rescue are limited to eligible friends with a
+      server-rolled outcome; errors do not leak internals;
+      `host_authority_secret` appears only in the attacker's challenge
+      response; no secrets in the repository.
+    - **Security review, low risk, left for a decision:**
+      - the Firebase ID token is stored in PlayerPrefs (plain storage on the
+        device);
+      - many POST routes have no per-player rate limit;
+      - revoked Firebase tokens are not checked (`checkRevoked`);
+      - CORS allows `*` (low risk: bearer tokens, no cookies);
+      - win-trading between a player's own accounts is limited only by the
+        120-minute Control;
+      - the anti-spoof speed limit is 300 km/h.
+    - Test fix (`a6b1ac4`): a rescue test failed in some `--randomize`
+      orders (a leftover mock); now independent of order.
     - Owner ideas recorded, not approved: city-wide play and travel between
       cities with events; an AI avatar generated from a selfie
       (`POST_ALPHA_VISION.md` §7).
@@ -593,9 +624,9 @@ Current test counts (cloud, after item 29; run from `backend/`):
 
 | Command | Result |
 |---|---|
-| `npm test` (same as `npx jest --runInBand`; includes the fake-database contract test and the Unity UI checks) | 32 suites / 437 tests |
+| `npm test` (same as `npx jest --runInBand`; includes the fake-database contract test and the Unity UI checks) | 32 suites / 442 tests |
 | `npm run test:contract` | 53 tests |
-| `npm run test:contract:db` (needs `CONTRACT_TEST_DATABASE_URL`, item 22) | 134 tests: 59 contract + 11 challenge answer + 20 battle lifecycle + 44 input robustness |
+| `npm run test:contract:db` (needs `CONTRACT_TEST_DATABASE_URL`, item 22) | 135 tests: 60 contract + 11 challenge answer + 20 battle lifecycle + 44 input robustness |
 | Unity EditMode / PlayMode in the real Editor (laptop, item 30) | 329 of 330 / 9 of 9 |
 | Unity EditMode, run under .NET in the cloud | `AuthErrorMessagesTests` 17, `AuthSessionTests` 30, `BattleLifecycleTests` 33, `IncomingChallengeFlowTests` 23, `IncomingChallengeMessagesTests` 19, `PopupStackTests` 13, `ActionGateTests` 2, `ChallengeErrorMessagesTests` 11, `LogRedactionTests` 4, `SosPollingTests` 7, `ArabicRtlTextTests` 27, `PlayerSessionDataContractTests` + `BattleSessionPartialUpdateTests` + `CultureInvariantRequestTests` 13 of 14 (the 14th needs Unity's JsonUtility) |
 
