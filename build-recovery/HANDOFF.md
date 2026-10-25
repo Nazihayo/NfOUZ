@@ -613,6 +613,30 @@ laptop; Unity 6000.0.58f2, Android target):
       - the anti-spoof speed limit is 300 km/h.
     - Test fix (`a6b1ac4`): a rescue test failed in some `--randomize`
       orders (a leftover mock); now independent of order.
+    - **Added (`4c85a14`, approved by the owner on 2026-10-25), needs the
+      laptop to run `npm.cmd run migrate` (migration 022) and a rebuild:**
+      - "Don't show me": `PATCH /player/:id/visibility`
+        `{ is_visible: boolean }` (only a real JSON boolean). A hidden
+        player is not listed, sees no one, cannot challenge
+        (`PLAYER_HIDDEN`) and cannot be challenged. `/auth/me` returns
+        `is_visible`. Unity: Settings → "أظهرني للاعبين القريبين"
+        (`SettingsScreen.visibleToggle`, MainMap); it reverts and shows
+        an Arabic message if saving fails.
+      - Driving stop (`players.fast_movement_at`): a location update
+        faster than 25 km/h, covering at least 30 m and at most 60 s
+        after the previous one, marks the player for 120 s (all
+        `SAFETY_*` in `env.js`). Meanwhile: not listed, no challenge
+        (`PLAYER_MOVING_TOO_FAST`), cannot be challenged, cannot accept
+        (declining still works). The location response carries
+        `moving_too_fast`; Unity shows "سلامتك أولاً" once and closes it
+        when the flag is false again.
+      - Blocked players (either direction) can no longer challenge each
+        other; before, only the nearby list respected a block.
+      - A hidden, driving or blocked defender all answer
+        `TARGET_UNAVAILABLE` (Arabic: "هذا اللاعب غير متاح للتحدي."), so
+        the attacker cannot tell which.
+      - Known limit: GPS jumps of 30 m or more within a few seconds
+        (indoors) can look like driving and hide the player for 2 minutes.
     - Owner ideas recorded, not approved: city-wide play and travel between
       cities with events; an AI avatar generated from a selfie
       (`POST_ALPHA_VISION.md` §7).
@@ -624,11 +648,11 @@ Current test counts (cloud, after item 29; run from `backend/`):
 
 | Command | Result |
 |---|---|
-| `npm test` (same as `npx jest --runInBand`; includes the fake-database contract test and the Unity UI checks) | 32 suites / 442 tests |
-| `npm run test:contract` | 53 tests |
-| `npm run test:contract:db` (needs `CONTRACT_TEST_DATABASE_URL`, item 22) | 135 tests: 60 contract + 11 challenge answer + 20 battle lifecycle + 44 input robustness |
+| `npm test` (same as `npx jest --runInBand`; includes the fake-database contract test and the Unity UI checks) | 33 suites / 467 tests |
+| `npm run test:contract` | 54 tests |
+| `npm run test:contract:db` (needs `CONTRACT_TEST_DATABASE_URL`, item 22) | 141 tests: 66 contract + 11 challenge answer + 20 battle lifecycle + 44 input robustness |
 | Unity EditMode / PlayMode in the real Editor (laptop, item 30) | 329 of 330 / 9 of 9 |
-| Unity EditMode, run under .NET in the cloud | `AuthErrorMessagesTests` 17, `AuthSessionTests` 30, `BattleLifecycleTests` 33, `IncomingChallengeFlowTests` 23, `IncomingChallengeMessagesTests` 19, `PopupStackTests` 13, `ActionGateTests` 2, `ChallengeErrorMessagesTests` 11, `LogRedactionTests` 4, `SosPollingTests` 7, `ArabicRtlTextTests` 27, `PlayerSessionDataContractTests` + `BattleSessionPartialUpdateTests` + `CultureInvariantRequestTests` 13 of 14 (the 14th needs Unity's JsonUtility) |
+| Unity EditMode, run under .NET in the cloud | `AuthErrorMessagesTests` 17, `AuthSessionTests` 30, `BattleLifecycleTests` 33, `IncomingChallengeFlowTests` 23, `IncomingChallengeMessagesTests` 20, `PopupStackTests` 13, `ActionGateTests` 2, `ChallengeErrorMessagesTests` 14, `SafetyMessagesTests` 2, `LogRedactionTests` 4, `SosPollingTests` 7, `ArabicRtlTextTests` 27, `PlayerSessionDataContractTests` + `BattleSessionPartialUpdateTests` + `CultureInvariantRequestTests` 13 of 14 (the 14th needs Unity's JsonUtility) |
 
 Check in Unity after pulling:
 - EditMode Test Runner: all tests, including the new ones above.

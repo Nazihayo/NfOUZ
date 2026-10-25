@@ -11,6 +11,11 @@
 >    «keyboard input» في إعدادات الجهاز (Device Manager ← ⋮ ← Edit).
 > 5. ثم: موقع وهمي، ثم إنشاء حساب، ثم Onboarding، ثم الخريطة.
 >
+> **بعد Pull في 2026-10-25 (مهم):** في نافذة الخادم، قبل `npm.cmd start`،
+> شغّل `npm.cmd run migrate` مرة واحدة، فيطبّق الترحيل 022 (إيقاف القيادة).
+> إن كان في `backend\.env` السطر `NEARBY_MAX_RADIUS_METERS=5000` فغيّره إلى
+> `1000`. في اللعبة: الإعدادات فيها زر جديد «أظهرني للاعبين القريبين».
+>
 > **قبل البناء التالي:** اسحب التحديثات (Fetch ثم Pull). غيّرنا إعداد الإدخال
 > إلى «Input Manager (Old)» وثبّتنا IL2CPP. بعد Pull، أعد **Build And Run**،
 > ويجب ألا تظهر رسالة «Unsupported Input Handling». وابحث في Console عن كلمة
