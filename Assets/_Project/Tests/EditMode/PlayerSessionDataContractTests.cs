@@ -23,7 +23,7 @@ namespace Nfouz.Tests.EditMode
         {
             "player_id", "username", "class_type", "health", "max_health", "energy", "max_energy",
             "influence", "level", "experience", "rank", "credits", "is_controlled", "controller_id",
-            "controlled_until", "is_protected", "protected_until",
+            "controlled_until", "is_protected", "protected_until", "is_visible",
         };
 
         [Test]
@@ -45,7 +45,7 @@ namespace Nfouz.Tests.EditMode
                 "\"class_type\":\"Scout\",\"faction_id\":null,\"health\":80,\"max_health\":100,\"energy\":40," +
                 "\"max_energy\":50,\"influence\":7,\"level\":3,\"experience\":120,\"rank\":\"Recruit\"," +
                 "\"credits\":250,\"is_controlled\":true,\"controller_id\":\"p-2\"," +
-                "\"controlled_until\":\"2026-10-19T10:00:00.000Z\",\"is_protected\":false,\"protected_until\":null}}";
+                "\"controlled_until\":\"2026-10-19T10:00:00.000Z\",\"is_protected\":false,\"protected_until\":null,\"is_visible\":false}}";
 
             var data = JsonUtility.FromJson<ApiResponse<PlayerSessionData>>(json).data;
 
@@ -65,6 +65,7 @@ namespace Nfouz.Tests.EditMode
             Assert.AreEqual("p-2", data.ControllerId);
             Assert.AreEqual("2026-10-19T10:00:00.000Z", data.ControlledUntilIso);
             Assert.IsFalse(data.IsProtected);
+            Assert.IsFalse(data.IsVisible); // "don't show me" (PATCH /player/:id/visibility)
         }
     }
 }
