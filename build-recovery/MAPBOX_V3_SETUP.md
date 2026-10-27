@@ -78,6 +78,9 @@
 4. **Project Settings ← Player ← Android ← Other Settings:**
    - **Scripting Define Symbols:** أضف `MAPBOX_SDK_AVAILABLE`.
    - **Managed Stripping Level:** `Minimal` أو `Low`.
+   - `Nfouz.Runtime.asmdef` يشير إلى مكتبات Mapbox (`MapboxBaseModule`
+     و`UnityMapModule` و`MapboxExamples`). بدونها يظهر الخطأ CS0234 في
+     `MapboxManager.cs` بعد إضافة الرمز.
 5. **إعدادات Gradle لـ Android (دُمجت في السحابة، 2026-10-27):**
    - `Assets/Plugins/Android/mainTemplate.gradle`: أُضيفت مكتبات Mapbox
      الثماني (okhttp وgson وplay-services-location وغيرها) **خارج** قسم

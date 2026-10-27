@@ -3,7 +3,10 @@
     "rootNamespace": "Nfouz",
     "references": [
         "Unity.TextMeshPro",
-        "UnityEngine.UI"
+        "UnityEngine.UI",
+        "MapboxBaseModule",
+        "UnityMapModule",
+        "MapboxExamples"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
