@@ -2763,6 +2763,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: da154f849fdf45998da2f258bb92ac12, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  gpsLocationService: {fileID: 969999255029427796}
   playerMarkerPrefab: {fileID: 2126826516645608329, guid: 802db451814ecaa26b16709dd7e9b545, type: 3}
 --- !u!1 &755611670469967969
 GameObject:
