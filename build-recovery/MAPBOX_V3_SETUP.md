@@ -26,6 +26,22 @@
 
 ## المرحلة أ: تحويل المشروع إلى URP (جلسة واحدة)
 
+> **تمّت على اللابتوب في 2026-10-27، والهاتف يعمل بـ URP.** دروس عملية:
+> - URP 17.0.4 لم يكن مركّباً من المحاولة الأولى. تحقق من Package Manager ←
+>   In Project، فبدونه لا يظهر «URP Asset» في قائمة Create ← Rendering.
+> - المجلد صار اسمه `Assets/_Project/settings`، بحرف أول صغير.
+> - الخطوة 5 (Quality) غير لازمة: المستويات الفارغة تأخذ Default Render
+>   Pipeline من Graphics.
+> - **وردي في MainMap:** `MapboxMapObject_Placeholder` كان يستعمل مادة Unity
+>   المدمجة Default-Material، والمحوّل لا يغيّر المواد المدمجة. الحل:
+>   Create ← Material في `settings`، فتكون URP/Lit تلقائياً، ثم وضعها على
+>   Element 0.
+> - البناء: أعد إطفاء x86-64، وأوقف مزامنة OneDrive، واحذف
+>   `Library\Bee\Android` إن ظهر AccessDenied. وعند رسالة OneDrive «حذف
+>   العناصر؟» أثناء البناء، اختر الحذف، فهي ملفات Unity مؤقتة.
+> - **لم يُرفع شيء من هذه التغييرات إلى Git بعد:** تُراجع قائمة GitHub
+>   Desktop أولاً.
+
 1. GitHub Desktop: Fetch ثم Pull. يجب أن يظهر **No local changes**.
 2. Unity (6000.0.58f2): **Window ← Package Manager ← Unity Registry**،
    ابحث عن **Universal RP**، ثم **Install**. يختار Unity الإصدار المناسب
