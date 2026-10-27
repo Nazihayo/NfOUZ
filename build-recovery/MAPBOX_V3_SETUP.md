@@ -39,8 +39,7 @@
 > - البناء: أعد إطفاء x86-64، وأوقف مزامنة OneDrive، واحذف
 >   `Library\Bee\Android` إن ظهر AccessDenied. وعند رسالة OneDrive «حذف
 >   العناصر؟» أثناء البناء، اختر الحذف، فهي ملفات Unity مؤقتة.
-> - **لم يُرفع شيء من هذه التغييرات إلى Git بعد:** تُراجع قائمة GitHub
->   Desktop أولاً.
+> - رُفعت إلى Git في commit `7f97389` بعد مراجعة الملفات العشرين.
 
 1. GitHub Desktop: Fetch ثم Pull. يجب أن يظهر **No local changes**.
 2. Unity (6000.0.58f2): **Window ← Package Manager ← Unity Registry**،
@@ -79,10 +78,16 @@
 4. **Project Settings ← Player ← Android ← Other Settings:**
    - **Scripting Define Symbols:** أضف `MAPBOX_SDK_AVAILABLE`.
    - **Managed Stripping Level:** `Minimal` أو `Low`.
-5. إعدادات Gradle لـ Android: ملفنا `mainTemplate.gradle` فيه إعدادات
-   Firebase، وملف Mapbox فيه مكتباته. **أدمجهما أنا في السحابة** عندما
-   نصل إلى هذه الخطوة، ثم تسحبهما (Pull). لا تنسخ مجلد `Plugins` من
-   المكتبة فوق مجلدنا.
+5. **إعدادات Gradle لـ Android (دُمجت في السحابة، 2026-10-27):**
+   - `Assets/Plugins/Android/mainTemplate.gradle`: أُضيفت مكتبات Mapbox
+     الثماني (okhttp وgson وplay-services-location وغيرها) **خارج** قسم
+     Firebase (Android Resolver)، فلا يحذفها Firebase عند إعادة الحل.
+   - `Assets/Plugins/Android/launcherTemplate.gradle` (جديد): قالب Mapbox لـ
+     Unity 6، وفيه `pickFirsts` لملف `libc++_shared.so`.
+   - **عليك:** Pull، ثم **Project Settings ← Player ← Android ← Publishing
+     Settings**، وضع ✓ على **Custom Launcher Gradle Template**. لا تضغط على
+     أي زر يعرض استبدال الملف.
+   - لا تنسخ مجلد `Plugins` من المكتبة فوق مجلدنا.
 
 ## المرحلة ج: الخريطة في مشهد MainMap
 

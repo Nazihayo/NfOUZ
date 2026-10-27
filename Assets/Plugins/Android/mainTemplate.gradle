@@ -12,6 +12,16 @@ dependencies {
     implementation 'com.google.firebase:firebase-auth-unity:13.17.0' // Assets/Firebase/Editor/AuthDependencies.xml:23
     implementation 'com.google.firebase:firebase-common:22.2.1' // Assets/Firebase/Editor/AppDependencies.xml:16
 // Android Resolver Dependencies End
+// Mapbox Unity SDK v3.2.0 (Runtime/AndroidBuildSettings/6000/Plugins/Android/mainTemplate.gradle).
+// Kept outside the Android Resolver block so a Firebase re-resolve does not remove it.
+    runtimeOnly 'androidx.core:core:1.9.0'
+    runtimeOnly 'androidx.startup:startup-runtime:1.0.0'
+    implementation 'com.squareup.okio:okio:3.4.0'
+    implementation 'com.squareup.okhttp3:okhttp:4.10.0'
+    runtimeOnly 'com.squareup.okio:okio-jvm:3.4.0'
+    implementation 'com.google.code.gson:gson:2.10.1'
+    implementation 'com.google.android.gms:play-services-cronet:18.0.1'
+    implementation 'com.google.android.gms:play-services-location:20.0.0'
 **DEPS**}
 
 // Android Resolver Exclusions Start
