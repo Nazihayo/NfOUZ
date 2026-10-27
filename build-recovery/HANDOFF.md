@@ -644,6 +644,32 @@ laptop; Unity 6000.0.58f2, Android target):
       (`OneDrive\Documents\GitHub\NfOUZ`); moving it out is recommended
       (sync conflicts with `Library/`).
 
+33. **First run on a real Android phone, 2026-10-27 (laptop).** Station 1 is
+    reached on real hardware.
+    - Phone: Samsung Galaxy A16 (SM-A166B), Android 16 / One UI 8.5, ARM64,
+      over USB (`adb install -r`, then `adb reverse tcp:3000 tcp:3000`).
+      The phone's USB mode must be "File transfer"; with "Charging only"
+      adb stays `unauthorized`.
+    - Login with an existing account worked (typing works on the phone).
+      MainMap opened: HUD (health, energy, rank Citizen, influence), the
+      top buttons, AYAZ, the bottom nav. Settings → "أظهرني للاعبين
+      القريبين" switches off and on without an error.
+    - The backend log shows, every 5 s: `PATCH /player/{id}/location`,
+      `GET /player/nearby` and `GET /battle/incoming`, plus quest progress
+      for `distance_traveled`. No errors.
+    - **The map area is empty, as expected:** the Mapbox SDK is not
+      installed (stub mode). Next: Mapbox account, SDK and a token kept
+      only on the laptop.
+    - **The emulator is not usable for typing on this laptop.** On the API
+      37 image the system was unstable; on a new API 34 image the ARM64-only
+      APK crashed (`SIGILL`), and with x86_64 added it ran but no TMP input
+      field ever requested the soft keyboard (`mInputShown=false`), even
+      with `hw.keyboard=no`. The same fields work in the Editor and on the
+      phone. Test on a real phone from now on.
+    - **Laptop-local, not committed:** Player Settings → Android → Target
+      Architectures has x86-64 ticked (for the emulator test). Untick it
+      before the next commit from the laptop, or ask first.
+
 Current test counts (cloud, after item 29; run from `backend/`):
 
 | Command | Result |
