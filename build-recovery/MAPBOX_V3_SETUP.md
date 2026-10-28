@@ -94,10 +94,21 @@
 
 ## المرحلة ج: الخريطة في مشهد MainMap
 
+> **تمّت على اللابتوب في 2026-10-28:** تظهر خريطة هلسنكي (موقع المثال)
+> ثلاثية الأبعاد في المحرر عند التشغيل من مشهد Boot. التشغيل من MainMap
+> مباشرة يعطي أخطاء ServiceLocator، وهذا متوقع.
+
 1. افتح `MainMap`. احذف الكائن **MapboxMapObject_Placeholder**، وهو
    السطح البيج المؤقت.
 2. من `Assets/Samples/Mapbox Unity SDK/…/LocationBasedGame` اسحب
    **LocationBasedMap.prefab** إلى المشهد، في الموضع (0, 0, 0).
+   - **مهم (v3.2.0):** الـ Prefab أقدم من مشهد المثال. في مكوّن **Mapbox Map
+     Behaviour** على LocationBasedMap: ضع ✓ على **Initialize On Start**،
+     واختر **Default Tile Material** = `ElevatedTerrainMaterial` (من
+     `Packages/com.mapbox.sdk/.../Visuals/Materials`؛ في نافذة الاختيار
+     اكتب الاسم في البحث). بدونهما لا تُرسم الخريطة ولا يظهر أي خطأ. احذف
+     المكوّن المفقود `(Script) None` إن أمكن. اترك **Location Factory**
+     فارغاً: الخريطة تتبع GPS لعبتنا عبر MapboxManager.
 3. **Managers ← MapboxManager:** اسحب **LocationBasedMap** إلى الحقل
    **Map**. أما حقل **Gps Location Service** فمربوط أصلاً.
 4. **Main Camera:**
