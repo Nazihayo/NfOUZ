@@ -120,7 +120,7 @@
      لا تحذف أي جدول ولا قاعدة بيانات.
 8. شغّل الخادم، واترك النافذة مفتوحة:
    ```powershell
-   npm start
+   npm.cmd start   # npm.cmd: PowerShell blocks npm.ps1 scripts on this laptop
    ```
    - النتيجة المطلوبة: «NFOUZ backend listening on port 3000».
    - تحقق في المتصفح: `http://127.0.0.1:3000/health` يجب أن يعطي حالة سليمة.
