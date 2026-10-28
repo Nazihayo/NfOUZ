@@ -642,7 +642,11 @@ laptop; Unity 6000.0.58f2, Android target):
       (`POST_ALPHA_VISION.md` §7).
     - The project lives under OneDrive
       (`OneDrive\Documents\GitHub\NfOUZ`); moving it out is recommended
-      (sync conflicts with `Library/`).
+      (sync conflicts with `Library/`). **Done 2026-10-28:** copied with
+      robocopy to `C:\Projects\NfOUZ` (40,042 files, 0 errors, `Bee`
+      excluded; local Firebase, `.env` and Mapbox files present). GitHub
+      Desktop and Unity Hub now point there; the OneDrive copy is kept
+      untouched as a backup until the owner decides to delete it.
 
 33. **First run on a real Android phone, 2026-10-27 (laptop).** Station 1 is
     reached on real hardware.

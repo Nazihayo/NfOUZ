@@ -79,7 +79,7 @@
 تسجيل، ثم Onboarding، ثم الخريطة بالعربية. خطوة واحدة في كل مرة، ولا ننتقل
 إلى الخطوة التالية قبل أن تنجح التي قبلها.
 
-مسار المشروع على اللابتوب: `C:\Users\ayoa3\OneDrive\Documents\GitHub\NfOUZ`
+مسار المشروع على اللابتوب: `C:\Projects\NfOUZ`
 
 ## الجزء أ: تأكيد ما أنجزناه (10 دقائق)
 
@@ -111,7 +111,7 @@
 
 7. في PowerShell عادي (ليس كمسؤول):
    ```powershell
-   cd "C:\Users\ayoa3\OneDrive\Documents\GitHub\NfOUZ\backend"
+   cd "C:\Projects\NfOUZ\backend"
    npm ci
    npm run migrate
    ```
