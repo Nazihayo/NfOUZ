@@ -123,6 +123,12 @@
 
 ## المرحلة د: الهاتف
 
+> **تمّت في 2026-10-28 على Galaxy A16:** خريطة حقيقية ثلاثية الأبعاد حول
+> موقع اللاعب، والواجهة فوقها. دمج Gradle مع Firebase سليم. أول بناء أخذ
+> حوالي 18 دقيقة ثم فشل بـ `AccessDeniedException` (OneDrive)؛ بعد إيقاف
+> OneDrive وقتل java وحذف `Library\Bee\Android` نجح في 80 ثانية. في
+> PowerShell داخل `platform-tools` اكتب `.\adb` وليس `adb`.
+
 1. ابنِ APK، وثبّته، ثم `adb reverse tcp:3000 tcp:3000`.
 2. المتوقع:
    - تظهر خريطة حقيقية حولك.
