@@ -674,6 +674,28 @@ laptop; Unity 6000.0.58f2, Android target):
       Architectures has x86-64 ticked (for the emulator test). Untick it
       before the next commit from the laptop, or ask first.
 
+34. **Mapbox v3 map and Photon Fusion 2 SDK, 2026-10-28.**
+    - Mapbox SDK v3.2.0 on URP 17.0.4: a real 3D map around the player on
+      the Galaxy A16 (`MAPBOX_V3_SETUP.md`, phases A–D). The project moved
+      out of OneDrive to `C:\Projects\NfOUZ`.
+    - Photon: Fusion app `NFOUZ` (Fusion 2, free 20 CCU); SDK 2.0.13 imported
+      (`55865be`). The App ID lives only in the git-ignored
+      `PhotonAppSettings.asset`.
+    - Cloud: the `PHOTON_FUSION_AVAILABLE` code now compiles against the real
+      Fusion 2.0.13 assemblies (new harness config `fusion`), and the four
+      code items of `PRE_ALPHA_CHECKLISTS.md` §2 are done: callback
+      signatures; Client join retried while the Host room does not exist
+      (`GameNotFound`, up to 20 s); the host `Runner.Spawn`s one avatar per
+      player (input authority to that player, DontDestroyOnLoad) and
+      despawns on leave; `OnInput` sends the Horizontal/Vertical axes during
+      the live match. Each player sends its class/Health/Energy to the host
+      by RPC (display state). `Nfouz.Runtime` is added to Fusion's
+      `AssembliesToWeave`.
+    - **Not yet done on the laptop:** add `NetworkObject` to
+      `NetworkPlayer.prefab`, then the `PHOTON_FUSION_AVAILABLE` define, then
+      the two-client test. A phone has no movement input yet (no touch
+      joystick in Battle); the Editor moves with the keyboard.
+
 Current test counts (cloud, after item 29; run from `backend/`):
 
 | Command | Result |

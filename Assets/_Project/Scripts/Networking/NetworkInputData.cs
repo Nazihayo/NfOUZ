@@ -24,6 +24,29 @@ namespace Nfouz.Networking
         public float MoveX;
         public float MoveZ;
         public float LookYaw;
+#if PHOTON_FUSION_AVAILABLE
+        public NetworkBool IsReadyPressed; // Fusion input structs use NetworkBool, not bool.
+#else
         public bool IsReadyPressed;
+#endif
+
+        /// <summary>
+        /// This device's movement input from the Input Manager (Old)
+        /// Horizontal/Vertical axes (keyboard in the Editor), facing the
+        /// move direction. The Battle scene has no touch joystick yet, so a
+        /// phone sends no movement.
+        /// </summary>
+        public static NetworkInputData SampleLocal()
+        {
+            var x = UnityEngine.Input.GetAxisRaw("Horizontal");
+            var z = UnityEngine.Input.GetAxisRaw("Vertical");
+            var data = new NetworkInputData { MoveX = x, MoveZ = z };
+            if (x * x + z * z > 0.01f)
+            {
+                data.LookYaw = UnityEngine.Mathf.Atan2(x, z) * UnityEngine.Mathf.Rad2Deg;
+            }
+
+            return data;
+        }
     }
 }

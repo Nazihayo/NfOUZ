@@ -1,3 +1,4 @@
+using Nfouz.Core;
 using UnityEngine;
 
 #if PHOTON_FUSION_AVAILABLE
@@ -69,6 +70,34 @@ namespace Nfouz.Networking
         }
 
 #if PHOTON_FUSION_AVAILABLE
+        /// <summary>
+        /// The host spawns this avatar at its spawn point (see
+        /// NetworkPlayerSpawner); the host seeds the networked transform
+        /// from there. Each player then sends its own class and starting
+        /// Health/Energy from its PlayerSession (server data) to the host,
+        /// which alone may write networked state. Display state only.
+        /// </summary>
+        public override void Spawned()
+        {
+            if (HasStateAuthority)
+            {
+                NetworkedPosition = transform.position;
+                NetworkedYaw = transform.eulerAngles.y;
+            }
+
+            if (HasInputAuthority && PlayerSession.HasActiveSession)
+            {
+                var session = PlayerSession.Current;
+                RPC_SetProfile(session.ClassType ?? string.Empty, session.Health, session.Energy);
+            }
+        }
+
+        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+        private void RPC_SetProfile(string classType, int health, int energy)
+        {
+            Initialize(classType, faction: null, weapon: null, health, energy);
+        }
+
         public override void FixedUpdateNetwork()
         {
             if (GetInput(out NetworkInputData input))
@@ -91,8 +120,12 @@ namespace Nfouz.Networking
             }
 
             NetworkedPosition += moveDirection * (moveSpeed * Runner.DeltaTime);
-            NetworkedYaw = Mathf.MoveTowardsAngle(
-                NetworkedYaw, input.LookYaw, rotationSpeedDegreesPerSecond * Runner.DeltaTime);
+            if (moveDirection.sqrMagnitude > 0.0001f)
+            {
+                // Idle input carries no facing; keep the last one.
+                NetworkedYaw = Mathf.MoveTowardsAngle(
+                    NetworkedYaw, input.LookYaw, rotationSpeedDegreesPerSecond * Runner.DeltaTime);
+            }
 
             transform.position = NetworkedPosition;
             transform.rotation = Quaternion.Euler(0f, NetworkedYaw, 0f);

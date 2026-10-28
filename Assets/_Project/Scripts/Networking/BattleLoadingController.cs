@@ -50,10 +50,9 @@ namespace Nfouz.Networking
 
             _isAttacker = BattleSession.Current.attacker_id == PlayerSession.Current.PlayerId;
 
-            // Both players spawn locally as soon as the scene is ready —
-            // NetworkPlayerSpawner seeds attributes from PlayerSession, the
-            // remote participant's avatar arrives via Photon's own
-            // spawn/replication once PHOTON_FUSION_AVAILABLE is defined.
+            // Stub mode: the local avatar is instantiated here. With Photon
+            // the host spawns both avatars through the runner and the
+            // client receives them by replication (NetworkPlayerSpawner).
             playerSpawner?.SpawnLocalPlayer(_isAttacker);
 
             await ConfirmReadyAsync();
@@ -187,6 +186,7 @@ namespace Nfouz.Networking
         private void StartSession()
         {
             _sessionActive = true;
+            SetMovementInput(true);
             Debug.Log("[BattleLoadingController] Battle session started (movement sync active, combat pending Sprint 6).");
         }
 
@@ -204,6 +204,7 @@ namespace Nfouz.Networking
             }
 
             _sessionActive = false;
+            SetMovementInput(false);
             playerSpawner?.DespawnAll();
             Debug.Log("[BattleLoadingController] Battle session ended.");
         }
@@ -221,6 +222,17 @@ namespace Nfouz.Networking
         private void OnDestroy()
         {
             _destroyed = true;
+            SetMovementInput(false);
+        }
+
+        /// <summary>Movement input reaches Photon only during the live match.</summary>
+        private static void SetMovementInput(bool enabled)
+        {
+            var locator = ServiceLocator.Instance;
+            if (locator != null && locator.TryGet<PhotonConnectionManager>(out var photon))
+            {
+                photon.SendMovementInput = enabled;
+            }
         }
 
         private void SetLoadingVisible(bool visible)

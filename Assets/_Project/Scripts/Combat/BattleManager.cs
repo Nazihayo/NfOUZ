@@ -285,7 +285,7 @@ namespace Nfouz.Combat
             // registration time (GDD v1.0 section 3.3), matched via the
             // NetworkPlayerController's already-networked NetworkedClass.
             var networkController = combat.GetComponent<NetworkPlayerController>();
-            var classType = networkController != null ? networkController.NetworkedClass : Constants.PlayerClass.Scout;
+            var classType = networkController != null ? networkController.NetworkedClass.ToString() : Constants.PlayerClass.Scout;
 
             int maxHealth;
             int maxEnergy;

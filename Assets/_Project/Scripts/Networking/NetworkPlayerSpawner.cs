@@ -31,6 +31,13 @@ namespace Nfouz.Networking
 
         private readonly Dictionary<string, GameObject> _spawnedByPlayerId = new Dictionary<string, GameObject>();
 
+#if PHOTON_FUSION_AVAILABLE
+        // Host only: one avatar per player in the room, input authority to
+        // that player. Clients receive these through replication.
+        private NetworkRunner _runner;
+        private readonly Dictionary<PlayerRef, NetworkObject> _spawnedByPlayerRef = new Dictionary<PlayerRef, NetworkObject>();
+#endif
+
         private void Awake()
         {
             if (_activeInstance != null && _activeInstance != this)
@@ -51,6 +58,14 @@ namespace Nfouz.Networking
             {
                 _activeInstance = null;
             }
+
+#if PHOTON_FUSION_AVAILABLE
+            if (_runner != null)
+            {
+                _runner.RemoveCallbacks(this);
+                _runner = null;
+            }
+#endif
         }
 
         /// <summary>
@@ -66,6 +81,17 @@ namespace Nfouz.Networking
                 Debug.LogError("[NetworkPlayerSpawner] No networkPlayerPrefab assigned.");
                 return null;
             }
+
+#if PHOTON_FUSION_AVAILABLE
+            var runner = ServiceLocator.Instance != null &&
+                         ServiceLocator.Instance.TryGet<PhotonConnectionManager>(out var photon)
+                ? photon.Runner
+                : null;
+            if (runner != null && runner.IsRunning)
+            {
+                return SpawnNetworkedPlayers(runner);
+            }
+#endif
 
             var spawnPoint = isAttacker ? attackerSpawnPoint : defenderSpawnPoint;
             var position = spawnPoint != null ? spawnPoint.position : Vector3.zero;
@@ -97,6 +123,80 @@ namespace Nfouz.Networking
             return instance;
         }
 
+#if PHOTON_FUSION_AVAILABLE
+        /// <summary>
+        /// Host: spawns an avatar for every player already in the room and
+        /// for any who join later (OnPlayerJoined). The host is the
+        /// attacker (PhotonRoomLifecycle joins the attacker as Host), so its
+        /// own player takes the attacker spawn point and the other player
+        /// the defender's. Client: spawns nothing. Returns the local
+        /// player's avatar when it exists.
+        /// </summary>
+        private GameObject SpawnNetworkedPlayers(NetworkRunner runner)
+        {
+            if (!runner.IsServer)
+            {
+                return null;
+            }
+
+            if (_runner == null)
+            {
+                _runner = runner;
+                runner.AddCallbacks(this);
+            }
+
+            foreach (var player in runner.ActivePlayers)
+            {
+                SpawnNetworkedPlayer(runner, player);
+            }
+
+            return _spawnedByPlayerRef.TryGetValue(runner.LocalPlayer, out var local) && local != null
+                ? local.gameObject
+                : null;
+        }
+
+        private void SpawnNetworkedPlayer(NetworkRunner runner, PlayerRef player)
+        {
+            if (_spawnedByPlayerRef.ContainsKey(player))
+            {
+                return;
+            }
+
+            var isAttacker = player == runner.LocalPlayer;
+            var spawnPoint = isAttacker ? attackerSpawnPoint : defenderSpawnPoint;
+            var position = spawnPoint != null ? spawnPoint.position : Vector3.zero;
+            var rotation = spawnPoint != null ? spawnPoint.rotation : Quaternion.identity;
+
+            // DontDestroyOnLoad: the runner lives in the DontDestroyOnLoad
+            // scene and the clients load Battle themselves (SceneLoader),
+            // not through Fusion, so avatars must not belong to a scene.
+            var spawned = runner.Spawn(networkPlayerPrefab, position, rotation, player,
+                null, NetworkSpawnFlags.DontDestroyOnLoad);
+            if (spawned == null)
+            {
+                Debug.LogError("[NetworkPlayerSpawner] runner.Spawn failed — does NetworkPlayer.prefab have a NetworkObject?");
+                return;
+            }
+
+            runner.SetPlayerObject(player, spawned);
+            _spawnedByPlayerRef[player] = spawned;
+        }
+
+        private void DespawnNetworkedPlayer(PlayerRef player)
+        {
+            if (!_spawnedByPlayerRef.TryGetValue(player, out var spawned))
+            {
+                return;
+            }
+
+            _spawnedByPlayerRef.Remove(player);
+            if (_runner != null && _runner.IsRunning && spawned != null)
+            {
+                _runner.Despawn(spawned);
+            }
+        }
+#endif
+
         /// <summary>Despawns and removes tracking for a given player's
         /// networked avatar (used on session end or forfeit).</summary>
         public void DespawnPlayer(string playerId)
@@ -127,11 +227,37 @@ namespace Nfouz.Networking
             }
 
             _spawnedByPlayerId.Clear();
+
+#if PHOTON_FUSION_AVAILABLE
+            foreach (var player in new List<PlayerRef>(_spawnedByPlayerRef.Keys))
+            {
+                DespawnNetworkedPlayer(player);
+            }
+
+            if (_runner != null)
+            {
+                _runner.RemoveCallbacks(this);
+                _runner = null;
+            }
+#endif
         }
 
 #if PHOTON_FUSION_AVAILABLE
-        public void OnPlayerJoined(NetworkRunner runner, PlayerRef player) { }
-        public void OnPlayerLeft(NetworkRunner runner, PlayerRef player) { }
+        public void OnPlayerJoined(NetworkRunner runner, PlayerRef player)
+        {
+            if (runner.IsServer)
+            {
+                SpawnNetworkedPlayer(runner, player);
+            }
+        }
+
+        public void OnPlayerLeft(NetworkRunner runner, PlayerRef player)
+        {
+            if (runner.IsServer)
+            {
+                DespawnNetworkedPlayer(player);
+            }
+        }
         public void OnInput(NetworkRunner runner, NetworkInput input) { }
         public void OnInputMissing(NetworkRunner runner, PlayerRef player, NetworkInput input) { }
         public void OnShutdown(NetworkRunner runner, ShutdownReason shutdownReason) { }
@@ -139,12 +265,12 @@ namespace Nfouz.Networking
         public void OnDisconnectedFromServer(NetworkRunner runner, Fusion.Sockets.NetDisconnectReason reason) { }
         public void OnConnectRequest(NetworkRunner runner, NetworkRunnerCallbackArgs.ConnectRequest request, byte[] token) { }
         public void OnConnectFailed(NetworkRunner runner, Fusion.Sockets.NetAddress remoteAddress, Fusion.Sockets.NetConnectFailedReason reason) { }
-        public void OnUserSimulationMessage(NetworkRunner runner, Fusion.Sockets.SimulationMessagePtr message) { }
+        public void OnUserSimulationMessage(NetworkRunner runner, SimulationMessagePtr message) { }
         public void OnSessionListUpdated(NetworkRunner runner, System.Collections.Generic.List<SessionInfo> sessionList) { }
         public void OnCustomAuthenticationResponse(NetworkRunner runner, System.Collections.Generic.Dictionary<string, object> data) { }
         public void OnHostMigration(NetworkRunner runner, HostMigrationToken hostMigrationToken) { }
-        public void OnReliableDataReceived(NetworkRunner runner, PlayerRef player, ReliableKey key, System.ArraySegment<byte> data) { }
-        public void OnReliableDataProgress(NetworkRunner runner, PlayerRef player, ReliableKey key, float progress) { }
+        public void OnReliableDataReceived(NetworkRunner runner, PlayerRef player, Fusion.Sockets.ReliableKey key, System.ArraySegment<byte> data) { }
+        public void OnReliableDataProgress(NetworkRunner runner, PlayerRef player, Fusion.Sockets.ReliableKey key, float progress) { }
         public void OnSceneLoadDone(NetworkRunner runner) { }
         public void OnSceneLoadStart(NetworkRunner runner) { }
         public void OnObjectExitAOI(NetworkRunner runner, NetworkObject obj, PlayerRef player) { }

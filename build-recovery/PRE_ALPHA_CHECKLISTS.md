@@ -70,6 +70,8 @@ passed to `JoinRoomAsync`.
 
 Code work still needed before two players can meet. These are not settings:
 each is a change to review and test on the laptop with the SDK present.
+**Items 1–4 done in the cloud on 2026-10-28** against the real Fusion
+2.0.13 assemblies (HANDOFF item 34); they still need the two-client test.
 1. **Compile the SDK branch.** `JoinRoomAsync`'s `#if PHOTON_FUSION_AVAILABLE`
    code (including `asHost ? GameMode.Host : GameMode.Client`) has never
    been compiled.

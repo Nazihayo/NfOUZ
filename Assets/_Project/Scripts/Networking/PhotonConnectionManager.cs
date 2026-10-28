@@ -60,8 +60,24 @@ namespace Nfouz.Networking
         // two NetworkRunners before the first StartGame() call resolves.
         private bool _isJoining;
 
+        /// <summary>The defender may reach Photon before the attacker has
+        /// created the room (it learns of the accept first). A Client join
+        /// that finds no room is retried for this long, which stays inside
+        /// the server's 30 s ready timeout.</summary>
+        public const float ClientJoinRetrySeconds = 20f;
+        private const int ClientJoinRetryDelayMs = 1000;
+
+        /// <summary>True only during the live match (after the countdown):
+        /// OnInput sends movement input while this is set.
+        /// BattleLoadingController switches it on and off.</summary>
+        public bool SendMovementInput { get; set; }
+
 #if PHOTON_FUSION_AVAILABLE
         private NetworkRunner _runner;
+
+        /// <summary>The live runner, or null outside a room. Used by
+        /// NetworkPlayerSpawner to spawn avatars on the host.</summary>
+        public NetworkRunner Runner => _runner;
 #endif
 
         private void Awake()
@@ -120,25 +136,20 @@ namespace Nfouz.Networking
                     await ShutdownAsync();
                 }
 
-                var runnerObject = new GameObject($"NetworkRunner_{roomName}");
-                DontDestroyOnLoad(runnerObject);
-                _runner = runnerObject.AddComponent<NetworkRunner>();
-                _runner.ProvideInput = true;
-                _runner.AddCallbacks(this);
+                var result = await StartRunnerAsync(roomName, asHost);
 
-                var startArgs = new StartGameArgs
+                // Client before Host: retry while the attacker's room does
+                // not exist yet (see ClientJoinRetrySeconds).
+                var waitedMs = 0;
+                while (!asHost && !result.Ok && result.ShutdownReason == ShutdownReason.GameNotFound &&
+                       waitedMs < ClientJoinRetrySeconds * 1000f)
                 {
-                    // Host Mode is the approved Alpha mode — see class remarks.
-                    // Do NOT change to GameMode.Shared or a Dedicated Server
-                    // mode without a corresponding update to TDD v1.0 and
-                    // Photon & Mapbox Integration v1.0.
-                    GameMode = asHost ? GameMode.Host : GameMode.Client,
-                    SessionName = roomName,
-                    PlayerCount = 2,
-                    SceneManager = runnerObject.AddComponent<NetworkSceneManagerDefault>(),
-                };
-
-                var result = await _runner.StartGame(startArgs);
+                    await DestroyRunnerAsync();
+                    await Task.Delay(ClientJoinRetryDelayMs);
+                    waitedMs += ClientJoinRetryDelayMs;
+                    Debug.Log($"[PhotonConnectionManager] Room '{roomName}' not created yet — retrying as Client.");
+                    result = await StartRunnerAsync(roomName, asHost);
+                }
 
                 if (result.Ok)
                 {
@@ -150,6 +161,7 @@ namespace Nfouz.Networking
                 }
 
                 Debug.LogError($"[PhotonConnectionManager] Failed to join room '{roomName}': {result.ShutdownReason}");
+                await DestroyRunnerAsync();
                 OnConnectFailed?.Invoke(result.ShutdownReason.ToString());
                 return false;
 #else
@@ -170,6 +182,54 @@ namespace Nfouz.Networking
                 _isJoining = false;
             }
         }
+
+#if PHOTON_FUSION_AVAILABLE
+        /// <summary>One StartGame attempt on a fresh runner (a runner cannot
+        /// be restarted after it shuts down).</summary>
+        private async Task<StartGameResult> StartRunnerAsync(string roomName, bool asHost)
+        {
+            var runnerObject = new GameObject($"NetworkRunner_{roomName}");
+            DontDestroyOnLoad(runnerObject);
+            _runner = runnerObject.AddComponent<NetworkRunner>();
+            _runner.ProvideInput = true;
+            _runner.AddCallbacks(this);
+
+            var startArgs = new StartGameArgs
+            {
+                // Host Mode is the approved Alpha mode — see class remarks.
+                // Do NOT change to GameMode.Shared or a Dedicated Server
+                // mode without a corresponding update to TDD v1.0 and
+                // Photon & Mapbox Integration v1.0.
+                GameMode = asHost ? GameMode.Host : GameMode.Client,
+                SessionName = roomName,
+                PlayerCount = 2,
+                SceneManager = runnerObject.AddComponent<NetworkSceneManagerDefault>(),
+            };
+
+            return await _runner.StartGame(startArgs);
+        }
+
+        private async Task DestroyRunnerAsync()
+        {
+            if (_runner == null)
+            {
+                return;
+            }
+
+            var runner = _runner;
+            _runner = null;
+            runner.RemoveCallbacks(this);
+            if (runner.IsRunning)
+            {
+                await runner.Shutdown();
+            }
+
+            if (runner != null && runner.gameObject != null)
+            {
+                Destroy(runner.gameObject);
+            }
+        }
+#endif
 
         /// <summary>
         /// Leaves the current room without fully tearing down — used when a
@@ -228,7 +288,11 @@ namespace Nfouz.Networking
             OnPlayerDisconnected?.Invoke();
         }
 
-        public void OnInput(NetworkRunner runner, NetworkInput input) { }
+        public void OnInput(NetworkRunner runner, NetworkInput input)
+        {
+            input.Set(SendMovementInput ? NetworkInputData.SampleLocal() : default);
+        }
+
         public void OnInputMissing(NetworkRunner runner, PlayerRef player, NetworkInput input) { }
 
         public void OnShutdown(NetworkRunner runner, ShutdownReason shutdownReason)
@@ -241,13 +305,22 @@ namespace Nfouz.Networking
 
         public void OnDisconnectedFromServer(NetworkRunner runner, NetDisconnectReason reason)
         {
+            if (_isJoining)
+            {
+                // A failed join attempt, reported by JoinRoomAsync's result;
+                // not a match disconnect, so no reconnect grace starts.
+                Debug.Log($"[PhotonConnectionManager] Join attempt disconnected: {reason}");
+                return;
+            }
+
             Debug.LogWarning($"[PhotonConnectionManager] Disconnected from server: {reason}");
             OnPlayerDisconnected?.Invoke();
         }
 
         public void OnConnectRequest(NetworkRunner runner, NetworkRunnerCallbackArgs.ConnectRequest request, byte[] token) { }
 
-        public void OnConnectFailed(NetworkRunner runner, NetAddress remoteAddress, NetConnectFailedReason reason)
+        // Explicit: the public OnConnectFailed event above has the same name.
+        void INetworkRunnerCallbacks.OnConnectFailed(NetworkRunner runner, NetAddress remoteAddress, NetConnectFailedReason reason)
         {
             OnConnectFailed?.Invoke(reason.ToString());
         }

@@ -6,7 +6,8 @@
         "UnityEngine.UI",
         "MapboxBaseModule",
         "UnityMapModule",
-        "MapboxExamples"
+        "MapboxExamples",
+        "Fusion.Unity"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

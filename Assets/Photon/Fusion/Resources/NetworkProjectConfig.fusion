@@ -67,7 +67,8 @@
         "Assembly-CSharp",
         "Assembly-CSharp-firstpass",
         "Fusion.Addons.Physics",
-        "Fusion.Addons.FSM"
+        "Fusion.Addons.FSM",
+        "Nfouz.Runtime"
     ],
     "UseSerializableDictionary": true,
     "NullChecksForNetworkedProperties": true,
