@@ -217,10 +217,15 @@ describe('quest.service (Sprint 9)', () => {
       expect(questRepo.recordProgress).not.toHaveBeenCalled();
     });
 
-    it('calls the repository with the exact goal_type and amount given', async () => {
+    it('calls the repository with the exact goal_type and a whole-number amount', async () => {
       questRepo.recordProgress.mockResolvedValue({ player_quest_id: 'pq-1' });
       await questService.recordProgress('P1', 'distance_traveled', 12.5);
-      expect(questRepo.recordProgress).toHaveBeenCalledWith('P1', 'distance_traveled', 12.5);
+      expect(questRepo.recordProgress).toHaveBeenCalledWith('P1', 'distance_traveled', 13);
+    });
+
+    it('no-ops for a fractional distance that rounds to zero', async () => {
+      await questService.recordProgress('P1', 'distance_traveled', 0.4);
+      expect(questRepo.recordProgress).not.toHaveBeenCalled();
     });
   });
 });

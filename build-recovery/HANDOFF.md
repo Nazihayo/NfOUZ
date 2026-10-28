@@ -678,7 +678,7 @@ Current test counts (cloud, after item 29; run from `backend/`):
 
 | Command | Result |
 |---|---|
-| `npm test` (same as `npx jest --runInBand`; includes the fake-database contract test and the Unity UI checks) | 33 suites / 467 tests |
+| `npm test` (same as `npx jest --runInBand`; includes the fake-database contract test and the Unity UI checks) | 33 suites / 468 tests |
 | `npm run test:contract` | 54 tests |
 | `npm run test:contract:db` (needs `CONTRACT_TEST_DATABASE_URL`, item 22) | 141 tests: 66 contract + 11 challenge answer + 20 battle lifecycle + 44 input robustness |
 | Unity EditMode / PlayMode in the real Editor (laptop, item 30) | 329 of 330 / 9 of 9 |

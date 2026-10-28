@@ -88,11 +88,35 @@ function parseUnityFile(file) {
   return { file, rel: rel(file), docs, byId };
 }
 
-/** A top-level field (two-space indent) of a document, raw. */
+/** True once a double-quoted YAML scalar has its closing quote. */
+function closesDoubleQuote(s) {
+  const body = s.slice(1);
+  let escaped = false;
+  for (const ch of body) {
+    if (escaped) escaped = false;
+    else if (ch === '\\') escaped = true;
+    else if (ch === '"') return true;
+  }
+  return false;
+}
+
+/**
+ * A top-level field (two-space indent) of a document, raw. Unity wraps a long
+ * double-quoted string onto indented continuation lines; those are folded
+ * back into one line (a line break becomes a space, an escaped one nothing).
+ */
 function field(doc, name) {
   const m = doc.body.match(new RegExp(`^  ${name}:(?: (.*))?$`, 'm'));
   if (!m) return undefined;
-  return m[1] === undefined ? '' : m[1].replace(/\r$/, '');
+  let value = m[1] === undefined ? '' : m[1].replace(/\r$/, '');
+  if (!value.startsWith('"') || closesDoubleQuote(value)) return value;
+  const rest = doc.body.slice(m.index + m[0].length + 1).split('\n');
+  for (const raw of rest) {
+    const line = raw.replace(/\r$/, '').trim();
+    value = value.endsWith('\\') ? value.slice(0, -1) + line : `${value} ${line}`;
+    if (closesDoubleQuote(value)) break;
+  }
+  return value;
 }
 
 /** The local fileID a `{fileID: N}` field points at ('0' for none), or null for an external reference. */

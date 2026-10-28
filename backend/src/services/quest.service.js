@@ -150,7 +150,13 @@ async function recordProgress(playerId, goalType, amount) {
     if (!playerId || !goalType || typeof amount !== 'number' || !Number.isFinite(amount) || amount <= 0) {
       return;
     }
-    await questRepo.recordProgress(playerId, goalType, amount);
+    // current_progress is an INT column; a distance in meters is fractional,
+    // and PostgreSQL rejects a fractional value bound to INT arithmetic.
+    const wholeAmount = Math.round(amount);
+    if (wholeAmount <= 0) {
+      return;
+    }
+    await questRepo.recordProgress(playerId, goalType, wholeAmount);
   } catch (err) {
     logger.warn('questService.recordProgress failed (best-effort, no-op on error)', {
       error: err.message,
