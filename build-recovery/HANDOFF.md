@@ -9,7 +9,7 @@ folder; where they differ, this file is current.
 - **Branch:** `claude/sprint-5-photon-multiplayer-5jv8v2` (all work below is pushed)
 - **Phase:** Build Recovery — make the existing Sprint 1–10 code runnable.
   **Do not start Sprint 11. Do not add gameplay features or redesign systems.**
-- **Last updated:** 2026-10-22 (first run on an Android emulator; see item 32)
+- **Last updated:** 2026-10-29 (council review and battle controls; see item 35)
 
 ## Working rules agreed with the developer
 
@@ -695,6 +695,60 @@ laptop; Unity 6000.0.58f2, Android target):
       `NetworkPlayer.prefab`, then the `PHOTON_FUSION_AVAILABLE` define, then
       the two-client test. A phone has no movement input yet (no touch
       joystick in Battle); the Editor moves with the keyboard.
+35. **Council review and battle controls, 2026-10-29 (cloud, unattended).**
+    The owner asked for development to continue without him. Three
+    read-only reviewers (Unity/Photon engineer, producer, QA/security)
+    studied the repo; the work below follows what they agreed, within
+    CLAUDE.md. **This cloud session had no .NET SDK and no package registry
+    access, so no C# was compiled here** (the item-34 harness is gone with
+    its sandbox; rebuild it if a later cloud session has network access).
+    - **On this branch:** `NetworkObject` on `NetworkPlayer.prefab`'s root
+      (`a9a4132`): script `{fileID: -1552182283, guid:
+      e725a070cec140c4caffb81624c8c787}` (Fusion.Runtime.dll; fileID from
+      Unity's MD4 rule for DLL classes, which gives the known Image and
+      Button values), plus the `FusionPrefab` label in the `.meta`.
+      `backend/tests/unity/networking.test.js` checks it, Battle's prefab
+      reference and `AssembliesToWeave`. Unity re-bakes the component's
+      fields on import: commit that re-saved prefab from the laptop.
+    - **On branch `claude/battle-controls-and-photon-fixes` (not merged;
+      compile in Unity first):**
+      - Combat input: the four ready icons in Battle are buttons (Editor:
+        Space attack, E special, Left Shift dodge, Q class ability). Presses
+        are latched (`CombatActionLatch`), sent as `NetworkInputData.ActionBits`,
+        and the host runs each press once (`LastActionBits`) through the
+        approved `PlayerCombat` methods in Battle/Overtime
+        (`BattleManager.HandleCombatActions`). Positions moved by an action
+        become the networked position.
+      - Phone movement: floating stick from a touch in the lower-left 40%
+        of the screen, not on UI (`TouchStick`, `TouchStickMath`). Left
+        side chosen as the common mobile convention; owner may revisit.
+      - Combatants identified by Fusion input authority (attacker = the
+        avatar whose "is mine" equals "am I host"); spawn points remain
+        the stub-mode fallback.
+      - A client ends the match when networked Health reaches 0
+        (`IsKnockedOutOnRemoteHost`), then polls for the host's result.
+      - Fixes from QA: profile RPC accepted once, known class, positive
+        values; NaN movement dropped on the host; energy regenerates on the
+        host only; Client join retry with a wall-clock deadline from the
+        first attempt; a throwing `runner.Spawn` no longer blocks `/ready`;
+        `LeaveRoomAsync`/`ShutdownAsync` forget the runner safely.
+      - New EditMode tests: `BattleControlsTests` (9).
+    - **Open, from the QA review (not changed; need the laptop to test):**
+      - Disconnects in a battle: `Battle.unity` has no `PhotonRoomLifecycle`,
+        so nothing posts `/disconnect` there; when it does run, the host
+        reports the *other* player's leave with its own token and the
+        backend records the caller as disconnected. `OnPlayerReconnected`
+        is never raised.
+      - After a match nothing calls `LeaveRoomAsync`: the runner and the
+        DontDestroyOnLoad avatars survive into MainMap (and use CCU).
+      - A client's cooldown icons always show ready (cooldowns run on the
+        host); Charged Pulse's projectile is not networked; `Render()` has
+        no interpolation.
+      - If only one avatar exists at Countdown, the other role stays null
+        (as before).
+    - **Hardware blocker:** a challenge needs two located players within
+      20 m; the Editor has no GPS and there is one Android phone. Needs a
+      second Android phone or approval of a dev-only simulated location.
 
 Current test counts (cloud, after item 29; run from `backend/`):
 

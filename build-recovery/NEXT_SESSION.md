@@ -1,5 +1,37 @@
 # NFOUZ — خطة الجلسة القادمة
 
+> **تحديث 2026-10-29: عمل المجلس أثناء غيابك.** (HANDOFF، البند 35)
+> - **ما تم:** أضفنا مكوّن NetworkObject إلى `NetworkPlayer.prefab` على
+>   فرعك المعتاد. وعلى فرع **منفصل** اسمه
+>   `claude/battle-controls-and-photon-fixes`: أزرار القتال الأربعة (هجوم،
+>   قدرة خاصة، تفادٍ، قدرة الصنف)، وعصا الحركة باللمس على الهاتف (اضغط
+>   بإبهامك في أسفل يسار الشاشة واسحب)، وإصلاحات Photon من مراجعة الأمان.
+> - **مهم:** كود الفرع المنفصل **لم يُجرَّب في Unity بعد** (لم يكن في السحابة
+>   مترجم C#). لذلك لم ندمجه في فرعك، ولن يكسر مشروعك.
+> - **الخطوات بالترتيب:**
+>   1. GitHub Desktop: **Fetch origin** ثم **Pull** على فرعك المعتاد.
+>   2. افتح Unity **6000.0.58f2**. افتح `Assets/_Project/Prefabs/Networking/NetworkPlayer.prefab`.
+>      في Inspector يجب أن يظهر مكوّن **Network Object** بلا «Missing script».
+>      إن ظهر «Missing script»: احذف ذلك السطر، ثم Add Component ← Network Object.
+>   3. Edit ← Project Settings ← Player ← Android ← Other Settings ←
+>      Scripting Define Symbols ← **+** ← اكتب `PHOTON_FUSION_AVAILABLE` ← Apply.
+>      انتظر حتى ينتهي Unity. يجب ألا تظهر أخطاء حمراء في Console.
+>   4. GitHub Desktop: إن تغيّر `NetworkPlayer.prefab` فاعمل له commit
+>      (هذا طبيعي: Unity أكمل إعداد المكوّن). **لا** تعمل commit لملفات
+>      `ProjectSettings`.
+>   5. جرّب الفرع الجديد: في GitHub Desktop ← Current Branch ←
+>      `claude/battle-controls-and-photon-fixes`. إن سأل عن تغييراتك المحلية
+>      فاختر **Bring my changes**. ارجع إلى Unity وانتظر.
+>      - Console بلا أخطاء حمراء؟ ثم Test Runner ← EditMode ← Run All.
+>      - إن كان كل شيء أخضر: اطلب من Claude دمج الفرع.
+>      - إن ظهرت أخطاء حمراء: صوّرها وأرسلها، وارجع إلى فرعك المعتاد. لا
+>        يضيع شيء.
+>   6. التجربة بلاعبين: تحتاج **هاتف Android ثانياً** (التحدي يحتاج لاعبين
+>      بموقعين حقيقيين على بعد 20 متراً، وUnity على اللابتوب ليس فيه GPS).
+>      أو توافق على «موقع وهمي للتطوير فقط» فنبنيه.
+> - **قرار لك لاحقاً (ليس عاجلاً):** عصا الحركة في **اليسار** كما في معظم
+>   ألعاب الجوال. إن أردتها في اليمين فقل ذلك.
+
 > **تحديث 2026-10-27: المحطة 1 تحققت على هاتف حقيقي.** (HANDOFF، البند 33)
 > - **نجرّب على الهاتف من الآن، وليس على المحاكي.** الهاتف: Samsung Galaxy
 >   A16.
