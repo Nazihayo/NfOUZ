@@ -29,11 +29,6 @@ namespace Nfouz.Networking
 #if PHOTON_FUSION_AVAILABLE
         [Networked] public Vector3 NetworkedPosition { get; set; }
         [Networked] public float NetworkedYaw { get; set; }
-        [Networked] public int NetworkedHealth { get; set; }
-        [Networked] public int NetworkedEnergy { get; set; }
-        [Networked] public NetworkString<_32> NetworkedClass { get; set; }
-        [Networked] public NetworkString<_32> NetworkedFaction { get; set; }
-        [Networked] public NetworkString<_32> NetworkedWeapon { get; set; }
         [Networked] public NetworkBool IsReady { get; set; }
 
         /// <summary>The host accepts this player's RPC_SetProfile once.</summary>
@@ -42,6 +37,54 @@ namespace Nfouz.Networking
         /// <summary>ActionBits of the last input the host ran, to run each
         /// press once (CombatActionBits.NewlyPressed).</summary>
         [Networked] public int LastActionBits { get; set; }
+
+        // Health/Energy/Class are networked once this avatar is spawned by a
+        // runner. Fusion throws on networked properties of an unspawned
+        // object, so before that (EditMode tests, a scene placed avatar)
+        // they read and write the plain fields below instead.
+        [Networked] private int NetHealth { get; set; }
+        [Networked] private int NetEnergy { get; set; }
+        [Networked] private NetworkString<_32> NetClass { get; set; }
+        [Networked] private NetworkString<_32> NetFaction { get; set; }
+        [Networked] private NetworkString<_32> NetWeapon { get; set; }
+
+        private int _offlineHealth;
+        private int _offlineEnergy;
+        private string _offlineClass = string.Empty;
+        private string _offlineFaction = string.Empty;
+        private string _offlineWeapon = string.Empty;
+
+        private bool IsNetworked => Object != null && Object.IsValid;
+
+        public int NetworkedHealth
+        {
+            get => IsNetworked ? NetHealth : _offlineHealth;
+            set { if (IsNetworked) NetHealth = value; else _offlineHealth = value; }
+        }
+
+        public int NetworkedEnergy
+        {
+            get => IsNetworked ? NetEnergy : _offlineEnergy;
+            set { if (IsNetworked) NetEnergy = value; else _offlineEnergy = value; }
+        }
+
+        public string NetworkedClass
+        {
+            get => IsNetworked ? NetClass.ToString() : _offlineClass;
+            set { if (IsNetworked) NetClass = value ?? string.Empty; else _offlineClass = value ?? string.Empty; }
+        }
+
+        public string NetworkedFaction
+        {
+            get => IsNetworked ? NetFaction.ToString() : _offlineFaction;
+            set { if (IsNetworked) NetFaction = value ?? string.Empty; else _offlineFaction = value ?? string.Empty; }
+        }
+
+        public string NetworkedWeapon
+        {
+            get => IsNetworked ? NetWeapon.ToString() : _offlineWeapon;
+            set { if (IsNetworked) NetWeapon = value ?? string.Empty; else _offlineWeapon = value ?? string.Empty; }
+        }
 #else
         public Vector3 NetworkedPosition { get; set; }
         public float NetworkedYaw { get; set; }

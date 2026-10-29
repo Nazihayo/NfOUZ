@@ -11,6 +11,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.TestTools;
 
 namespace Nfouz.Tests.EditMode
 {
@@ -41,7 +42,22 @@ namespace Nfouz.Tests.EditMode
             {
                 var loaded = SceneManager.GetSceneByPath(entry.path);
                 var openedHere = !loaded.isLoaded;
-                var scene = openedHere ? EditorSceneManager.OpenScene(entry.path, OpenSceneMode.Additive) : loaded;
+                // Opening MainMap logs the Mapbox SDK's own
+                // "missing ExtensionOfNativeClass" asserts (its sample
+                // LocationBasedMap prefab); they are not about the UI text.
+                // Ignore failing logs only while the scene opens.
+                // (ignoreFailingMessages has no getter; these tests never set it.)
+                LogAssert.ignoreFailingMessages = true;
+                Scene scene;
+                try
+                {
+                    scene = openedHere ? EditorSceneManager.OpenScene(entry.path, OpenSceneMode.Additive) : loaded;
+                }
+                finally
+                {
+                    LogAssert.ignoreFailingMessages = false;
+                }
+
                 try
                 {
                     check(entry.path, scene.GetRootGameObjects());
