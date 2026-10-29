@@ -749,6 +749,13 @@ laptop; Unity 6000.0.58f2, Android target):
     - **Hardware blocker:** a challenge needs two located players within
       20 m; the Editor has no GPS and there is one Android phone. Needs a
       second Android phone or approval of a dev-only simulated location.
+    - **Laptop, 2026-10-29:** `NetworkPlayer.prefab` re-baked by Unity
+      (`e80364a`; Inspector shows Network Object with IsSpawnable, the
+      controller and PlayerCombat, no missing scripts). With
+      `PHOTON_FUSION_AVAILABLE` added (laptop-local ProjectSettings, not
+      committed) the Console has no `error CS` and nothing from Fusion; only
+      the known Mapbox `ExtensionOfNativeClass` errors. The capsule shows
+      pink (built-in material under URP), cosmetic.
 
 Current test counts (cloud, after item 29; run from `backend/`):
 
