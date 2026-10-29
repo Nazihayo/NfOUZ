@@ -756,6 +756,12 @@ laptop; Unity 6000.0.58f2, Android target):
       committed) the Console has no `error CS` and nothing from Fusion; only
       the known Mapbox `ExtensionOfNativeClass` errors. The capsule shows
       pink (built-in material under URP), cosmetic.
+    - EditMode Run All with the define on: **375/375** (336 NFOUZ + 39
+      Mapbox) after two fixes: `NetworkPlayerController` keeps
+      Health/Energy/Class in plain fields until a runner spawns it
+      (`b7a0f39`; PlayerCombatTests had thrown on unspawned networked
+      properties), and `ArabicUiAssetTests` ignores Mapbox's own asserts
+      while opening MainMap (`3e2c328`).
 
 Current test counts (cloud, after item 29; run from `backend/`):
 
