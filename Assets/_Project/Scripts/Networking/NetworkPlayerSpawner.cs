@@ -170,8 +170,22 @@ namespace Nfouz.Networking
             // DontDestroyOnLoad: the runner lives in the DontDestroyOnLoad
             // scene and the clients load Battle themselves (SceneLoader),
             // not through Fusion, so avatars must not belong to a scene.
-            var spawned = runner.Spawn(networkPlayerPrefab, position, rotation, player,
-                null, NetworkSpawnFlags.DontDestroyOnLoad);
+            // Spawn throws (rather than returning null) when the prefab is
+            // not a registered Fusion prefab; catch it so the caller still
+            // reaches the server /ready call instead of stalling until the
+            // 30 s ready timeout cancels the battle.
+            NetworkObject spawned;
+            try
+            {
+                spawned = runner.Spawn(networkPlayerPrefab, position, rotation, player,
+                    null, NetworkSpawnFlags.DontDestroyOnLoad);
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"[NetworkPlayerSpawner] runner.Spawn threw: {e.Message}");
+                spawned = null;
+            }
+
             if (spawned == null)
             {
                 Debug.LogError("[NetworkPlayerSpawner] runner.Spawn failed — does NetworkPlayer.prefab have a NetworkObject?");

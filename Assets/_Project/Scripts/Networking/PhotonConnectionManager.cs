@@ -140,13 +140,16 @@ namespace Nfouz.Networking
 
                 // Client before Host: retry while the attacker's room does
                 // not exist yet (see ClientJoinRetrySeconds).
-                var waitedMs = 0;
+                // Wall-clock deadline: each StartGame attempt is itself a
+                // cloud round-trip of a few seconds, so counting only the
+                // delays would let twenty attempts run far past the
+                // server's 30 s ready timeout.
+                var retryClock = System.Diagnostics.Stopwatch.StartNew();
                 while (!asHost && !result.Ok && result.ShutdownReason == ShutdownReason.GameNotFound &&
-                       waitedMs < ClientJoinRetrySeconds * 1000f)
+                       retryClock.Elapsed.TotalSeconds < ClientJoinRetrySeconds)
                 {
                     await DestroyRunnerAsync();
                     await Task.Delay(ClientJoinRetryDelayMs);
-                    waitedMs += ClientJoinRetryDelayMs;
                     Debug.Log($"[PhotonConnectionManager] Room '{roomName}' not created yet — retrying as Client.");
                     result = await StartRunnerAsync(roomName, asHost);
                 }
@@ -239,10 +242,9 @@ namespace Nfouz.Networking
         public async Task LeaveRoomAsync()
         {
 #if PHOTON_FUSION_AVAILABLE
-            if (_runner != null)
-            {
-                await _runner.Shutdown();
-            }
+            // Shut down AND forget the runner (and its callbacks), so the
+            // next battle starts a fresh one instead of reusing a dead one.
+            await DestroyRunnerAsync();
 #else
             await Task.Yield();
 #endif
@@ -259,15 +261,10 @@ namespace Nfouz.Networking
         public async Task ShutdownAsync()
         {
 #if PHOTON_FUSION_AVAILABLE
-            if (_runner != null)
-            {
-                await _runner.Shutdown();
-                if (_runner.gameObject != null)
-                {
-                    Destroy(_runner.gameObject);
-                }
-                _runner = null;
-            }
+            // Runner.Shutdown() destroys the runner's GameObject by default,
+            // so touching _runner.gameObject afterwards could throw;
+            // DestroyRunnerAsync checks first.
+            await DestroyRunnerAsync();
 #else
             await Task.Yield();
 #endif

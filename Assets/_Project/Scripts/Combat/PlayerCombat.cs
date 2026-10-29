@@ -262,7 +262,10 @@ namespace Nfouz.Combat
                 }
             }
 
-            if (EnergyRegenEnabled)
+            // Energy is networked state: only the machine that owns it (the
+            // Photon host) regenerates it; a client's writes would be
+            // overwritten by the host's anyway.
+            if (EnergyRegenEnabled && _networkController.HasSimulationAuthority)
             {
                 RegenerateEnergy();
             }

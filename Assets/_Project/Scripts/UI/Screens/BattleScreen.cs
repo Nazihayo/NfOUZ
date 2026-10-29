@@ -27,6 +27,14 @@ namespace Nfouz.UI.Screens
     /// (documented there and in the sprint report) for the one case where a
     /// read-only accessor genuinely could not be avoided (the match timer,
     /// which has no boolean substitute).
+    ///
+    /// Build Recovery (HANDOFF item 35): the four readiness icons double as
+    /// the action buttons. A tap only records the press
+    /// (CombatActionLatch.Local); NetworkInputData carries it to the Photon
+    /// host, which runs the action (BattleManager.HandleCombatActions). This
+    /// screen also drives the phone's movement stick (TouchStick) every
+    /// frame. In the Editor: Space attack, E special, Left Shift dodge,
+    /// Q class ability.
     /// </summary>
     [RequireComponent(typeof(BattleManager))]
     public class BattleScreen : MonoBehaviour
@@ -51,10 +59,24 @@ namespace Nfouz.UI.Screens
         private void Awake()
         {
             _battleManager = GetComponent<BattleManager>();
+
+            AttachActionButton(basicAttackReadyIcon, CombatAction.BasicAttack);
+            AttachActionButton(specialReadyIcon, CombatAction.Special);
+            AttachActionButton(dodgeReadyIcon, CombatAction.Dodge);
+            AttachActionButton(classAbilityReadyIcon, CombatAction.ClassAbility);
+        }
+
+        private void OnDisable()
+        {
+            TouchStick.Reset();
+            CombatActionLatch.Local.Clear();
         }
 
         private void Update()
         {
+            TouchStick.Tick();
+            ReadEditorKeys();
+
             if (_localPlayerCombat == null)
             {
                 // BattleManager only identifies the local combatant once the
@@ -105,6 +127,47 @@ namespace Nfouz.UI.Screens
             SetReady(specialReadyIcon, _localPlayerCombat.IsSpecialReady);
             SetReady(dodgeReadyIcon, _localPlayerCombat.IsDodgeReady);
             SetReady(classAbilityReadyIcon, _localPlayerCombat.IsClassAbilityReady);
+        }
+
+        /// <summary>The icon's Image is already a raycast target; a Button on
+        /// it turns a tap into a press.</summary>
+        private static void AttachActionButton(GameObject icon, CombatAction action)
+        {
+            if (icon == null)
+            {
+                return;
+            }
+
+            var button = icon.GetComponent<Button>();
+            if (button == null)
+            {
+                button = icon.AddComponent<Button>();
+            }
+
+            button.onClick.AddListener(() => CombatActionLatch.Local.Press(action));
+        }
+
+        private static void ReadEditorKeys()
+        {
+            if (Input.GetKeyDown(KeyCode.Space))
+            {
+                CombatActionLatch.Local.Press(CombatAction.BasicAttack);
+            }
+
+            if (Input.GetKeyDown(KeyCode.E))
+            {
+                CombatActionLatch.Local.Press(CombatAction.Special);
+            }
+
+            if (Input.GetKeyDown(KeyCode.LeftShift))
+            {
+                CombatActionLatch.Local.Press(CombatAction.Dodge);
+            }
+
+            if (Input.GetKeyDown(KeyCode.Q))
+            {
+                CombatActionLatch.Local.Press(CombatAction.ClassAbility);
+            }
         }
 
         private static void SetReady(GameObject icon, bool isReady)

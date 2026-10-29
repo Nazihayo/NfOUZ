@@ -167,6 +167,8 @@ namespace Nfouz.Combat
                     break;
 
                 case CombatStateMachine.MatchState.Battle:
+                    // Buttons tapped during the countdown do not fire at "go".
+                    CombatActionLatch.Local.Clear();
                     _matchTimeRemaining = Constants.Battle.SessionMaxDurationSeconds;
                     _inOvertime = false;
                     _matchEndHandled = false;
@@ -197,22 +199,17 @@ namespace Nfouz.Combat
         }
 
         /// <summary>
-        /// Finds the two spawned PlayerCombat instances and identifies
-        /// which is the attacker's and which is the defender's by spawn
-        /// position proximity, then Initializes each from
+        /// Finds the two spawned PlayerCombat instances, identifies
+        /// which is the attacker's and which is the defender's, then Initializes each from
         /// server-authoritative data (BattleSession.Current for ids,
         /// PlayerSession.Current for the local player's own class/weapon/
         /// max stats where available).
         ///
-        /// Caveat: a reliable per-object owner id requires the real Photon
-        /// Fusion SDK's InputAuthority/PlayerRef system, which is not
-        /// available in PHOTON_FUSION_AVAILABLE stub mode. Spawn-point
-        /// proximity at Countdown time (immediately after
-        /// NetworkPlayerSpawner places each avatar exactly at its spawn
-        /// point — see NetworkPlayerSpawner.SpawnLocalPlayer) is used as a
-        /// pragmatic stand-in and should be replaced with
-        /// NetworkObject.InputAuthority-based identification once the real
-        /// SDK is integrated.
+        /// With the real Fusion SDK each avatar is identified by its input
+        /// authority (TryIdentifyByAuthority). In stub mode, where that does
+        /// not exist, spawn-point proximity at Countdown time (immediately
+        /// after NetworkPlayerSpawner places each avatar exactly at its spawn
+        /// point) remains the stand-in (IdentifyBySpawnPoints).
         /// </summary>
         private void IdentifyCombatants()
         {
@@ -226,6 +223,70 @@ namespace Nfouz.Combat
                 return;
             }
 
+            if (!TryIdentifyByAuthority(allCombatants, out var attacker, out var defender))
+            {
+                IdentifyBySpawnPoints(allCombatants, out attacker, out defender);
+            }
+
+            _attackerCombat = attacker;
+            _defenderCombat = defender;
+
+            InitializeCombatant(_attackerCombat, isAttacker: true);
+            InitializeCombatant(_defenderCombat, isAttacker: false);
+
+            if (_attackerCombat != null)
+            {
+                _attackerCombat.OnDeath += HandleAttackerDeath;
+                SubscribeActions(_attackerCombat);
+            }
+
+            if (_defenderCombat != null)
+            {
+                _defenderCombat.OnDeath += HandleDefenderDeath;
+                SubscribeActions(_defenderCombat);
+            }
+        }
+
+        /// <summary>
+        /// With the real Fusion SDK: the host is the attacker (it creates the
+        /// Photon room), so on every machine the attacker's avatar is the one
+        /// whose "is it mine?" answer equals "am I the host?". False when
+        /// that is unknown for any avatar (stub mode, not spawned yet).
+        /// </summary>
+        private static bool TryIdentifyByAuthority(PlayerCombat[] combatants,
+            out PlayerCombat attacker, out PlayerCombat defender)
+        {
+            attacker = null;
+            defender = null;
+            foreach (var combatant in combatants)
+            {
+                var controller = combatant.GetComponent<NetworkPlayerController>();
+                var isLocal = controller != null ? controller.IsLocalPlayer : null;
+                var onHost = controller != null ? controller.IsOnHostMachine : null;
+                if (!isLocal.HasValue || !onHost.HasValue)
+                {
+                    return false;
+                }
+
+                if (isLocal.Value == onHost.Value)
+                {
+                    attacker = combatant;
+                }
+                else
+                {
+                    defender = combatant;
+                }
+            }
+
+            return attacker != null || defender != null;
+        }
+
+        /// <summary>Stub-mode stand-in (no input authority): the avatar
+        /// nearest each spawn point, placed there at spawn by
+        /// NetworkPlayerSpawner.</summary>
+        private void IdentifyBySpawnPoints(PlayerCombat[] allCombatants,
+            out PlayerCombat attacker, out PlayerCombat defender)
+        {
             PlayerCombat nearestToAttacker = null;
             PlayerCombat nearestToDefender = null;
             var nearestToAttackerDist = float.MaxValue;
@@ -254,20 +315,104 @@ namespace Nfouz.Combat
                 }
             }
 
-            _attackerCombat = nearestToAttacker;
-            _defenderCombat = nearestToDefender;
+            attacker = nearestToAttacker;
+            defender = nearestToDefender;
+        }
 
-            InitializeCombatant(_attackerCombat, isAttacker: true);
-            InitializeCombatant(_defenderCombat, isAttacker: false);
-
-            if (_attackerCombat != null)
+        private void SubscribeActions(PlayerCombat combat)
+        {
+            var controller = combat.GetComponent<NetworkPlayerController>();
+            if (controller != null)
             {
-                _attackerCombat.OnDeath += HandleAttackerDeath;
+                controller.CombatActionsPressed -= HandleCombatActions;
+                controller.CombatActionsPressed += HandleCombatActions;
+            }
+        }
+
+        private void UnsubscribeActions(PlayerCombat combat)
+        {
+            var controller = combat != null ? combat.GetComponent<NetworkPlayerController>() : null;
+            if (controller != null)
+            {
+                controller.CombatActionsPressed -= HandleCombatActions;
+            }
+        }
+
+        /// <summary>
+        /// Host only (NetworkPlayerController raises the event on the Photon
+        /// host): runs the approved Sprint 6 actions a player pressed, against
+        /// the other combatant, during Battle and Overtime only. PlayerCombat
+        /// itself validates range, energy, cooldowns and locks, so a rejected
+        /// press changes nothing. Dodge and the class ability go first, so a
+        /// dodge pressed in the same tick as an attack is not blocked by it.
+        /// </summary>
+        private void HandleCombatActions(NetworkPlayerController source, CombatAction pressed)
+        {
+            if (_matchEndHandled || source == null)
+            {
+                return;
             }
 
-            if (_defenderCombat != null)
+            var state = _stateMachine.CurrentState;
+            if (state != CombatStateMachine.MatchState.Battle && state != CombatStateMachine.MatchState.Overtime)
             {
-                _defenderCombat.OnDeath += HandleDefenderDeath;
+                return;
+            }
+
+            PlayerCombat actor;
+            PlayerCombat target;
+            if (_attackerCombat != null && _attackerCombat.gameObject == source.gameObject)
+            {
+                actor = _attackerCombat;
+                target = _defenderCombat;
+            }
+            else if (_defenderCombat != null && _defenderCombat.gameObject == source.gameObject)
+            {
+                actor = _defenderCombat;
+                target = _attackerCombat;
+            }
+            else
+            {
+                return;
+            }
+
+            if (actor.IsDead)
+            {
+                return;
+            }
+
+            if ((pressed & CombatAction.Dodge) != 0)
+            {
+                actor.TryDodge();
+            }
+
+            if ((pressed & CombatAction.ClassAbility) != 0)
+            {
+                actor.TryClassAbility();
+            }
+
+            if (target != null && (pressed & CombatAction.BasicAttack) != 0)
+            {
+                actor.BasicAttack(target);
+            }
+
+            if (target != null && !_matchEndHandled && (pressed & CombatAction.Special) != 0)
+            {
+                actor.TrySpecial(target);
+            }
+
+            // Dodge, Blink Step, Shadow Lunge and knockback move transforms
+            // directly; make that the networked position of both avatars.
+            AdoptPosition(actor);
+            AdoptPosition(target);
+        }
+
+        private static void AdoptPosition(PlayerCombat combat)
+        {
+            var controller = combat != null ? combat.GetComponent<NetworkPlayerController>() : null;
+            if (controller != null)
+            {
+                controller.AdoptTransformPosition();
             }
         }
 
@@ -345,11 +490,13 @@ namespace Nfouz.Combat
             if (_attackerCombat != null)
             {
                 _attackerCombat.OnDeath -= HandleAttackerDeath;
+                UnsubscribeActions(_attackerCombat);
             }
 
             if (_defenderCombat != null)
             {
                 _defenderCombat.OnDeath -= HandleDefenderDeath;
+                UnsubscribeActions(_defenderCombat);
             }
         }
 
