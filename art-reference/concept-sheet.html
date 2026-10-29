@@ -1,0 +1,828 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NFOUZ Concept Sheet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;700&family=Noto+Kufi+Arabic:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F3F6FB; --panel:#FFFFFF; --panel2:#EEF2F8; --text:#0B1020; --muted:#4A5675; --line:#D5DCE8;
+  --plate1:#FFFFFF; --plate2:#D7DEEB; --grid:rgba(11,16,32,.07); --ground:rgba(11,16,32,.18);
+  --silc:#0B1020; --accent:#B7791F; --hp:#D92D3F; --en:#0891B2; --chip:#E4E9F2;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0B1020; --panel:#121A33; --panel2:#0F1630; --text:#F3F6FB; --muted:#9AA6C4; --line:#24305A;
+    --plate1:#1F2A52; --plate2:#0A0F1F; --grid:rgba(201,211,230,.07); --ground:rgba(0,0,0,.55);
+    --silc:#C9D3E6; --accent:#F5B53D; --hp:#FF4D5E; --en:#22D3EE; --chip:#1C2547;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0B1020; --panel:#121A33; --panel2:#0F1630; --text:#F3F6FB; --muted:#9AA6C4; --line:#24305A;
+  --plate1:#1F2A52; --plate2:#0A0F1F; --grid:rgba(201,211,230,.07); --ground:rgba(0,0,0,.55);
+  --silc:#C9D3E6; --accent:#F5B53D; --hp:#FF4D5E; --en:#22D3EE; --chip:#1C2547;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--text);font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,"Noto Kufi Arabic",sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+.ar{font-family:"Noto Kufi Arabic",system-ui,sans-serif}
+.disp{font-family:"Chakra Petch",system-ui,sans-serif;letter-spacing:.02em}
+.wrap{max-width:1180px;margin:0 auto;padding:28px 16px 64px}
+header.hero{display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:center;margin-bottom:28px}
+header.hero svg{width:84px;height:84px}
+h1{margin:0;font-size:clamp(26px,5vw,40px);line-height:1.1}
+h1 .ar{font-weight:800;margin-inline-end:.35em}
+.sub{margin:6px 0 0;color:var(--muted);max-width:70ch}
+.pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.pill{background:var(--chip);border:1px solid var(--line);border-radius:999px;padding:2px 10px;font-size:12px;color:var(--muted)}
+h2{font-size:22px;margin:44px 0 6px;display:flex;flex-wrap:wrap;gap:.2em .6em;align-items:baseline}
+h2 .ar{font-size:18px;color:var(--accent);font-weight:600}
+.lead{color:var(--muted);margin:0 0 16px;max-width:80ch}
+.grid{display:grid;gap:16px}
+.g3{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.g2{grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:14px;min-width:0}
+.card-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.card-head svg{width:40px;height:40px;flex:none}
+.card-head h3{margin:0;font-size:20px;line-height:1.2}
+.card-head .en{margin:0;color:var(--muted);font-size:13px}
+.card-head .tag{margin-inline-start:auto;font-size:12px;white-space:nowrap;background:var(--chip);padding:3px 8px;border-radius:8px}
+.plate{border-radius:14px;overflow:hidden;border:1px solid var(--line)}
+.plate svg{display:block;width:100%;height:auto}
+.reads{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.read{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:8px;text-align:center;font-size:12px;color:var(--muted)}
+.read svg{display:block;margin:0 auto 4px;height:96px;width:auto;max-width:100%}
+ul.callouts{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:5px;font-size:13px}
+ul.callouts li{display:grid;grid-template-columns:20px 18px 1fr auto;gap:8px;align-items:center}
+.num{width:20px;height:20px;border-radius:50%;background:#F5B53D;color:#0B1020;font-weight:700;font-size:11px;display:grid;place-items:center}
+.sw{width:18px;height:18px;border-radius:5px;background:var(--c);border:1px solid rgba(127,127,127,.35)}
+code,.hex{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;color:var(--muted)}
+dl.stats{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:12px 0 0;font-size:13px;border-top:1px solid var(--line);padding-top:10px}
+dl.stats dt{color:var(--muted)}
+dl.stats dd{margin:0}
+.wcard .plate svg{aspect-ratio:400/130}
+.wtitle{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;margin:0 0 8px}
+.wtitle h3{margin:0;font-size:18px}
+.rar{font-size:11px;text-transform:uppercase;letter-spacing:.08em;padding:2px 8px;border-radius:6px;border:1px solid var(--rc);color:var(--rc);margin-inline-start:auto}
+.bars{display:grid;grid-template-columns:auto 1fr auto;gap:6px 10px;align-items:center;font-size:12.5px;margin-top:10px}
+.bar{height:7px;border-radius:4px;background:var(--chip);overflow:hidden}
+.bar i{display:block;height:100%;width:var(--w);background:linear-gradient(90deg,var(--b1),var(--b2));border-radius:4px}
+.special{margin-top:10px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:12.5px}
+.special b{font-size:13.5px}
+.icons{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px}
+.icon{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;text-align:center}
+.icon svg{width:112px;height:112px;display:block;margin:0 auto 8px}
+.icon h4{margin:0;font-size:15px}
+.icon p{margin:2px 0 0;font-size:12.5px;color:var(--muted)}
+.icon .sizes{margin-top:6px;font-size:11px}
+.combat{display:grid;grid-template-columns:minmax(0,420px) 1fr;gap:20px;align-items:start}
+.phone svg{width:100%;height:auto;display:block;filter:drop-shadow(0 18px 30px rgba(0,0,0,.25))}
+ol.legend{margin:0;padding:0;list-style:none;display:grid;gap:10px}
+ol.legend li{display:grid;grid-template-columns:24px 1fr;gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:13.5px}
+ol.legend .num{width:24px;height:24px;font-size:12px}
+ol.legend b{display:block}
+.palette{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.chipc{display:flex;gap:10px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:8px}
+.chipc .sw{width:36px;height:36px;border-radius:9px;flex:none}
+.chipc b{display:block;font-size:13px}
+.note{margin-top:40px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+.note li{margin:4px 0}
+@media (max-width:760px){.combat{grid-template-columns:1fr}}
+@media (max-width:420px){ul.callouts li{grid-template-columns:20px 18px 1fr}ul.callouts li .hex{grid-column:3}}
+</style>
+</head>
+<body>
+
+<!-- ================= Shared SVG definitions ================= -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+<defs>
+  <!-- materials (key light upper-left, so gradients run light→dark toward lower-right) -->
+  <linearGradient id="g-skin" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#E2AE86"/><stop offset="1" stop-color="#A2673F"/></linearGradient>
+  <linearGradient id="g-slate" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#52628F"/><stop offset=".55" stop-color="#2C3860"/><stop offset="1" stop-color="#18203A"/></linearGradient>
+  <linearGradient id="g-pants" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#36405F"/><stop offset="1" stop-color="#141A2C"/></linearGradient>
+  <linearGradient id="g-hood" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#43537F"/><stop offset="1" stop-color="#141B33"/></linearGradient>
+  <linearGradient id="g-scarf" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#AEB9D0"/></linearGradient>
+  <linearGradient id="g-mint" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#B9FFE6"/><stop offset=".5" stop-color="#3EE6A8"/><stop offset="1" stop-color="#139B6E"/></linearGradient>
+  <linearGradient id="g-bisht" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5A473C"/><stop offset=".6" stop-color="#2E241F"/><stop offset="1" stop-color="#191311"/></linearGradient>
+  <linearGradient id="g-thobe" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#C9C1AE"/></linearGradient>
+  <linearGradient id="g-gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFE7AE"/><stop offset=".5" stop-color="#F5B53D"/><stop offset="1" stop-color="#A86F12"/></linearGradient>
+  <radialGradient id="g-goldcore" cx=".4" cy=".4" r=".7"><stop offset="0" stop-color="#FFFBEA"/><stop offset=".45" stop-color="#FFD27A"/><stop offset="1" stop-color="#D08A12"/></radialGradient>
+  <linearGradient id="g-steel" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9CA7BD"/><stop offset=".5" stop-color="#5B6578"/><stop offset="1" stop-color="#262C3A"/></linearGradient>
+  <linearGradient id="g-steelv" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#B4BED1"/><stop offset=".5" stop-color="#6A748A"/><stop offset="1" stop-color="#2A303E"/></linearGradient>
+  <linearGradient id="g-copper" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFC394"/><stop offset=".45" stop-color="#D9783A"/><stop offset="1" stop-color="#7E3812"/></linearGradient>
+  <radialGradient id="g-ember" cx=".5" cy=".45" r=".6"><stop offset="0" stop-color="#FFF4DE"/><stop offset=".4" stop-color="#FFB36B"/><stop offset="1" stop-color="#E0560F"/></radialGradient>
+  <linearGradient id="g-pearl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".55" stop-color="#DCE3EF"/><stop offset="1" stop-color="#8E9AB4"/></linearGradient>
+  <linearGradient id="g-obsidian" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4C4468"/><stop offset=".5" stop-color="#231D36"/><stop offset="1" stop-color="#0E0B18"/></linearGradient>
+  <linearGradient id="g-blade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".45" stop-color="#D6DEEA"/><stop offset=".55" stop-color="#9AA8BF"/><stop offset="1" stop-color="#5B6A85"/></linearGradient>
+  <linearGradient id="g-handle" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5A6378"/><stop offset="1" stop-color="#1D222E"/></linearGradient>
+  <linearGradient id="g-iconbg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#26325E"/><stop offset="1" stop-color="#0B1020"/></linearGradient>
+  <radialGradient id="g-ayaz" cx=".38" cy=".35" r=".7"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".35" stop-color="#BFF3FF"/><stop offset=".8" stop-color="#22D3EE"/><stop offset="1" stop-color="#0E7490"/></radialGradient>
+  <!-- plates: one radial per class accent -->
+  <radialGradient id="pl-base" cx=".5" cy=".38" r=".75"><stop offset="0" style="stop-color:var(--plate1)"/><stop offset="1" style="stop-color:var(--plate2)"/></radialGradient>
+  <radialGradient id="pl-mint" cx=".5" cy=".42" r=".5"><stop offset="0" stop-color="#3EE6A8" stop-opacity=".38"/><stop offset="1" stop-color="#3EE6A8" stop-opacity="0"/></radialGradient>
+  <radialGradient id="pl-gold" cx=".5" cy=".42" r=".5"><stop offset="0" stop-color="#F5B53D" stop-opacity=".38"/><stop offset="1" stop-color="#F5B53D" stop-opacity="0"/></radialGradient>
+  <radialGradient id="pl-ember" cx=".5" cy=".42" r=".5"><stop offset="0" stop-color="#FF8A3D" stop-opacity=".38"/><stop offset="1" stop-color="#FF8A3D" stop-opacity="0"/></radialGradient>
+  <radialGradient id="pl-violet" cx=".55" cy=".55" r=".5"><stop offset="0" stop-color="#A78BFA" stop-opacity=".32"/><stop offset="1" stop-color="#A78BFA" stop-opacity="0"/></radialGradient>
+  <radialGradient id="pl-cyan" cx=".5" cy=".5" r=".55"><stop offset="0" stop-color="#22D3EE" stop-opacity=".30"/><stop offset="1" stop-color="#22D3EE" stop-opacity="0"/></radialGradient>
+  <radialGradient id="g-shadow" cx=".5" cy=".5" r=".5"><stop offset="0" style="stop-color:var(--ground)"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>
+  <radialGradient id="g-tele" cx=".5" cy="1" r="1"><stop offset="0" stop-color="#FFFFFF" stop-opacity=".05"/><stop offset=".85" stop-color="#FFFFFF" stop-opacity=".32"/><stop offset="1" stop-color="#FFFFFF" stop-opacity=".45"/></radialGradient>
+  <radialGradient id="g-stick" cx=".4" cy=".35" r=".7"><stop offset="0" stop-color="#FFFFFF" stop-opacity=".95"/><stop offset="1" stop-color="#9AA6C4" stop-opacity=".9"/></radialGradient>
+  <linearGradient id="g-arena" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#22D3EE" stop-opacity=".2"/><stop offset=".5" stop-color="#22D3EE"/><stop offset="1" stop-color="#22D3EE" stop-opacity=".2"/></linearGradient>
+
+  <pattern id="p-khatam" width="32" height="32" patternUnits="userSpaceOnUse">
+    <g fill="none" style="stroke:var(--grid)" stroke-width="1"><rect x="9" y="9" width="14" height="14"/><rect x="9" y="9" width="14" height="14" transform="rotate(45 16 16)"/></g>
+  </pattern>
+  <pattern id="p-floor" width="52" height="52" patternUnits="userSpaceOnUse">
+    <rect width="52" height="52" fill="#121A33"/>
+    <g fill="none" stroke="#22D3EE" stroke-opacity=".10" stroke-width="1"><rect x="15" y="15" width="22" height="22"/><rect x="15" y="15" width="22" height="22" transform="rotate(45 26 26)"/><path d="M0 0H52V52"/></g>
+  </pattern>
+
+  <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur in="SourceGraphic" stdDeviation="2.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  <filter id="glow-l" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur in="SourceGraphic" stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  <filter id="sil" x="0" y="0" width="100%" height="100%"><feFlood class="silflood" result="f"/><feComposite in="f" in2="SourceAlpha" operator="in"/></filter>
+  <clipPath id="screen"><rect x="10" y="10" width="370" height="760" rx="36"/></clipPath>
+
+  <!-- ============ SCOUT (front) ============ -->
+  <g id="scout">
+    <path d="M138 112 C168 116 192 134 208 164 C194 158 182 162 174 172 C168 146 156 132 134 124 Z" fill="url(#g-scarf)"/>
+    <path d="M150 121 C170 129 186 142 198 158" stroke="#3EE6A8" stroke-width="2.2" fill="none" opacity=".85"/>
+    <path d="M146 116 C164 124 178 134 188 146" stroke="#8C98B4" stroke-width="1.2" fill="none" opacity=".6"/>
+    <path d="M84 96 C80 58 96 30 120 22 C146 30 160 58 156 96 C146 108 94 108 84 96 Z" fill="url(#g-hood)"/>
+    <path d="M100 204 L94 262 L90 326 L110 326 L114 266 L120 214 Z" fill="url(#g-pants)"/>
+    <path d="M120 214 L126 266 L130 326 L150 326 L146 262 L140 204 Z" fill="url(#g-pants)"/>
+    <rect x="91" y="250" width="22" height="18" rx="6" fill="#1E2742" stroke="#3EE6A8" stroke-width="1.5"/>
+    <rect x="127" y="250" width="22" height="18" rx="6" fill="#1E2742" stroke="#3EE6A8" stroke-width="1.5"/>
+    <path d="M86 322 h28 q6 0 6 8 v6 h-38 q0 -14 4 -14z" fill="#E8ECF3"/>
+    <path d="M126 322 h28 q4 0 4 14 h-38 v-6 q0 -8 6 -8z" fill="#C9D1E0"/>
+    <rect x="82" y="334" width="38" height="4" rx="2" fill="#3EE6A8" filter="url(#glow)"/>
+    <rect x="120" y="334" width="38" height="4" rx="2" fill="#3EE6A8" filter="url(#glow)"/>
+    <path d="M90 108 C104 102 136 102 150 108 L158 168 C154 192 146 206 140 210 L100 210 C94 206 86 192 82 168 Z" fill="url(#g-slate)"/>
+    <path d="M120 122 L120 206" stroke="#0F1528" stroke-width="2"/>
+    <path d="M92 152 C104 160 136 160 148 152" stroke="#3EE6A8" stroke-width="2" fill="none"/>
+    <path d="M98 118 L144 186" stroke="#141A2E" stroke-width="7" stroke-linecap="round"/>
+    <rect x="115" y="146" width="10" height="8" rx="2" fill="#3EE6A8" transform="rotate(56 120 150)"/>
+    <rect x="96" y="198" width="48" height="10" rx="3" fill="#141A2E"/>
+    <rect x="114" y="199" width="12" height="8" rx="2" fill="#3EE6A8"/>
+    <path d="M152 110 L158 168 C154 192 146 206 140 210" stroke="#22D3EE" stroke-width="1.6" fill="none" opacity=".75"/>
+    <path d="M93 114 L86 164" stroke="#FFB870" stroke-width="2" opacity=".35"/>
+    <path d="M92 112 C78 120 72 140 72 168 C72 182 74 192 78 198 L92 196 C90 182 90 164 96 140 Z" fill="url(#g-slate)"/>
+    <g fill="none" stroke="#3EE6A8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M80 126 l6 -5 l6 5"/><path d="M80 133 l6 -5 l6 5" opacity=".6"/></g>
+    <circle cx="84" cy="203" r="9" fill="#141A2E"/><path d="M78 199 h12" stroke="#3EE6A8" stroke-width="1.5"/>
+    <path d="M148 112 C164 120 170 140 168 160 L162 184 L148 180 C152 166 154 150 146 134 Z" fill="url(#g-slate)"/>
+    <path d="M164 122 C170 136 170 150 168 160" stroke="#22D3EE" stroke-width="1.4" fill="none" opacity=".7"/>
+    <g transform="translate(157 190) rotate(14)">
+      <path d="M-3 4 C-7 24 -3 44 9 60 C2 40 4 22 4 4 Z" fill="url(#g-obsidian)"/>
+      <path d="M-3 4 C-7 24 -3 44 9 60" stroke="#A78BFA" stroke-width="1.6" fill="none" filter="url(#glow)"/>
+      <rect x="-8" y="0" width="16" height="5" rx="2" fill="#C9D3E6"/>
+      <circle cx="0" cy="-15" r="3.6" fill="#A78BFA" filter="url(#glow)"/>
+    </g>
+    <circle cx="157" cy="187" r="9" fill="#141A2E"/>
+    <ellipse cx="120" cy="70" rx="21" ry="25" fill="url(#g-skin)"/>
+    <path d="M94 92 C90 60 100 40 120 37 C140 40 150 60 146 92 L140 90 C142 64 134 48 120 47 C106 48 98 64 100 90 Z" fill="#2A365C"/>
+    <path d="M99 64 C112 58 128 58 141 64 L140 75 C128 70 112 70 100 75 Z" fill="url(#g-mint)" filter="url(#glow)"/>
+    <path d="M104 64 C114 61 122 61 129 62" stroke="#FFFFFF" stroke-width="1.5" opacity=".8" fill="none"/>
+    <path d="M98 80 C110 92 130 92 142 80 L146 100 C134 114 106 114 94 100 Z" fill="url(#g-scarf)"/>
+    <path d="M104 92 l6 6 M114 95 l6 6 M124 95 l6 6 M134 92 l5 5" stroke="#3EE6A8" stroke-width="1.4" opacity=".75"/>
+    <path d="M90 104 C108 118 132 118 150 104 L152 114 C134 130 106 130 88 114 Z" fill="url(#g-scarf)"/>
+    <path d="M90 110 C108 122 132 122 150 110" stroke="#3EE6A8" stroke-width="1.6" fill="none" opacity=".8"/>
+  </g>
+
+  <!-- ============ RANGER (front) ============ -->
+  <g id="ranger">
+    <path d="M82 108 C100 100 140 100 158 108 L180 300 C150 312 90 312 60 300 Z" fill="url(#g-bisht)"/>
+    <path d="M104 296 L102 326 L118 326 L118 298 Z" fill="#1A1A22"/>
+    <path d="M122 298 L122 326 L138 326 L136 296 Z" fill="#1A1A22"/>
+    <path d="M96 322 h24 v14 h-30 q0 -14 6 -14z" fill="#3A2E27"/>
+    <path d="M120 322 h24 q6 0 6 14 h-30z" fill="#2A211C"/>
+    <rect x="90" y="334" width="60" height="3" rx="1.5" fill="#F5B53D" opacity=".8"/>
+    <path d="M106 110 L134 110 L140 300 L100 300 Z" fill="url(#g-thobe)"/>
+    <path d="M120 116 L120 298" stroke="#BDB5A2" stroke-width="1.5"/>
+    <circle cx="120" cy="124" r="2.4" fill="#F5B53D"/><circle cx="120" cy="136" r="2.4" fill="#F5B53D"/>
+    <path d="M112 230 L128 230 M110 250 L130 250" stroke="#22D3EE" stroke-width="1" opacity=".5"/>
+    <path d="M82 108 C92 104 100 104 108 108 L104 300 L60 300 Z" fill="url(#g-bisht)"/>
+    <path d="M132 108 C140 104 148 104 158 108 L180 300 L136 300 Z" fill="url(#g-bisht)"/>
+    <path d="M108 108 L104 300" stroke="url(#g-gold)" stroke-width="4.5"/>
+    <path d="M132 108 L136 300" stroke="url(#g-gold)" stroke-width="4.5"/>
+    <path d="M60 300 C90 312 150 312 180 300" stroke="url(#g-gold)" stroke-width="3.5" fill="none"/>
+    <path d="M101 120 l4 6 l-4 6 l4 6 l-4 6 l4 6 l-4 6" stroke="#F5B53D" stroke-width="1.3" fill="none" opacity=".8"/>
+    <path d="M139 120 l-4 6 l4 6 l-4 6 l4 6 l-4 6 l4 6" stroke="#F5B53D" stroke-width="1.3" fill="none" opacity=".8"/>
+    <path d="M158 110 L180 300" stroke="#22D3EE" stroke-width="1.6" opacity=".7"/>
+    <path d="M82 112 L64 290" stroke="#FFB870" stroke-width="2" opacity=".25"/>
+    <path d="M84 110 C70 120 66 144 70 170 L82 188 L98 178 C88 160 90 138 96 124 Z" fill="url(#g-bisht)"/>
+    <path d="M156 110 C172 118 178 138 176 160 L166 180 L150 170 C158 154 156 136 148 124 Z" fill="url(#g-bisht)"/>
+    <path d="M86 112 C78 112 72 118 70 124" stroke="#F5B53D" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path d="M154 112 C162 112 168 118 170 124" stroke="#F5B53D" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <g transform="rotate(-14 120 182)">
+      <path d="M50 170 L84 168 L84 196 L58 202 Q46 196 50 170 Z" fill="#2A211C"/>
+      <rect x="78" y="164" width="106" height="32" rx="13" fill="url(#g-pearl)"/>
+      <rect x="96" y="164" width="6" height="32" fill="url(#g-gold)"/>
+      <rect x="152" y="164" width="6" height="32" fill="url(#g-gold)"/>
+      <rect x="106" y="160" width="40" height="7" rx="3" fill="url(#g-steel)"/>
+      <rect x="112" y="172" width="30" height="16" rx="8" fill="#1A1406"/>
+      <rect x="115" y="175" width="24" height="10" rx="5" fill="url(#g-goldcore)" filter="url(#glow)"/>
+      <rect x="182" y="171" width="34" height="18" rx="6" fill="url(#g-steel)"/>
+      <rect x="212" y="166" width="9" height="28" rx="3" fill="url(#g-gold)"/>
+      <circle cx="224" cy="180" r="4" fill="#FFE3A3" filter="url(#glow-l)"/>
+      <path d="M84 168 L180 168" stroke="#FFFFFF" stroke-width="1.5" opacity=".7"/>
+    </g>
+    <circle cx="90" cy="194" r="9" fill="#2A211C"/><path d="M84 190 h11" stroke="#F5B53D" stroke-width="1.4"/>
+    <circle cx="160" cy="176" r="9" fill="#2A211C"/>
+    <path d="M98 96 L103 112 L137 112 L142 96 C128 104 112 104 98 96 Z" fill="#2A211C" stroke="#F5B53D" stroke-width="1.4"/>
+    <ellipse cx="99" cy="72" rx="4" ry="6" fill="#B87A50"/><ellipse cx="141" cy="72" rx="4" ry="6" fill="#9C6440"/>
+    <ellipse cx="120" cy="70" rx="20" ry="24" fill="url(#g-skin)"/>
+    <path d="M99 64 C98 42 110 35 122 35 C136 35 144 46 141 64 C138 54 130 49 120 51 C110 49 102 56 99 64 Z" fill="#17120F"/>
+    <path d="M101 76 C103 92 112 99 120 99 C128 99 137 92 139 76 C134 86 128 89 120 89 C112 89 106 86 101 76 Z" fill="#17120F"/>
+    <path d="M112 84 Q120 87 128 84" stroke="#5A3A26" stroke-width="1.6" fill="none"/>
+    <path d="M107 62 L116 61 M124 61 L133 62" stroke="#17120F" stroke-width="2.4" stroke-linecap="round"/>
+    <ellipse cx="112" cy="69" rx="2.2" ry="2.6" fill="#17120F"/>
+    <circle cx="129" cy="69" r="7.5" fill="#F5B53D" fill-opacity=".45" stroke="url(#g-gold)" stroke-width="2.6" filter="url(#glow)"/>
+    <path d="M136.5 68 L143 64" stroke="#F5B53D" stroke-width="2"/>
+    <ellipse cx="129" cy="69" rx="2" ry="2.4" fill="#17120F"/>
+  </g>
+
+  <!-- ============ TITAN (front) ============ -->
+  <g id="titan">
+    <path d="M88 214 L82 318 L116 318 L118 222 Z" fill="url(#g-steel)"/>
+    <path d="M122 222 L124 318 L158 318 L152 214 Z" fill="url(#g-steel)"/>
+    <path d="M84 252 L116 252 L114 274 L86 274 Z" fill="url(#g-copper)"/>
+    <path d="M124 252 L156 252 L154 274 L126 274 Z" fill="url(#g-copper)"/>
+    <path d="M76 312 h44 v22 h-48 q0 -22 4 -22z" fill="#232937"/>
+    <path d="M120 312 h44 q4 0 4 22 h-48z" fill="#1B202B"/>
+    <rect x="72" y="332" width="96" height="4" rx="2" fill="#FF8A3D" filter="url(#glow)"/>
+    <path d="M184 196 L194 196 L202 296 L192 296 Z" fill="url(#g-handle)"/>
+    <path d="M186 212 l10 -2 M187 222 l10 -2 M188 232 l10 -2" stroke="#D9783A" stroke-width="2"/>
+    <path d="M176 290 L222 290 Q228 290 228 296 L228 328 Q228 334 222 334 L176 334 Q170 334 170 328 L170 296 Q170 290 176 290 Z" fill="url(#g-steelv)"/>
+    <rect x="164" y="294" width="9" height="36" rx="3" fill="url(#g-copper)"/>
+    <rect x="225" y="294" width="9" height="36" rx="3" fill="url(#g-copper)"/>
+    <g transform="translate(199 312)" filter="url(#glow)"><rect x="-8" y="-8" width="16" height="16" fill="url(#g-ember)"/><rect x="-8" y="-8" width="16" height="16" fill="url(#g-ember)" transform="rotate(45)"/></g>
+    <path d="M178 297 L187 305 M220 327 L212 320" stroke="#FF8A3D" stroke-width="1.6" opacity=".8"/>
+    <path d="M72 108 C96 98 144 98 168 108 L160 214 C140 226 100 226 80 214 Z" fill="url(#g-steel)"/>
+    <path d="M86 186 C110 194 130 194 154 186 M84 202 C110 210 130 210 156 202" stroke="#1E2430" stroke-width="3" fill="none"/>
+    <path d="M92 116 C110 110 130 110 148 116 L144 166 C130 176 110 176 96 166 Z" fill="url(#g-copper)"/>
+    <path d="M96 120 C110 115 122 115 132 117" stroke="#FFE2C8" stroke-width="2" opacity=".6" fill="none"/>
+    <g transform="translate(120 140)" filter="url(#glow-l)"><rect x="-11" y="-11" width="22" height="22" fill="url(#g-ember)"/><rect x="-11" y="-11" width="22" height="22" fill="url(#g-ember)" transform="rotate(45)"/><circle r="5" fill="#FFF4DE"/></g>
+    <path d="M166 110 L160 214" stroke="#22D3EE" stroke-width="1.6" opacity=".7"/>
+    <path d="M50 136 C44 160 46 186 54 204 L78 204 C78 184 80 160 84 140 Z" fill="url(#g-steel)"/>
+    <rect x="46" y="198" width="36" height="28" rx="11" fill="url(#g-copper)"/>
+    <path d="M52 210 h24" stroke="#7E3812" stroke-width="2"/>
+    <path d="M156 140 C162 160 168 180 172 196 L194 190 C192 170 186 150 184 136 Z" fill="url(#g-steel)"/>
+    <rect x="172" y="184" width="32" height="28" rx="11" fill="url(#g-copper)"/>
+    <ellipse cx="70" cy="122" rx="33" ry="26" fill="url(#g-copper)"/>
+    <ellipse cx="170" cy="122" rx="33" ry="26" fill="url(#g-copper)"/>
+    <path d="M40 126 C52 142 88 142 100 126" stroke="#7E3812" stroke-width="2.5" fill="none"/>
+    <path d="M140 126 C152 142 188 142 200 126" stroke="#7E3812" stroke-width="2.5" fill="none"/>
+    <g fill="#FFB36B" filter="url(#glow)">
+      <path d="M58 116 l4 -4 l4 4 l-4 4z"/><path d="M70 112 l4 -4 l4 4 l-4 4z"/><path d="M82 116 l4 -4 l4 4 l-4 4z"/>
+      <path d="M150 116 l4 -4 l4 4 l-4 4z"/><path d="M162 112 l4 -4 l4 4 l-4 4z"/><path d="M174 116 l4 -4 l4 4 l-4 4z"/>
+    </g>
+    <path d="M44 110 C52 100 64 96 76 97" stroke="#FFE2C8" stroke-width="2.4" opacity=".55" fill="none"/>
+    <path d="M196 112 C200 120 202 128 200 134" stroke="#22D3EE" stroke-width="1.6" opacity=".7" fill="none"/>
+    <path d="M94 92 C108 104 132 104 146 92 L148 108 L92 108 Z" fill="#232937"/>
+    <path d="M98 62 C98 36 108 26 120 26 C132 26 142 36 142 62 C142 78 136 92 120 96 C104 92 98 78 98 62 Z" fill="url(#g-steel)"/>
+    <path d="M108 30 C114 27 126 27 132 30 L130 38 C124 36 116 36 110 38 Z" fill="url(#g-copper)"/>
+    <circle cx="98" cy="66" r="7" fill="url(#g-copper)"/><circle cx="142" cy="66" r="7" fill="url(#g-copper)"/>
+    <path d="M103 54 C114 50 126 50 137 54 L135 66 C126 62 114 62 105 66 Z" fill="#0F131C"/>
+    <path d="M106 58 C115 55 125 55 134 58 L120 64 Z" fill="url(#g-ember)" filter="url(#glow)"/>
+    <path d="M108 80 H132 M110 86 H130" stroke="#1E2430" stroke-width="2"/>
+    <path d="M103 44 C106 36 112 31 120 30" stroke="#FFFFFF" stroke-width="1.6" opacity=".55" fill="none"/>
+  </g>
+
+  <!-- ============ Top-down reads (battle camera) ============ -->
+  <g id="td-scout">
+    <path d="M6 14 C14 26 10 36 0 44" stroke="#E8ECF3" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <path d="M0 -20 C13 -10 16 6 11 14 C5 21 -5 21 -11 14 C-16 6 -13 -10 0 -20 Z" fill="url(#g-slate)" stroke="#3EE6A8" stroke-width="2"/>
+    <ellipse cx="0" cy="-2" rx="7" ry="8" fill="url(#g-hood)"/>
+    <path d="M-5 -9 Q0 -12 5 -9" stroke="#3EE6A8" stroke-width="2.4" fill="none" filter="url(#glow)"/>
+    <path d="M12 2 L22 -10" stroke="#A78BFA" stroke-width="3" stroke-linecap="round"/>
+  </g>
+  <g id="td-ranger">
+    <rect x="3" y="-46" width="7" height="34" rx="3" fill="url(#g-pearl)"/>
+    <rect x="2" y="-48" width="9" height="5" rx="2" fill="#F5B53D"/>
+    <ellipse cx="0" cy="4" rx="16" ry="20" fill="url(#g-bisht)" stroke="#F5B53D" stroke-width="2"/>
+    <circle cx="0" cy="-2" r="8" fill="#17120F"/>
+    <circle cx="5" cy="-14" r="3" fill="#F5B53D" filter="url(#glow)"/>
+  </g>
+  <g id="td-titan">
+    <rect x="16" y="-34" width="10" height="36" rx="3" fill="url(#g-handle)"/>
+    <rect x="8" y="-48" width="26" height="16" rx="4" fill="url(#g-steelv)" stroke="#FF8A3D" stroke-width="1.5"/>
+    <rect x="-24" y="-12" width="48" height="28" rx="12" fill="url(#g-steel)"/>
+    <circle cx="-22" cy="0" r="13" fill="url(#g-copper)"/>
+    <circle cx="22" cy="0" r="13" fill="url(#g-copper)"/>
+    <circle cx="0" cy="-1" r="9" fill="url(#g-steel)" stroke="#1E2430"/>
+    <path d="M-6 -5 L0 -8 L6 -5" stroke="#FFB36B" stroke-width="2.4" fill="none" stroke-linecap="round" filter="url(#glow)"/>
+  </g>
+
+  <!-- class emblems -->
+  <g id="em-scout"><path d="M-14 6 L0 -10 L14 6" stroke="#3EE6A8" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M-9 13 L0 3 L9 13" stroke="#3EE6A8" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity=".6"/></g>
+  <g id="em-ranger"><circle r="11" fill="none" stroke="#F5B53D" stroke-width="3"/><path d="M0 -17 V-6 M0 6 V17 M-17 0 H-6 M6 0 H17" stroke="#F5B53D" stroke-width="3" stroke-linecap="round"/><circle r="3" fill="#F5B53D"/></g>
+  <g id="em-titan"><path d="M0 -15 L13 -9 V3 C13 10 7 14 0 17 C-7 14 -13 10 -13 3 V-9 Z" fill="none" stroke="#FF8A3D" stroke-width="3" stroke-linejoin="round"/><rect x="-6" y="-6" width="12" height="12" fill="#FF8A3D" transform="rotate(45)"/></g>
+</defs>
+</svg>
+
+<div class="wrap">
+
+<header class="hero">
+  <svg viewBox="0 0 100 100" role="img" aria-label="AYAZ emblem">
+    <circle cx="50" cy="50" r="44" fill="url(#pl-cyan)"/>
+    <ellipse cx="50" cy="50" rx="44" ry="14" fill="none" stroke="#22D3EE" stroke-opacity=".5" stroke-width="1.5" transform="rotate(-18 50 50)"/>
+    <circle cx="50" cy="50" r="26" fill="url(#g-ayaz)" filter="url(#glow)"/>
+    <g fill="none" stroke="#FFFFFF" stroke-opacity=".9" stroke-width="2"><rect x="39" y="39" width="22" height="22"/><rect x="39" y="39" width="22" height="22" transform="rotate(45 50 50)"/></g>
+    <circle cx="50" cy="50" r="4" fill="#FFFFFF"/>
+    <circle cx="88" cy="37" r="3" fill="#F5B53D" filter="url(#glow)"/>
+  </svg>
+  <div>
+    <h1 class="disp"><span class="ar" dir="rtl" lang="ar">نفوذ</span>NFOUZ Concept Sheet</h1>
+    <p class="sub">Alpha art direction: the three classes, the four approved weapons, the three consumables, and how a 90-second battle reads on a phone. Every number below is copied from the code. Gulf night, near future, with a warm key light from the upper-left and a cyan rim light from the back-right.</p>
+    <div class="pills"><span class="pill">Unity 6 · URP 17.0.4</span><span class="pill">Android first</span><span class="pill ar" dir="rtl" lang="ar">العربية أولاً</span><span class="pill">Server-authoritative</span><span class="pill">AYAZ · <span class="ar" dir="rtl" lang="ar">أياز</span></span></div>
+  </div>
+</header>
+
+<!-- ================= Palette ================= -->
+<h2>Palette <span class="ar" dir="rtl" lang="ar">الألوان</span></h2>
+<p class="lead">Faction colours come from <code>003_factions.sql</code> and appear only on ground rings, name plates and map markers. Class accents live on the model. HP and EN are reserved colours that are never used for decoration.</p>
+<div class="palette">
+  <div class="chipc"><span class="sw" style="--c:#0B1020"></span><div><b>Ink 800</b><span class="hex">#0B1020</span></div></div>
+  <div class="chipc"><span class="sw" style="--c:#1C2547"></span><div><b>Ink 600</b><span class="hex">#1C2547</span></div></div>
+  <div class="chipc"><span class="sw" style="--c:#FFB870"></span><div><b>Sodium key</b><span class="hex">#FFB870</span></div></div>
+  <div class="chipc"><span class="sw" style="--c:#22D3EE"></span><div><b>Energy / rim</b><span class="hex">#22D3EE</span></div></div>
+  <div class="chipc"><span class="sw" style="--c:#FF4D5E"></span><div><b>Health</b><span class="hex">#FF4D5E</span></div></div>
+  <div class="chipc"><span class="sw" style="--c:#F5B53D"></span><div><b>Influence · Ranger</b><span class="hex">#F5B53D</span></div></div>
+  <div class="chipc"><span class="sw" style="--c:#3EE6A8"></span><div><b>Scout accent</b><span class="hex">#3EE6A8</span></div></div>
+  <div class="chipc"><span class="sw" style="--c:#FF8A3D"></span><div><b>Titan accent</b><span class="hex">#FF8A3D</span></div></div>
+  <div class="chipc"><span class="sw" style="--c:#3AA0FF"></span><div><b>Falcons <span class="ar" dir="rtl" lang="ar">الصقور</span></b><span class="hex">#3AA0FF</span></div></div>
+  <div class="chipc"><span class="sw" style="--c:#9CA3AF"></span><div><b>Wolves <span class="ar" dir="rtl" lang="ar">الذئاب</span></b><span class="hex">#9CA3AF</span></div></div>
+  <div class="chipc"><span class="sw" style="--c:#7C3AED"></span><div><b>Ghosts <span class="ar" dir="rtl" lang="ar">الأشباح</span></b><span class="hex">#7C3AED</span></div></div>
+  <div class="chipc"><span class="sw" style="--c:#DC2626"></span><div><b>Titans <span class="ar" dir="rtl" lang="ar">العمالقة</span></b><span class="hex">#DC2626</span></div></div>
+</div>
+
+<!-- ================= Characters ================= -->
+<h2>Classes <span class="ar" dir="rtl" lang="ar">الفئات</span></h2>
+<p class="lead">Each class has one shape: triangle, tall rectangle, square. Each must read from the battle camera's top-down view before colour helps. HP/EN come from <code>BattleManager.GetClassBaseStats</code>, abilities from <code>ClassAbilityDatabase</code>. The weapon each one holds is a visual pairing only, because code lets any class use any weapon.</p>
+<div class="grid g3">
+
+  <!-- SCOUT -->
+  <article class="card">
+    <div class="card-head">
+      <svg viewBox="-20 -20 40 40" aria-hidden="true"><use href="#em-scout"/></svg>
+      <div><h3 class="ar" dir="rtl" lang="ar">الكشّاف</h3><p class="en">Scout · <code>PlayerClass.Scout</code></p></div>
+      <span class="tag">HP 80 · EN 120</span>
+    </div>
+    <div class="plate">
+      <svg viewBox="0 0 240 360" role="img" aria-label="Scout front view">
+        <rect width="240" height="360" fill="url(#pl-base)"/><rect width="240" height="360" fill="url(#p-khatam)"/><rect width="240" height="360" fill="url(#pl-mint)"/>
+        <ellipse cx="120" cy="340" rx="70" ry="11" fill="url(#g-shadow)"/>
+        <use href="#scout"/>
+        <g font-family="Chakra Petch" font-size="11" font-weight="700" text-anchor="middle">
+          <g transform="translate(160 54)"><circle r="8" fill="#F5B53D"/><text y="4" fill="#0B1020">1</text></g>
+          <g transform="translate(214 176)"><circle r="8" fill="#F5B53D"/><text y="4" fill="#0B1020">2</text></g>
+          <g transform="translate(62 150)"><circle r="8" fill="#F5B53D"/><text y="4" fill="#0B1020">3</text></g>
+          <g transform="translate(176 252)"><circle r="8" fill="#F5B53D"/><text y="4" fill="#0B1020">4</text></g>
+          <g transform="translate(74 338)"><circle r="8" fill="#F5B53D"/><text y="4" fill="#0B1020">5</text></g>
+        </g>
+      </svg>
+    </div>
+    <div class="reads">
+      <div class="read"><svg viewBox="40 10 180 340" aria-hidden="true"><use href="#scout" filter="url(#sil)"/></svg>Silhouette: hood point, scarf tail</div>
+      <div class="read"><svg viewBox="-50 -50 100 100" aria-hidden="true"><circle r="30" fill="none" stroke="#3AA0FF" stroke-width="3" opacity=".85"/><use href="#td-scout"/></svg>Top-down: teardrop, ≈0.8 m</div>
+    </div>
+    <ul class="callouts">
+      <li><span class="num">1</span><span class="sw" style="--c:#3EE6A8"></span><span>Visor, piping, sole glow (emissive)</span><span class="hex">#3EE6A8</span></li>
+      <li><span class="num">2</span><span class="sw" style="--c:#F3F6FB"></span><span>Shemagh-weave scarf</span><span class="hex">#F3F6FB</span></li>
+      <li><span class="num">3</span><span class="sw" style="--c:#2C3860"></span><span>Slate shell jacket</span><span class="hex">#2C3860</span></li>
+      <li><span class="num">4</span><span class="sw" style="--c:#A78BFA"></span><span>Shadow Dagger edge</span><span class="hex">#A78BFA</span></li>
+      <li><span class="num">5</span><span class="sw" style="--c:#E8ECF3"></span><span>Runner sneakers</span><span class="hex">#E8ECF3</span></li>
+    </ul>
+    <dl class="stats">
+      <dt>Ability</dt><dd><b>Blink Step</b>: 4 m dash, 0.25 s, first 0.2 s invulnerable · 25 EN · 12 s</dd>
+      <dt>Passive</dt><dd>Dodge costs 18 EN (others 20)</dd>
+      <dt>Shape</dt><dd>Inverted triangle, asymmetric, leaning forward</dd>
+    </dl>
+  </article>
+
+  <!-- RANGER -->
+  <article class="card">
+    <div class="card-head">
+      <svg viewBox="-20 -20 40 40" aria-hidden="true"><use href="#em-ranger"/></svg>
+      <div><h3 class="ar" dir="rtl" lang="ar">الرامي</h3><p class="en">Ranger · <code>PlayerClass.Ranger</code></p></div>
+      <span class="tag">HP 100 · EN 100</span>
+    </div>
+    <div class="plate">
+      <svg viewBox="0 0 240 360" role="img" aria-label="Ranger front view">
+        <rect width="240" height="360" fill="url(#pl-base)"/><rect width="240" height="360" fill="url(#p-khatam)"/><rect width="240" height="360" fill="url(#pl-gold)"/>
+        <ellipse cx="120" cy="340" rx="76" ry="11" fill="url(#g-shadow)"/>
+        <use href="#ranger"/>
+        <g font-family="Chakra Petch" font-size="11" font-weight="700" text-anchor="middle">
+          <g transform="translate(48 262)"><circle r="8" fill="#F5B53D"/><text y="4" fill="#0B1020">1</text></g>
+          <g transform="translate(120 268)"><circle r="8" fill="#F5B53D"/><text y="4" fill="#0B1020">2</text></g>
+          <g transform="translate(126 150)"><circle r="8" fill="#F5B53D"/><text y="4" fill="#0B1020">3</text></g>
+          <g transform="translate(158 50)"><circle r="8" fill="#F5B53D"/><text y="4" fill="#0B1020">4</text></g>
+          <g transform="translate(192 262)"><circle r="8" fill="#F5B53D"/><text y="4" fill="#0B1020">5</text></g>
+        </g>
+      </svg>
+    </div>
+    <div class="reads">
+      <div class="read"><svg viewBox="40 10 190 340" aria-hidden="true"><use href="#ranger" filter="url(#sil)"/></svg>Silhouette: long coat, barrel line</div>
+      <div class="read"><svg viewBox="-50 -50 100 100" aria-hidden="true"><circle r="30" fill="none" stroke="#7C3AED" stroke-width="3" opacity=".85"/><use href="#td-ranger"/></svg>Top-down: oval + 1 m barrel</div>
+    </div>
+    <ul class="callouts">
+      <li><span class="num">1</span><span class="sw" style="--c:#F5B53D"></span><span>Bisht gold edging (zari)</span><span class="hex">#F5B53D</span></li>
+      <li><span class="num">2</span><span class="sw" style="--c:#F3EFE6"></span><span>Thobe line beneath</span><span class="hex">#F3EFE6</span></li>
+      <li><span class="num">3</span><span class="sw" style="--c:#FFD27A"></span><span>Influence core (emissive)</span><span class="hex">#FFD27A</span></li>
+      <li><span class="num">4</span><span class="sw" style="--c:#F5B53D"></span><span>Targeting monocle</span><span class="hex">#F5B53D</span></li>
+      <li><span class="num">5</span><span class="sw" style="--c:#2E241F"></span><span>Bisht-brown tech coat</span><span class="hex">#2E241F</span></li>
+    </ul>
+    <dl class="stats">
+      <dt>Ability</dt><dd><b>Focus Shot</b>: 5 s self-buff, next hit +6 damage, no stacking · 25 EN · 12 s</dd>
+      <dt>Passive</dt><dd>+1 m range on Influence Cannon (basic and Charged Pulse)</dd>
+      <dt>Shape</dt><dd>Tall rectangle, vertical lines, calm stance</dd>
+    </dl>
+  </article>
+
+  <!-- TITAN -->
+  <article class="card">
+    <div class="card-head">
+      <svg viewBox="-20 -20 40 40" aria-hidden="true"><use href="#em-titan"/></svg>
+      <div><h3 class="ar" dir="rtl" lang="ar">الصامد</h3><p class="en">Titan · <code>PlayerClass.Titan</code></p></div>
+      <span class="tag">HP 140 · EN 80</span>
+    </div>
+    <div class="plate">
+      <svg viewBox="0 0 240 360" role="img" aria-label="Titan front view">
+        <rect width="240" height="360" fill="url(#pl-base)"/><rect width="240" height="360" fill="url(#p-khatam)"/><rect width="240" height="360" fill="url(#pl-ember)"/>
+        <ellipse cx="128" cy="340" rx="92" ry="12" fill="url(#g-shadow)"/>
+        <use href="#titan"/>
+        <g font-family="Chakra Petch" font-size="11" font-weight="700" text-anchor="middle">
+          <g transform="translate(152 40)"><circle r="8" fill="#F5B53D"/><text y="4" fill="#0B1020">1</text></g>
+          <g transform="translate(30 92)"><circle r="8" fill="#F5B53D"/><text y="4" fill="#0B1020">2</text></g>
+          <g transform="translate(150 158)"><circle r="8" fill="#F5B53D"/><text y="4" fill="#0B1020">3</text></g>
+          <g transform="translate(66 170)"><circle r="8" fill="#F5B53D"/><text y="4" fill="#0B1020">4</text></g>
+          <g transform="translate(212 276)"><circle r="8" fill="#F5B53D"/><text y="4" fill="#0B1020">5</text></g>
+        </g>
+      </svg>
+    </div>
+    <div class="reads">
+      <div class="read"><svg viewBox="30 0 214 350" aria-hidden="true"><use href="#titan" filter="url(#sil)"/></svg>Silhouette: pauldrons, hammer head</div>
+      <div class="read"><svg viewBox="-50 -50 100 100" aria-hidden="true"><circle r="36" fill="none" stroke="#DC2626" stroke-width="3" opacity=".85"/><use href="#td-titan"/></svg>Top-down: wide block, ≈1.3 m</div>
+    </div>
+    <ul class="callouts">
+      <li><span class="num">1</span><span class="sw" style="--c:#FFB36B"></span><span>Chevron visor (emissive)</span><span class="hex">#FFB36B</span></li>
+      <li><span class="num">2</span><span class="sw" style="--c:#D9783A"></span><span>Copper pauldrons, mashrabiya cuts</span><span class="hex">#D9783A</span></li>
+      <li><span class="num">3</span><span class="sw" style="--c:#FF8A3D"></span><span>Khatam chest core</span><span class="hex">#FF8A3D</span></li>
+      <li><span class="num">4</span><span class="sw" style="--c:#5B6578"></span><span>Gunmetal plate</span><span class="hex">#5B6578</span></li>
+      <li><span class="num">5</span><span class="sw" style="--c:#FFB36B"></span><span>Hammer core</span><span class="hex">#FFB36B</span></li>
+    </ul>
+    <dl class="stats">
+      <dt>Ability</dt><dd><b>Bulwark</b>: absorbs 25 damage over 3 s (unused part is lost) · 30 EN · 15 s</dd>
+      <dt>Passive</dt><dd>30% knockback resistance</dd>
+      <dt>Shape</dt><dd>Square/trapezoid; small head = mass</dd>
+    </dl>
+  </article>
+</div>
+
+<!-- ================= Weapons ================= -->
+<h2>Weapons <span class="ar" dir="rtl" lang="ar">الأسلحة</span></h2>
+<p class="lead">Side views at a shared scale. Stats come from <code>WeaponDatabase.GetDefaultStats</code> (latest GDD) and rarity from <code>008_items.sql</code>. Bars are scaled to the highest value among the four weapons (damage 36, range 12 m).</p>
+<div class="grid g2">
+
+  <article class="card wcard">
+    <div class="wtitle"><h3 class="ar" dir="rtl" lang="ar">نصل النبض</h3><span>Pulse Blade</span><span class="rar" style="--rc:#9AA4B2">Common</span></div>
+    <div class="plate"><svg viewBox="0 0 400 130" role="img" aria-label="Pulse Blade side view">
+      <rect width="400" height="130" fill="url(#pl-base)"/><rect width="400" height="130" fill="url(#p-khatam)"/><rect width="400" height="130" fill="url(#pl-cyan)"/>
+      <g transform="translate(0 4)">
+        <circle cx="26" cy="61" r="10" fill="url(#g-steel)"/><circle cx="26" cy="61" r="4" fill="#22D3EE" filter="url(#glow)"/>
+        <rect x="32" y="54" width="62" height="14" rx="6" fill="#1E2742"/>
+        <path d="M44 54 l-4 14 M56 54 l-4 14 M68 54 l-4 14 M80 54 l-4 14" stroke="#3A4870" stroke-width="2"/>
+        <path d="M92 34 C104 46 104 76 92 88 L106 88 C114 76 114 46 106 34 Z" fill="url(#g-steel)"/>
+        <path d="M108 50 C200 44 300 40 340 44 C366 48 382 54 392 62 C372 70 348 76 320 76 C240 76 170 74 108 72 Z" fill="url(#g-blade)"/>
+        <path d="M110 51 C200 45 300 41 340 45 C362 48 378 54 388 61" stroke="#FFB870" stroke-width="1.4" fill="none" opacity=".7"/>
+        <path d="M118 62 C200 59 290 57 352 59" stroke="#22D3EE" stroke-width="4" stroke-linecap="round" fill="none" filter="url(#glow-l)"/>
+        <path d="M118 62 C200 59 290 57 352 59" stroke="#E6FBFF" stroke-width="1.4" stroke-linecap="round" fill="none"/>
+      </g>
+    </svg></div>
+    <div class="bars">
+      <span>Damage</span><span class="bar"><i style="--w:50%;--b1:#FF8A96;--b2:#FF4D5E"></i></span><b>18</b>
+      <span>Range</span><span class="bar"><i style="--w:18.3%;--b1:#7FE7F5;--b2:#22D3EE"></i></span><b>2.2 m</b>
+      <span>Wind-up / cycle</span><span></span><b>0.20 s / 0.65 s</b>
+      <span>Basic EN cost</span><span></span><b>0</b>
+    </div>
+    <div class="special"><b>Pulse Arc</b>: 26 dmg in a 140° arc, 3 m · wind-up 0.45 s · 25 EN · 8 s cooldown · 0.35 s recovery. <span class="hex">The default weapon for every combatant today (BattleManager).</span></div>
+  </article>
+
+  <article class="card wcard">
+    <div class="wtitle"><h3 class="ar" dir="rtl" lang="ar">خنجر الظل</h3><span>Shadow Dagger</span><span class="rar" style="--rc:#2DD4BF">Rare</span></div>
+    <div class="plate"><svg viewBox="0 0 400 130" role="img" aria-label="Shadow Dagger side view">
+      <rect width="400" height="130" fill="url(#pl-base)"/><rect width="400" height="130" fill="url(#p-khatam)"/>
+      <rect width="400" height="130" fill="url(#pl-violet)"/>
+      <g transform="translate(20 0)">
+        <path d="M40 38 L64 50 L64 74 L40 86 Q32 62 40 38 Z" fill="url(#g-steel)"/>
+        <path d="M64 50 L124 52 L124 72 L64 74 Z" fill="#2B2440"/>
+        <path d="M80 51 v22 M96 52 v20 M110 52 v20" stroke="#C9D3E6" stroke-width="2.5" opacity=".8"/>
+        <rect x="122" y="42" width="11" height="40" rx="3" fill="url(#g-steel)"/>
+        <path d="M133 50 C196 48 246 52 276 70 C292 80 298 98 292 112 C282 94 262 84 236 78 C204 72 166 74 133 74 Z" fill="url(#g-obsidian)"/>
+        <path d="M133 74 C166 74 204 72 236 78 C262 84 282 94 292 112" stroke="#A78BFA" stroke-width="2.4" fill="none" filter="url(#glow-l)"/>
+        <path d="M133 74 C166 74 204 72 236 78 C262 84 282 94 292 112" stroke="#EDE9FE" stroke-width="1" fill="none"/>
+        <path d="M144 60 C192 58 232 62 258 74" stroke="#5A5080" stroke-width="3" fill="none"/>
+        <path d="M134 51 C196 49 244 53 272 69" stroke="#FFB870" stroke-width="1.2" fill="none" opacity=".5"/>
+      </g>
+    </svg></div>
+    <div class="bars">
+      <span>Damage</span><span class="bar"><i style="--w:33.3%;--b1:#FF8A96;--b2:#FF4D5E"></i></span><b>12</b>
+      <span>Range</span><span class="bar"><i style="--w:12.5%;--b1:#7FE7F5;--b2:#22D3EE"></i></span><b>1.5 m</b>
+      <span>Wind-up / cycle</span><span></span><b>0.12 s / 0.40 s</b>
+      <span>Basic EN cost</span><span></span><b>0</b>
+    </div>
+    <div class="special"><b>Shadow Lunge</b>: 20 dmg, 3 m dash, contact 1.5 m, no invulnerability · wind-up 0.25 s · 20 EN · 7 s. <span class="hex">Khanjar J-curve silhouette.</span></div>
+  </article>
+
+  <article class="card wcard">
+    <div class="wtitle"><h3 class="ar" dir="rtl" lang="ar">مطرقة العملاق</h3><span>Titan Hammer</span><span class="rar" style="--rc:#2DD4BF">Rare</span></div>
+    <div class="plate"><svg viewBox="0 0 400 130" role="img" aria-label="Titan Hammer side view">
+      <rect width="400" height="130" fill="url(#pl-base)"/><rect width="400" height="130" fill="url(#p-khatam)"/><rect width="400" height="130" fill="url(#pl-ember)"/>
+      <rect x="18" y="54" width="16" height="22" rx="4" fill="url(#g-copper)"/>
+      <rect x="32" y="59" width="248" height="12" rx="5" fill="url(#g-handle)"/>
+      <path d="M44 59 l-4 12 M56 59 l-4 12 M68 59 l-4 12 M80 59 l-4 12 M92 59 l-4 12 M104 59 l-4 12" stroke="#D9783A" stroke-width="2.4"/>
+      <path d="M34 60 H278" stroke="#FFFFFF" stroke-width="1" opacity=".35"/>
+      <rect x="264" y="28" width="14" height="74" rx="4" fill="url(#g-copper)"/>
+      <path d="M284 20 L364 20 Q374 20 374 30 L374 100 Q374 110 364 110 L284 110 Q276 110 276 100 L276 30 Q276 20 284 20 Z" fill="url(#g-steelv)"/>
+      <rect x="370" y="16" width="18" height="98" rx="5" fill="url(#g-copper)"/>
+      <path d="M284 24 L360 24" stroke="#FFFFFF" stroke-width="1.6" opacity=".5"/>
+      <g fill="#FFB36B" filter="url(#glow)"><path d="M290 38 l5 -5 l5 5 l-5 5z"/><path d="M290 92 l5 -5 l5 5 l-5 5z"/><path d="M350 38 l5 -5 l5 5 l-5 5z"/><path d="M350 92 l5 -5 l5 5 l-5 5z"/></g>
+      <g transform="translate(325 65)" filter="url(#glow-l)"><rect x="-13" y="-13" width="26" height="26" fill="url(#g-ember)"/><rect x="-13" y="-13" width="26" height="26" fill="url(#g-ember)" transform="rotate(45)"/><circle r="5" fill="#FFF4DE"/></g>
+    </svg></div>
+    <div class="bars">
+      <span>Damage</span><span class="bar"><i style="--w:88.9%;--b1:#FF8A96;--b2:#FF4D5E"></i></span><b>32</b>
+      <span>Range</span><span class="bar"><i style="--w:20.8%;--b1:#7FE7F5;--b2:#22D3EE"></i></span><b>2.5 m</b>
+      <span>Wind-up / cycle</span><span></span><b>0.55 s / 1.20 s</b>
+      <span>Basic EN cost</span><span></span><b>5</b>
+    </div>
+    <div class="special"><b>Ground Break</b>: 36 dmg, 3 m radius, 1 m knockback · wind-up 0.75 s · 35 EN · 12 s. <span class="hex">Heaviest silhouette; the head is 40% of its length.</span></div>
+  </article>
+
+  <article class="card wcard">
+    <div class="wtitle"><h3 class="ar" dir="rtl" lang="ar">مدفع النفوذ</h3><span>Influence Cannon</span><span class="rar" style="--rc:#F5B53D">Legendary</span></div>
+    <div class="plate"><svg viewBox="0 0 400 130" role="img" aria-label="Influence Cannon side view">
+      <rect width="400" height="130" fill="url(#pl-base)"/><rect width="400" height="130" fill="url(#p-khatam)"/><rect width="400" height="130" fill="url(#pl-gold)"/>
+      <path d="M22 54 L80 48 L84 84 L34 92 Q18 84 22 54 Z" fill="#2A211C"/>
+      <path d="M26 58 L78 52" stroke="#F5B53D" stroke-width="2"/>
+      <path d="M140 84 L164 84 L158 114 L138 114 Z" fill="#2A211C"/>
+      <rect x="110" y="28" width="110" height="12" rx="4" fill="url(#g-steel)"/>
+      <rect x="76" y="38" width="192" height="46" rx="19" fill="url(#g-pearl)"/>
+      <rect x="116" y="38" width="7" height="46" fill="url(#g-gold)"/>
+      <rect x="222" y="38" width="7" height="46" fill="url(#g-gold)"/>
+      <rect x="140" y="49" width="64" height="24" rx="12" fill="#1A1406"/>
+      <rect x="146" y="54" width="52" height="14" rx="7" fill="url(#g-goldcore)" filter="url(#glow-l)"/>
+      <path d="M84 42 H260" stroke="#FFFFFF" stroke-width="1.6" opacity=".8"/>
+      <rect x="264" y="50" width="96" height="24" rx="8" fill="url(#g-steel)"/>
+      <rect x="292" y="45" width="8" height="34" rx="3" fill="url(#g-gold)"/>
+      <rect x="352" y="41" width="15" height="42" rx="4" fill="url(#g-gold)"/>
+      <circle cx="376" cy="62" r="7" fill="#FFE3A3" filter="url(#glow-l)"/>
+      <path d="M268 80 H356" stroke="#22D3EE" stroke-width="1.4" opacity=".6"/>
+    </svg></div>
+    <div class="bars">
+      <span>Damage</span><span class="bar"><i style="--w:41.7%;--b1:#FF8A96;--b2:#FF4D5E"></i></span><b>15</b>
+      <span>Range</span><span class="bar"><i style="--w:83.3%;--b1:#7FE7F5;--b2:#22D3EE"></i></span><b>10 m</b>
+      <span>Wind-up / cycle</span><span></span><b>0.25 s / 0.80 s</b>
+      <span>Basic EN cost</span><span></span><b>0</b>
+    </div>
+    <div class="special"><b>Charged Pulse</b>: 28 dmg projectile, 12 m, 18 m/s, radius 0.2 m · wind-up 0.65 s · 30 EN · 10 s. <span class="hex">Ranger gets +1 m on both ranges.</span></div>
+  </article>
+</div>
+
+<!-- ================= Consumables & status ================= -->
+<h2>Consumables &amp; status icons <span class="ar" dir="rtl" lang="ar">المستهلكات والحالات</span></h2>
+<p class="lead">Master art is 512²; it is exported at 256 (inventory), 128 (HUD) and 64 (markers). The light comes from the upper-left, just as in 3D. The Health Kit avoids the red cross and the red crescent, which are protected emblems.</p>
+<div class="icons">
+  <div class="icon">
+    <svg viewBox="0 0 128 128" role="img" aria-label="Energy Pack icon">
+      <rect x="6" y="6" width="116" height="116" rx="26" fill="url(#g-iconbg)" stroke="#9AA4B2" stroke-width="3"/>
+      <circle cx="64" cy="64" r="44" fill="url(#pl-cyan)"/>
+      <rect x="52" y="20" width="24" height="12" rx="4" fill="url(#g-steel)"/>
+      <rect x="40" y="30" width="48" height="74" rx="13" fill="url(#g-pearl)"/>
+      <rect x="47" y="40" width="34" height="54" rx="9" fill="#0B1020"/>
+      <path d="M68 44 L52 70 L63 70 L57 90 L77 62 L66 62 L72 44 Z" fill="#22D3EE" filter="url(#glow)"/>
+      <path d="M44 36 V96" stroke="#FFFFFF" stroke-width="2" opacity=".7"/>
+      <rect x="74" y="88" width="40" height="22" rx="8" fill="#22D3EE"/><text x="94" y="104" text-anchor="middle" font-family="Chakra Petch" font-weight="700" font-size="14" fill="#0B1020">+40</text>
+    </svg>
+    <h4 class="ar" dir="rtl" lang="ar">حزمة طاقة</h4><p>Energy Pack · +40 EN outside battle</p><p class="sizes hex">common</p>
+  </div>
+  <div class="icon">
+    <svg viewBox="0 0 128 128" role="img" aria-label="Health Kit icon">
+      <rect x="6" y="6" width="116" height="116" rx="26" fill="url(#g-iconbg)" stroke="#9AA4B2" stroke-width="3"/>
+      <path d="M50 44 v-8 q0 -7 7 -7 h14 q7 0 7 7 v8" stroke="url(#g-steel)" stroke-width="6" fill="none"/>
+      <rect x="24" y="42" width="80" height="58" rx="13" fill="url(#g-pearl)"/>
+      <path d="M24 56 H104" stroke="#8E9AB4" stroke-width="1.5" opacity=".6"/>
+      <path d="M64 92 C42 78 38 66 44 58 C50 50 59 52 64 60 C69 52 78 50 84 58 C90 66 86 78 64 92 Z" fill="#FF4D5E" filter="url(#glow)"/>
+      <path d="M42 70 h11 l4 -8 l6 15 l5 -9 h17" stroke="#FFFFFF" stroke-width="2.6" fill="none" stroke-linejoin="round" stroke-linecap="round"/>
+      <path d="M28 48 Q30 45 34 45" stroke="#FFFFFF" stroke-width="2" fill="none"/>
+      <rect x="74" y="88" width="40" height="22" rx="8" fill="#FF4D5E"/><text x="94" y="104" text-anchor="middle" font-family="Chakra Petch" font-weight="700" font-size="14" fill="#FFFFFF">+30</text>
+    </svg>
+    <h4 class="ar" dir="rtl" lang="ar">حقيبة إسعاف</h4><p>Health Kit · +30 HP outside battle</p><p class="sizes hex">common</p>
+  </div>
+  <div class="icon">
+    <svg viewBox="0 0 128 128" role="img" aria-label="SOS Beacon icon">
+      <rect x="6" y="6" width="116" height="116" rx="26" fill="url(#g-iconbg)" stroke="#9AA4B2" stroke-width="3"/>
+      <g fill="none" stroke="#F5B53D" stroke-linecap="round">
+        <path d="M44 28 A26 26 0 0 0 44 66" stroke-width="3.5"/><path d="M84 28 A26 26 0 0 1 84 66" stroke-width="3.5"/>
+        <path d="M32 18 A40 40 0 0 0 32 76" stroke-width="3" opacity=".55"/><path d="M96 18 A40 40 0 0 1 96 76" stroke-width="3" opacity=".55"/>
+      </g>
+      <circle cx="64" cy="47" r="11" fill="url(#g-goldcore)" filter="url(#glow-l)"/>
+      <path d="M56 58 L72 58 L76 92 L52 92 Z" fill="url(#g-pearl)"/>
+      <path d="M58 68 H70 M57 78 H71" stroke="#F5B53D" stroke-width="2.4"/>
+      <path d="M40 104 L88 104 L80 90 L48 90 Z" fill="url(#g-steel)"/>
+      <text x="64" y="117" text-anchor="middle" font-family="Chakra Petch" font-weight="700" font-size="10" fill="#F5B53D" letter-spacing="2">SOS</text>
+    </svg>
+    <h4 class="ar" dir="rtl" lang="ar">منارة استغاثة</h4><p>SOS Beacon · wider range for one SOS</p><p class="sizes hex">common</p>
+  </div>
+  <div class="icon">
+    <svg viewBox="0 0 128 128" role="img" aria-label="Controlled status icon">
+      <circle cx="64" cy="64" r="56" fill="url(#g-iconbg)" stroke="#FF6B4A" stroke-width="3"/>
+      <path d="M64 20 A44 44 0 1 1 25 85" stroke="#FF6B4A" stroke-width="6" fill="none" stroke-linecap="round" opacity=".9"/>
+      <path d="M50 58 v-9 a14 14 0 0 1 28 0 v9" stroke="url(#g-steel)" stroke-width="7" fill="none"/>
+      <rect x="40" y="56" width="48" height="38" rx="9" fill="#FF6B4A"/>
+      <circle cx="64" cy="72" r="5" fill="#0B1020"/><rect x="62" y="74" width="4" height="10" rx="2" fill="#0B1020"/>
+    </svg>
+    <h4 class="ar" dir="rtl" lang="ar">تحت السيطرة</h4><p>Controlled · 120 min ring</p><p class="sizes hex">PlayerControlStatusIcon</p>
+  </div>
+  <div class="icon">
+    <svg viewBox="0 0 128 128" role="img" aria-label="Protected status icon">
+      <circle cx="64" cy="64" r="56" fill="url(#g-iconbg)" stroke="#2DD4BF" stroke-width="3"/>
+      <path d="M64 22 L96 34 V60 C96 82 82 96 64 106 C46 96 32 82 32 60 V34 Z" fill="#2DD4BF" fill-opacity=".2" stroke="#2DD4BF" stroke-width="4" stroke-linejoin="round" filter="url(#glow)"/>
+      <g fill="none" stroke="#E6FFFB" stroke-width="2.6"><rect x="54" y="50" width="20" height="20"/><rect x="54" y="50" width="20" height="20" transform="rotate(45 64 60)"/></g>
+    </svg>
+    <h4 class="ar" dir="rtl" lang="ar">محمي</h4><p>Protected · 30 min after rescue</p><p class="sizes hex">PlayerControlStatusIcon</p>
+  </div>
+</div>
+
+<!-- ================= Combat ================= -->
+<h2>How combat looks <span class="ar" dir="rtl" lang="ar">شكل المعركة</span></h2>
+<p class="lead">Top-down camera framing about 10 m across (≈39 px per metre on a 390 pt screen), so the Pulse Arc's 3 m reach fills a third of the screen. The arena is a 15 m radius circle (<code>ArenaRadiusMeters</code>). The match lasts 90 s, plus 30 s of overtime. Moment shown: a Scout with Pulse Blade winds up <b>Pulse Arc</b> on a Titan.</p>
+<div class="combat">
+  <div class="phone">
+    <svg viewBox="0 0 390 780" role="img" aria-label="Battle screen mock-up, top-down arena with HUD and controls">
+      <rect x="2" y="2" width="386" height="776" rx="44" fill="#05070E" stroke="#2A3560" stroke-width="2"/>
+      <g clip-path="url(#screen)">
+        <rect x="10" y="10" width="370" height="760" fill="url(#p-floor)"/>
+        <!-- city rooftops outside the ring -->
+        <g>
+          <rect x="18" y="12" width="96" height="70" rx="4" fill="#1A2342"/><rect x="26" y="20" width="80" height="54" rx="3" fill="#212C52"/>
+          <g fill="#FFB870" opacity=".55"><rect x="34" y="28" width="8" height="4"/><rect x="50" y="28" width="8" height="4"/><rect x="66" y="40" width="8" height="4"/><rect x="82" y="52" width="8" height="4"/></g>
+          <rect x="262" y="12" width="116" height="58" rx="4" fill="#1A2342"/><circle cx="320" cy="40" r="18" fill="#212C52" stroke="#22D3EE" stroke-opacity=".35"/>
+          <rect x="140" y="12" width="96" height="40" rx="4" fill="#161E3A"/>
+        </g>
+        <!-- outside-arena darkening (evenodd ring) -->
+        <path fill-rule="evenodd" fill="#000" fill-opacity=".45" d="M0 0 H390 V780 H0 Z M-390 700 a585 585 0 1 0 1170 0 a585 585 0 1 0 -1170 0 Z"/>
+        <!-- arena boundary + pylons -->
+        <circle cx="195" cy="700" r="585" fill="none" stroke="#22D3EE" stroke-width="3" filter="url(#glow-l)"/>
+        <circle cx="195" cy="700" r="575" fill="none" stroke="#22D3EE" stroke-opacity=".25" stroke-width="1" stroke-dasharray="6 8"/>
+        <g fill="#0F1630" stroke="#22D3EE" stroke-width="1.5">
+          <rect x="88" y="117" width="14" height="14" rx="3" transform="rotate(45 95 124)"/>
+          <rect x="188" y="108" width="14" height="14" rx="3" transform="rotate(45 195 115)"/>
+          <rect x="288" y="117" width="14" height="14" rx="3" transform="rotate(45 295 124)"/>
+        </g>
+        <!-- floor medallion -->
+        <g transform="translate(195 380)" fill="none" stroke="#F5B53D" stroke-opacity=".08" stroke-width="2"><rect x="-70" y="-70" width="140" height="140"/><rect x="-70" y="-70" width="140" height="140" transform="rotate(45)"/><circle r="60"/></g>
+
+        <!-- Pulse Arc telegraph: 140°, 3 m = 117 px -->
+        <path d="M190 425 L80 385 A117 117 0 0 1 300 385 Z" fill="url(#g-tele)" stroke="#FFFFFF" stroke-opacity=".7" stroke-width="1.5" stroke-dasharray="5 5"/>
+        <path d="M100 360 A100 100 0 0 1 280 360" fill="none" stroke="#22D3EE" stroke-width="3" stroke-linecap="round" opacity=".9" filter="url(#glow)"/>
+
+        <!-- opponent: Titan (Titans faction ring) -->
+        <g transform="translate(190 300)">
+          <ellipse cx="2" cy="4" rx="34" ry="30" fill="#000" opacity=".35"/>
+          <circle r="34" fill="#DC2626" fill-opacity=".12" stroke="#DC2626" stroke-width="3"/>
+          <g transform="rotate(180)"><use href="#td-titan"/></g>
+          <g transform="translate(0 -56)">
+            <rect x="-44" y="-12" width="88" height="22" rx="7" fill="#0B1020" fill-opacity=".8"/>
+            <rect x="-44" y="-12" width="4" height="22" rx="2" fill="#DC2626"/>
+            <text x="2" y="3" text-anchor="middle" font-family="Noto Kufi Arabic" font-size="10" fill="#F3F6FB" direction="rtl">العاصفة</text>
+            <rect x="-36" y="12" width="72" height="4" rx="2" fill="#2A1218"/><rect x="-36" y="12" width="52" height="4" rx="2" fill="#FF4D5E"/>
+          </g>
+          <text x="40" y="-16" font-family="Chakra Petch" font-weight="700" font-size="18" fill="#FF4D5E" stroke="#0B1020" stroke-width="3" paint-order="stroke">-18</text>
+        </g>
+
+        <!-- player: Scout (Falcons faction ring) -->
+        <g transform="translate(190 425)">
+          <ellipse cx="2" cy="4" rx="28" ry="24" fill="#000" opacity=".35"/>
+          <circle r="28" fill="#3AA0FF" fill-opacity=".14" stroke="#3AA0FF" stroke-width="3"/>
+          <path d="M-10 -32 L0 -42 L10 -32" fill="none" stroke="#3AA0FF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+          <use href="#td-scout"/>
+          <path d="M12 -2 L40 -26" stroke="url(#g-blade)" stroke-width="5" stroke-linecap="round"/><path d="M16 -6 L38 -24" stroke="#22D3EE" stroke-width="1.6" filter="url(#glow)"/>
+        </g>
+        <text x="190" y="486" text-anchor="middle" font-family="Chakra Petch" font-size="11" fill="#C9D3E6" opacity=".9">PULSE ARC · wind-up 0.45 s</text>
+
+        <!-- HUD top -->
+        <rect x="10" y="10" width="370" height="120" fill="#05070E" fill-opacity=".35"/>
+        <!-- you (right, RTL) -->
+        <g>
+          <circle cx="352" cy="78" r="21" fill="#121A33" stroke="#3AA0FF" stroke-width="2.5"/>
+          <g transform="translate(352 78) scale(.8)"><use href="#em-scout"/></g>
+          <text x="324" y="64" font-family="Noto Kufi Arabic" font-size="12" font-weight="600" fill="#F3F6FB" direction="rtl" text-anchor="start">أنت</text>
+          <rect x="240" y="72" width="84" height="10" rx="5" fill="#2A1218"/>
+          <rect x="258.9" y="72" width="65.1" height="10" rx="5" fill="#FF4D5E"/>
+          <text x="244" y="81" font-family="Chakra Petch" font-size="9" font-weight="700" fill="#FFD9DD">62/80</text>
+          <rect x="240" y="87" width="84" height="7" rx="3.5" fill="#0B2A33"/>
+          <rect x="264.5" y="87" width="59.5" height="7" rx="3.5" fill="#22D3EE"/>
+          <text x="324" y="106" text-anchor="end" font-family="Chakra Petch" font-size="9" font-weight="700" fill="#9EEFFA">EN 85/120</text>
+        </g>
+        <!-- opponent (left) -->
+        <g>
+          <circle cx="38" cy="78" r="21" fill="#121A33" stroke="#DC2626" stroke-width="2.5"/>
+          <g transform="translate(38 78) scale(.8)"><use href="#em-titan"/></g>
+          <text x="66" y="64" font-family="Noto Kufi Arabic" font-size="12" font-weight="600" fill="#F3F6FB" direction="rtl" text-anchor="end">العاصفة</text>
+          <rect x="66" y="72" width="84" height="10" rx="5" fill="#2A1218"/>
+          <rect x="66" y="72" width="60" height="10" rx="5" fill="#FF4D5E"/>
+          <text x="146" y="81" text-anchor="end" font-family="Chakra Petch" font-size="9" font-weight="700" fill="#FFD9DD">100/140</text>
+          <rect x="66" y="87" width="84" height="7" rx="3.5" fill="#0B2A33"/>
+          <rect x="66" y="87" width="31.5" height="7" rx="3.5" fill="#22D3EE"/>
+          <text x="66" y="106" font-family="Chakra Petch" font-size="9" font-weight="700" fill="#9EEFFA">EN 30/80</text>
+        </g>
+        <!-- timer -->
+        <g transform="translate(195 80)">
+          <path d="M-26 -18 L26 -18 L34 0 L26 18 L-26 18 L-34 0 Z" fill="#0B1020" stroke="#F5B53D" stroke-width="2"/>
+          <text y="7" text-anchor="middle" font-family="Chakra Petch" font-size="20" font-weight="700" fill="#F3F6FB">1:12</text>
+          <text y="34" text-anchor="middle" font-family="Noto Kufi Arabic" font-size="9" fill="#C9D3E6" direction="rtl">المعركة</text>
+        </g>
+
+        <!-- touch stick zone (lower-left 40%) -->
+        <rect x="16" y="470" width="150" height="290" rx="18" fill="none" stroke="#FFFFFF" stroke-opacity=".12" stroke-dasharray="4 6"/>
+        <circle cx="88" cy="650" r="58" fill="#FFFFFF" fill-opacity=".06" stroke="#FFFFFF" stroke-opacity=".35" stroke-width="2"/>
+        <circle cx="88" cy="650" r="36" fill="none" stroke="#FFFFFF" stroke-opacity=".12"/>
+        <path d="M88 600 l-6 8 h12 z M88 700 l-6 -8 h12 z M38 650 l8 -6 v12 z M138 650 l-8 -6 v12 z" fill="#FFFFFF" opacity=".35"/>
+        <circle cx="104" cy="626" r="26" fill="url(#g-stick)" stroke="#3AA0FF" stroke-width="2"/>
+        <text x="88" y="728" text-anchor="middle" font-family="Noto Kufi Arabic" font-size="10" fill="#C9D3E6" direction="rtl">التحريك</text>
+
+        <!-- action buttons -->
+        <!-- Attack -->
+        <g transform="translate(306 652)">
+          <circle r="44" fill="#3AA0FF" fill-opacity=".22" filter="url(#glow)"/>
+          <circle r="40" fill="#121A33" stroke="#F3F6FB" stroke-width="3"/>
+          <path d="M-14 14 L12 -12" stroke="url(#g-blade)" stroke-width="7" stroke-linecap="round"/><path d="M-10 10 L10 -10" stroke="#22D3EE" stroke-width="2" filter="url(#glow)"/>
+          <path d="M-18 6 L-6 18" stroke="#9AA6C4" stroke-width="4" stroke-linecap="round"/>
+          <text y="30" text-anchor="middle" font-family="Noto Kufi Arabic" font-size="10" font-weight="600" fill="#F3F6FB" direction="rtl">هجوم</text>
+        </g>
+        <!-- Special (cooldown) -->
+        <g transform="translate(228 696)">
+          <circle r="28" fill="#121A33" stroke="#22D3EE" stroke-width="2.5"/>
+          <path d="M-13 4 A15 15 0 0 1 13 4" stroke="#22D3EE" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+          <path d="M0 0 L0 -28 A28 28 0 1 1 -2.4 -27.9 Z" fill="#05070E" fill-opacity=".62"/>
+          <text y="6" text-anchor="middle" font-family="Chakra Petch" font-size="16" font-weight="700" fill="#F3F6FB">8</text>
+          <text y="20" text-anchor="middle" font-family="Noto Kufi Arabic" font-size="8" fill="#C9D3E6" direction="rtl">خاصة</text>
+          <g transform="translate(21 -21)"><circle r="9" fill="#22D3EE"/><text y="3.5" text-anchor="middle" font-family="Chakra Petch" font-size="9" font-weight="700" fill="#0B1020">25</text></g>
+        </g>
+        <!-- Dodge -->
+        <g transform="translate(238 610)">
+          <circle r="28" fill="#121A33" stroke="#F3F6FB" stroke-opacity=".8" stroke-width="2.5"/>
+          <path d="M-12 4 C-8 -8 6 -10 12 -2" stroke="#F3F6FB" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M8 -8 L13 -1 L5 1" stroke="#F3F6FB" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M-14 9 H-4 M-12 14 H-6" stroke="#F3F6FB" stroke-width="2" opacity=".5" stroke-linecap="round"/>
+          <text y="20" text-anchor="middle" font-family="Noto Kufi Arabic" font-size="8" fill="#C9D3E6" direction="rtl">مراوغة</text>
+          <g transform="translate(-21 -21)"><circle r="9" fill="#22D3EE"/><text y="3.5" text-anchor="middle" font-family="Chakra Petch" font-size="9" font-weight="700" fill="#0B1020">18</text></g>
+        </g>
+        <!-- Class ability (ready) -->
+        <g transform="translate(292 568)">
+          <circle r="32" fill="#3EE6A8" fill-opacity=".25" filter="url(#glow-l)"/>
+          <circle r="28" fill="#121A33" stroke="#3EE6A8" stroke-width="2.5"/>
+          <g transform="translate(0 -4) scale(.8)"><use href="#em-scout"/></g>
+          <text y="20" text-anchor="middle" font-family="Noto Kufi Arabic" font-size="8" fill="#C9D3E6" direction="rtl">قدرة</text>
+          <g transform="translate(-21 -21)"><circle r="9" fill="#22D3EE"/><text y="3.5" text-anchor="middle" font-family="Chakra Petch" font-size="9" font-weight="700" fill="#0B1020">25</text></g>
+        </g>
+
+        <!-- callout markers -->
+        <g font-family="Chakra Petch" font-size="11" font-weight="700" text-anchor="middle">
+          <g transform="translate(150 596)"><circle r="10" fill="#F5B53D" stroke="#0B1020" stroke-width="2"/><text y="4" fill="#0B1020">1</text></g>
+          <g transform="translate(356 600)"><circle r="10" fill="#F5B53D" stroke="#0B1020" stroke-width="2"/><text y="4" fill="#0B1020">2</text></g>
+          <g transform="translate(226 118)"><circle r="10" fill="#F5B53D" stroke="#0B1020" stroke-width="2"/><text y="4" fill="#0B1020">3</text></g>
+          <g transform="translate(240 56)"><circle r="10" fill="#F5B53D" stroke="#0B1020" stroke-width="2"/><text y="4" fill="#0B1020">4</text></g>
+          <g transform="translate(300 360)"><circle r="10" fill="#F5B53D" stroke="#0B1020" stroke-width="2"/><text y="4" fill="#0B1020">5</text></g>
+          <g transform="translate(232 444)"><circle r="10" fill="#F5B53D" stroke="#0B1020" stroke-width="2"/><text y="4" fill="#0B1020">6</text></g>
+          <g transform="translate(350 160)"><circle r="10" fill="#F5B53D" stroke="#0B1020" stroke-width="2"/><text y="4" fill="#0B1020">7</text></g>
+        </g>
+      </g>
+      <rect x="150" y="18" width="90" height="22" rx="11" fill="#05070E"/>
+    </svg>
+  </div>
+  <ol class="legend">
+    <li><span class="num">1</span><div><b>Floating touch stick, lower-left 40% <span class="ar" dir="rtl" lang="ar">التحريك</span></b>It appears where the thumb lands (<code>TouchStick</code>) and never sits on UI. The dashed zone is a design guide only and is not drawn in-game.</div></li>
+    <li><span class="num">2</span><div><b>Four action buttons <span class="ar" dir="rtl" lang="ar">هجوم · خاصة · مراوغة · قدرة</span></b>These are Attack (largest), Special, Dodge and Class ability, the four bits in <code>CombatActionInput</code>. Cyan badges show the energy cost. The Special shows the 8 s cooldown sweep and the ability glows in the class accent when ready. Icons are white glyphs so one sprite serves all classes. The device only reports intent; the host resolves the outcome.</div></li>
+    <li><span class="num">3</span><div><b>HP / EN bars <span class="ar" dir="rtl" lang="ar">الصحة · الطاقة</span></b>"You" sits on the right in the Arabic layout. Each bar is anchored at its avatar and drains toward the centre, so yours fills from the right. HP is coral and EN is cyan, the reserved colours. The values shown are the Scout's 80/120 and the Titan's 140/80.</div></li>
+    <li><span class="num">4</span><div><b>Match timer</b>90 s (<code>SessionMaxDurationSeconds</code>), then "وقت إضافي!" for a 30 s overtime. The gold hex frame is the influence colour.</div></li>
+    <li><span class="num">5</span><div><b>Wind-up telegraph</b>A white 35% wedge with the real geometry: 140° and 3 m for Pulse Arc. A cyan arc grows across the 0.45 s wind-up. White reads on every faction colour.</div></li>
+    <li><span class="num">6</span><div><b>Faction ring + facing chevron</b>The only place faction colour appears on a combatant (Falcons blue here, Titans red opposite). The chevron replaces today's <code>Facing</code> cube.</div></li>
+    <li><span class="num">7</span><div><b>Arena edge, 15 m radius</b>An emissive cyan ring with mashrabiya pylons. Outside is dimmed, with Gulf rooftops for context. Shadow Lunge and Blink Step stop at this line.</div></li>
+  </ol>
+</div>
+
+<div class="note">
+  <ul>
+    <li>The Arabic class, weapon and consumable names are <b>proposals</b>, because <code>StringTable.cs</code> has no keys for them yet. They need a native reviewer. «الصامد» was chosen for the Titan class to avoid colliding with the Titans faction «العمالقة».</li>
+    <li>Health and energy values come from <code>BattleManager.GetClassBaseStats</code> (the remote-player path). The local player uses <code>PlayerSession.MaxHealth/MaxEnergy</code> from the server.</li>
+    <li>These are concept illustrations, not production assets. The specs, budgets and the pink-capsule fix are in <code>art_bible.md</code>.</li>
+  </ul>
+</div>
+
+</div>
+<style>.silflood{flood-color:var(--silc)}</style>
+</body>
+</html>

@@ -772,11 +772,19 @@ laptop; Unity 6000.0.58f2, Android target):
       laptop's EditorPrefs only (never a scene, asset or Git) and compiled
       out of builds (`UNITY_EDITOR`); the server validates it as usual.
 
+36. **Council review and fixes, 2026-10-29 (cloud, owner away).** Six
+    read-only reviewers (backend/security, Unity/Photon, QA, producer,
+    combat design, art) reviewed the game; reports and finding status in
+    `build-recovery/council/README.md`, concept art in
+    `art-reference/concept-sheet.html`. Fixed: `2e9fcbf` (backend, tested)
+    and `c0fcc70` (Unity, **not compiled**: compile and run EditMode on the
+    laptop before the two-device test). Owner decisions listed there.
+
 Current test counts (cloud, after item 29; run from `backend/`):
 
 | Command | Result |
 |---|---|
-| `npm test` (same as `npx jest --runInBand`; includes the fake-database contract test and the Unity UI checks) | 33 suites / 468 tests |
+| `npm test` (same as `npx jest --runInBand`; includes the fake-database contract test and the Unity UI checks) | 34 suites / 487 tests |
 | `npm run test:contract` | 54 tests |
 | `npm run test:contract:db` (needs `CONTRACT_TEST_DATABASE_URL`, item 22) | 141 tests: 66 contract + 11 challenge answer + 20 battle lifecycle + 44 input robustness |
 | Unity EditMode / PlayMode in the real Editor (laptop, item 30) | 329 of 330 / 9 of 9 |
