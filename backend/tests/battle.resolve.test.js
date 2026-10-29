@@ -208,6 +208,31 @@ describe('POST /battle/{battleId}/resolve — Sprint 6 final security correction
     expect(applyParams[2]).toBe(DEFENDER.player_id); // playerId (the loser)
   });
 
+  it('records win quest progress only after the resolution commits', async () => {
+    const questService = require('../src/services/quest.service');
+    const progressSpy = jest.spyOn(questService, 'recordProgress').mockResolvedValue(undefined);
+    db.query
+      .mockResolvedValueOnce({ rows: [ATTACKER] })
+      .mockResolvedValueOnce({ rows: [baseBattleRow()] });
+    txClient.query
+      .mockResolvedValueOnce({ rows: [{ ...baseBattleRow(), status: 'resolved', winner_id: ATTACKER.player_id, loser_id: DEFENDER.player_id, duration_seconds: 42 }] })
+      .mockResolvedValueOnce({ rows: [{ player_id: ATTACKER.player_id, influence: 115, rank: 'Citizen', applied_delta: 15 }] })
+      .mockResolvedValueOnce({ rows: [{ player_id: DEFENDER.player_id, influence: 90, rank: 'Citizen', applied_delta: -10 }] })
+      .mockResolvedValue({ rows: [{}] });
+    // The callback runs, then COMMIT fails.
+    db.withTransaction.mockImplementationOnce(async (fn) => {
+      await fn(txClient);
+      throw new Error('COMMIT failed');
+    });
+
+    const result = baseResult();
+    const response = await postResolve(app, result, sign(result));
+
+    expect(response.status).toBe(500);
+    expect(progressSpy).not.toHaveBeenCalled();
+    progressSpy.mockRestore();
+  });
+
   it('resolves a defender_win result correctly (winner/loser derived from the absolute outcome, not the caller)', async () => {
     db.query
       .mockResolvedValueOnce({ rows: [ATTACKER] })

@@ -120,19 +120,25 @@ async function removeFriend(playerIdA, playerIdB, executor = db) {
 }
 
 /**
- * Blocking supersedes any prior relationship: any existing row between the
- * two players (either direction, any status) is removed first, then a
- * fresh 'blocked' row is inserted with the blocker as player_id. Runs as
- * two statements on the SAME executor — the caller wraps this in a
- * transaction when atomicity matters.
+ * Blocking supersedes any prior friendship or request between the two
+ * players (either direction), then a 'blocked' row is inserted with the
+ * blocker as player_id. A block the OTHER player placed is never removed
+ * here: otherwise a blocked player could block back and then unblock,
+ * erasing both blocks. Both directions can be blocked at once. Runs as two
+ * statements on the SAME executor — the caller wraps this in a transaction
+ * when atomicity matters.
  */
 async function blockPlayer(blockerId, blockedId, executor = db) {
   await executor.query(
-    `DELETE FROM friendships WHERE (player_id = $1 AND friend_id = $2) OR (player_id = $2 AND friend_id = $1)`,
+    `DELETE FROM friendships
+     WHERE ((player_id = $1 AND friend_id = $2) OR (player_id = $2 AND friend_id = $1))
+       AND status <> 'blocked'`,
     [blockerId, blockedId]
   );
   const result = await executor.query(
-    `INSERT INTO friendships (player_id, friend_id, status) VALUES ($1, $2, 'blocked') RETURNING *`,
+    `INSERT INTO friendships (player_id, friend_id, status) VALUES ($1, $2, 'blocked')
+     ON CONFLICT (player_id, friend_id) DO UPDATE SET status = 'blocked'
+     RETURNING *`,
     [blockerId, blockedId]
   );
   return result.rows[0];

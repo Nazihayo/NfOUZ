@@ -6,6 +6,14 @@ const { ApiError } = require('../utils/responseEnvelope');
 const VALID_CLASSES = ['Scout', 'Ranger', 'Titan'];
 const USERNAME_REGEX = /^[a-zA-Z0-9_]{3,20}$/;
 
+/** Base Health/Energy by class — GDD v1.0 section 3.3, the same table the
+ * Unity client uses (BattleManager.GetClassBaseStats). */
+const CLASS_BASE_STATS = {
+  Scout: { health: 80, energy: 120 },
+  Ranger: { health: 100, energy: 100 },
+  Titan: { health: 140, energy: 80 },
+};
+
 /**
  * Registers a new player row for an already-authenticated Firebase user.
  * firebaseUid is NEVER accepted from the request body — it is passed in
@@ -35,7 +43,21 @@ async function registerPlayer(firebaseUid, { username, classType }) {
     throw new ApiError('USERNAME_TAKEN', 'This username is already taken.', 409);
   }
 
-  const player = await playerRepo.create({ firebaseUid, username, classType });
+  const stats = CLASS_BASE_STATS[classType];
+  let player;
+  try {
+    player = await playerRepo.create({ firebaseUid, username, classType, health: stats.health, energy: stats.energy });
+  } catch (err) {
+    // The checks above race with a concurrent register (double tap, two
+    // installs): the UNIQUE constraints are the real guard.
+    if (err && err.code === '23505' && /firebase_uid/.test(err.constraint || '')) {
+      throw new ApiError('PLAYER_ALREADY_REGISTERED', 'This account is already registered.', 409);
+    }
+    if (err && err.code === '23505' && /username/.test(err.constraint || '')) {
+      throw new ApiError('USERNAME_TAKEN', 'This username is already taken.', 409);
+    }
+    throw err;
+  }
   return toPublicPlayer(player);
 }
 

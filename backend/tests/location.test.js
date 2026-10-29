@@ -89,6 +89,19 @@ describe('Player location & nearby routes', () => {
       expect(response.body.error.code).toBe('INVALID_LOCATION');
     });
 
+    it.each([[null], [''], [[]]])('rejects lat %p instead of storing (0,0)', async (bad) => {
+      verifyIdToken.mockResolvedValue({ uid: 'fb-uid-1' });
+      db.query.mockResolvedValueOnce({ rows: [SELF_PLAYER] });
+
+      const response = await request(app)
+        .patch(`/player/${SELF_PLAYER.player_id}/location`)
+        .set('Authorization', 'Bearer valid-token')
+        .send({ lat: bad, lng: 9.0855 });
+
+      expect(response.status).toBe(400);
+      expect(response.body.error.code).toBe('INVALID_LOCATION');
+    });
+
     it('rejects a teleport-like jump with INVALID_LOCATION', async () => {
       verifyIdToken.mockResolvedValue({ uid: 'fb-uid-1' });
       db.query

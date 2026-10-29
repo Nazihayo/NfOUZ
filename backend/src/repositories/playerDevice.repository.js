@@ -36,9 +36,18 @@ class TokenOwnedByAnotherPlayerError extends Error {
  * response (see updateFcmToken's own doc comment).
  */
 async function registerDevice(playerId, deviceKey, fcmToken, platform, executor = db) {
-  const tokenOwner = await executor.query(`SELECT player_id FROM player_devices WHERE fcm_token = $1`, [fcmToken]);
-  if (tokenOwner.rows[0] && tokenOwner.rows[0].player_id !== playerId) {
-    throw new TokenOwnedByAnotherPlayerError();
+  const tokenOwner = await executor.query(`SELECT player_id, is_active FROM player_devices WHERE fcm_token = $1`, [fcmToken]);
+  const owner = tokenOwner.rows[0];
+  if (owner && owner.player_id !== playerId) {
+    if (owner.is_active !== false) {
+      throw new TokenOwnedByAnotherPlayerError();
+    }
+    // The other player signed out on this phone (deactivateDevice): the
+    // token now belongs to whoever signs in next, so it moves.
+    await executor.query(
+      `DELETE FROM player_devices WHERE fcm_token = $1 AND is_active = FALSE AND player_id <> $2`,
+      [fcmToken, playerId]
+    );
   }
 
   try {

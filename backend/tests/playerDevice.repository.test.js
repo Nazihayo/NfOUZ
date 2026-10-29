@@ -34,6 +34,20 @@ describe('playerDevice.repository — registerDevice (Sprint 8 correction, final
     expect(db.query).toHaveBeenCalledTimes(1); // never reaches the INSERT/upsert
   });
 
+  it('A token whose previous owner signed out on this phone moves to the player signing in', async () => {
+    db.query
+      .mockResolvedValueOnce({ rows: [{ player_id: 'OTHER_PLAYER', is_active: false }] })
+      .mockResolvedValueOnce({ rows: [] }) // DELETE the inactive registration
+      .mockResolvedValueOnce({ rows: [{ device_id: 'd-2', player_id: 'A', is_active: true }] });
+
+    const device = await playerDeviceRepo.registerDevice('A', 'device-1', 'tok-shared', 'android');
+
+    expect(device.player_id).toBe('A');
+    const [deleteSql, deleteParams] = db.query.mock.calls[1];
+    expect(deleteSql).toMatch(/DELETE FROM player_devices WHERE fcm_token = \$1 AND is_active = FALSE/);
+    expect(deleteParams).toEqual(['tok-shared', 'A']);
+  });
+
   it('Re-registering the SAME player\'s SAME device is an ordinary upsert (their own existing token)', async () => {
     db.query
       .mockResolvedValueOnce({ rows: [{ player_id: 'A' }] }) // token already exists, but owned by the SAME player

@@ -112,6 +112,20 @@ describe('friend.service (Sprint 8)', () => {
     expect(db.withTransaction).toHaveBeenCalledTimes(1);
   });
 
+  it('Blocked User — blocking back never removes the block the other player placed', async () => {
+    db.query.mockResolvedValueOnce({ rows: [{ player_id: 'A' }] }); // getPlayerOrThrow(blockedId)
+    txClient.query
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [{ player_id: 'V', friend_id: 'A', status: 'blocked' }] });
+
+    await friendService.blockPlayer('V', 'A');
+
+    const [deleteSql] = txClient.query.mock.calls[0];
+    const [insertSql] = txClient.query.mock.calls[1];
+    expect(deleteSql).toMatch(/status <> 'blocked'/);
+    expect(insertSql).toMatch(/ON CONFLICT \(player_id, friend_id\)/);
+  });
+
   // Sprint 8 Critical Security Patch — the one gate rescue.service.js#acceptMission
   // and sos.service.js#assertCanViewSos both now enforce server-side (see
   // this function's own doc comment in friend.service.js). Query order is

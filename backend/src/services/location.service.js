@@ -138,37 +138,51 @@ async function getNearbyPlayers(requester, lat, lng, radiusMeters) {
 
   const candidates = await playerRepo.findWithinBoundingBox(box, requester.player_id, onlineSince, notFastSince);
 
+  // Within EXACT_LOCATION_WITHIN_METERS a player sees the exact position and
+  // distance. Farther away everything returned, the distance and the order
+  // included, comes from the 0.001° grid cells only, so repeated queries
+  // from different points cannot narrow a player down below one cell.
+  const coarseCentreLat = coarseCellCentre(centreLat);
+  const coarseCentreLng = coarseCellCentre(centreLng);
   const withDistance = candidates
-    .map((row) => ({ row, distance: haversineDistanceMeters(centreLat, centreLng, row.last_lat, row.last_lng) }))
-    .filter(({ distance }) => distance <= radius)
-    .sort((a, b) => a.distance - b.distance)
-    .slice(0, env.NEARBY_MAX_RESULTS)
-    .map(({ row, distance }) => {
+    .map((row) => {
+      const distance = haversineDistanceMeters(centreLat, centreLng, row.last_lat, row.last_lng);
       const exact = distance <= EXACT_LOCATION_WITHIN_METERS;
-      return {
-        player_id: row.player_id,
-        username: row.username,
-        class_type: row.class_type,
-        lat: exact ? row.last_lat : coarseCellCentre(row.last_lat),
-        lng: exact ? row.last_lng : coarseCellCentre(row.last_lng),
-        // Sprint 7: live, time-based status — the raw is_controlled/
-        // protected_until columns are never cleared on their own once a
-        // window passes (see player.repository.js#isControlActive/
-        // isProtected's doc comments), so
-        // ChallengeInteractionController.cs's client-side eligibility check
-        // must never be fed a stale `true` here.
-        is_controlled: playerRepo.isControlActive(row),
-        is_protected: playerRepo.isProtected(row),
-        // Guaranteed by the SQL filter above — included for defense-in-depth
-        // on the client (see NearbyPlayerData / ChallengeInteractionController.cs).
-        is_online: true,
-        is_blocked: false,
-        // Farther away: rounded up to the next 50 m ("under 100 m").
-        distance_meters: exact
-          ? distance
-          : Math.ceil(distance / COARSE_DISTANCE_STEP_METERS) * COARSE_DISTANCE_STEP_METERS,
-      };
-    });
+      const shownDistance = exact
+        ? distance
+        // Rounded up to the next 50 m ("under 100 m"), never below 50 m.
+        : Math.max(
+          COARSE_DISTANCE_STEP_METERS,
+          Math.ceil(
+            haversineDistanceMeters(coarseCentreLat, coarseCentreLng, coarseCellCentre(row.last_lat), coarseCellCentre(row.last_lng))
+              / COARSE_DISTANCE_STEP_METERS
+          ) * COARSE_DISTANCE_STEP_METERS
+        );
+      return { row, distance, exact, shownDistance };
+    })
+    .filter(({ distance }) => distance <= radius)
+    .sort((a, b) => (a.exact === b.exact ? a.shownDistance - b.shownDistance : a.exact ? -1 : 1))
+    .slice(0, env.NEARBY_MAX_RESULTS)
+    .map(({ row, exact, shownDistance }) => ({
+      player_id: row.player_id,
+      username: row.username,
+      class_type: row.class_type,
+      lat: exact ? row.last_lat : coarseCellCentre(row.last_lat),
+      lng: exact ? row.last_lng : coarseCellCentre(row.last_lng),
+      // Sprint 7: live, time-based status — the raw is_controlled/
+      // protected_until columns are never cleared on their own once a
+      // window passes (see player.repository.js#isControlActive/
+      // isProtected's doc comments), so
+      // ChallengeInteractionController.cs's client-side eligibility check
+      // must never be fed a stale `true` here.
+      is_controlled: playerRepo.isControlActive(row),
+      is_protected: playerRepo.isProtected(row),
+      // Guaranteed by the SQL filter above — included for defense-in-depth
+      // on the client (see NearbyPlayerData / ChallengeInteractionController.cs).
+      is_online: true,
+      is_blocked: false,
+      distance_meters: shownDistance,
+    }));
 
   return { players: withDistance };
 }

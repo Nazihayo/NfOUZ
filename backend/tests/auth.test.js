@@ -134,6 +134,48 @@ describe('Auth routes', () => {
       expect(response.body.data.player_id).toBe('new-player-id');
       expect(response.body.data.influence).toBe(100);
     });
+
+    it.each([
+      ['Scout', 80, 120],
+      ['Ranger', 100, 100],
+      ['Titan', 140, 80],
+    ])('stores the %s base Health/Energy (GDD 3.3) at registration', async (classType, health, energy) => {
+      verifyIdToken.mockResolvedValue({ uid: 'fb-uid-1' });
+      db.query
+        .mockResolvedValueOnce({ rows: [] })
+        .mockResolvedValueOnce({ rows: [] })
+        .mockResolvedValueOnce({ rows: [{ player_id: 'p', username: 'nazih_k', class_type: classType }] });
+
+      const response = await request(app)
+        .post('/auth/register')
+        .set('Authorization', 'Bearer valid-token')
+        .send({ username: 'nazih_k', class_type: classType });
+
+      expect(response.status).toBe(201);
+      const [sql, params] = db.query.mock.calls[2];
+      expect(sql).toMatch(/INSERT INTO players/);
+      expect(params).toEqual(['fb-uid-1', 'nazih_k', classType, health, energy]);
+    });
+
+    it.each([
+      ['players_firebase_uid_key', 'PLAYER_ALREADY_REGISTERED'],
+      ['players_username_key', 'USERNAME_TAKEN'],
+    ])('answers 409, not 500, when a concurrent register hits %s', async (constraint, code) => {
+      verifyIdToken.mockResolvedValue({ uid: 'fb-uid-1' });
+      const unique = Object.assign(new Error('duplicate key'), { code: '23505', constraint });
+      db.query
+        .mockResolvedValueOnce({ rows: [] })
+        .mockResolvedValueOnce({ rows: [] })
+        .mockRejectedValueOnce(unique);
+
+      const response = await request(app)
+        .post('/auth/register')
+        .set('Authorization', 'Bearer valid-token')
+        .send({ username: 'nazih_k', class_type: 'Scout' });
+
+      expect(response.status).toBe(409);
+      expect(response.body.error.code).toBe(code);
+    });
   });
 
   describe('GET /auth/me', () => {

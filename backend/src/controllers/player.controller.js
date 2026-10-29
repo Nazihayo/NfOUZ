@@ -17,11 +17,19 @@ async function assertOwnPlayerId(req) {
   return player;
 }
 
+function toCoordinate(value) {
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string' && value.trim() !== '') return Number(value);
+  return NaN;
+}
+
 async function updateLocation(req, res, next) {
   try {
     const player = await assertOwnPlayerId(req);
-    const lat = Number(req.body.lat);
-    const lng = Number(req.body.lng);
+    // Number(null), Number('') and Number([]) are 0: only a number or a
+    // numeric string counts, anything else becomes NaN and is rejected.
+    const lat = toCoordinate(req.body.lat);
+    const lng = toCoordinate(req.body.lng);
     const result = await locationService.updatePlayerLocation(player.player_id, lat, lng);
     return res.status(200).json(success(result));
   } catch (err) {

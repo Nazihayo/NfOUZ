@@ -43,12 +43,12 @@ async function getByUsername(username) {
   return result.rows[0] || null;
 }
 
-async function create({ firebaseUid, username, classType }) {
+async function create({ firebaseUid, username, classType, health = 100, energy = 100 }) {
   const result = await db.query(
-    `INSERT INTO players (firebase_uid, username, class_type)
-     VALUES ($1, $2, $3)
+    `INSERT INTO players (firebase_uid, username, class_type, health, max_health, energy, max_energy)
+     VALUES ($1, $2, $3, $4, $4, $5, $5)
      RETURNING *`,
-    [firebaseUid, username, classType]
+    [firebaseUid, username, classType, health, energy]
   );
   return result.rows[0];
 }

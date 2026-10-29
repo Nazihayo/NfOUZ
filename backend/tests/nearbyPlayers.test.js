@@ -165,6 +165,26 @@ describe('Sprint 4 — Nearby Players System', () => {
     expect(player.distance_meters).toBe(350);
   });
 
+  it('security: two players in the same far grid cell get the same distance, whatever their exact positions', async () => {
+    // Both in the cell centred on 52.6005 / 9.0855, at different exact distances.
+    const a = playerRow('cell-a', 0.00271, { last_lng: CENTER_LNG + 0.00011 });
+    const b = playerRow('cell-b', 0.00309, { last_lng: CENTER_LNG + 0.00055 });
+
+    db.query
+      .mockResolvedValueOnce({ rows: [SELF] })
+      .mockResolvedValueOnce({ rows: [b, a] });
+
+    const response = await request(app)
+      .get('/player/nearby')
+      .query({ lat: CENTER_LAT, lng: CENTER_LNG, radius: 1000 })
+      .set('Authorization', 'Bearer valid-token');
+
+    const [first, second] = response.body.data.players;
+    expect(first.lat).toBe(second.lat);
+    expect(first.lng).toBe(second.lng);
+    expect(first.distance_meters).toBe(second.distance_meters);
+  });
+
   it('security: centres the search on the stored location, not on the lat/lng in the query', async () => {
     const nextToSelf = playerRow('next-to-self', 0.0002);
 

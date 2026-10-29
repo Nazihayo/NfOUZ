@@ -548,7 +548,8 @@ async function resolveBattle(battleId, callerId, { result, signature }) {
 
   // --- Duplicate / replay guard. ---
   const eventSeq = Number(result.event_seq);
-  if (!Number.isInteger(eventSeq) || eventSeq <= battle.last_event_seq) {
+  // last_event_seq is an INT column: a larger value would be a 500, not a 409.
+  if (!Number.isInteger(eventSeq) || eventSeq <= battle.last_event_seq || eventSeq > 2147483647) {
     throw new ApiError('DUPLICATE_RESULT', 'Result event_seq must strictly exceed this battle\'s last recorded value.', 409);
   }
 
@@ -618,7 +619,8 @@ async function resolveBattle(battleId, callerId, { result, signature }) {
   const suspicion = evaluateSuspicion({ durationSeconds: roundedDuration, attackerHealth, defenderHealth });
   const resolvedStatus = suspicion.suspicious ? 'pending_review' : 'resolved';
 
-  return db.withTransaction(async (client) => {
+  let questWinnerId = null;
+  const response = await db.withTransaction(async (client) => {
     const resolved = await battleRepo.resolveBattle(
       battleId,
       { winnerId, loserId, durationSeconds: roundedDuration, eventSeq, status: resolvedStatus },
@@ -719,16 +721,9 @@ async function resolveBattle(battleId, callerId, { result, signature }) {
     await playerRepo.recordRankUnlock(winnerId, winnerRow.rank, client);
     await playerRepo.recordRankUnlock(loserId, loserRow.rank, client);
 
-    // Sprint 9 — Quest System: server-side "Win 2 Battles" progress for a
-    // decisive, eligible (non-draw, non-training, non-pending_review) win
-    // only. Best-effort and never allowed to affect this already-committed
-    // battle resolution — see quest.service.js#recordProgress's own
-    // internal try/catch, mirrored here defensively as well.
-    try {
-      await questService.recordProgress(winnerId, 'win_battles', 1);
-    } catch (err) {
-      logger.warn('Sprint 9 quest progress hook failed (best-effort, ignored)', { error: err.message, winnerId });
-    }
+    // Sprint 9 quest progress is recorded after COMMIT (below), never on a
+    // second pool connection inside this transaction.
+    questWinnerId = winnerId;
 
     return {
       battle_id: battleId,
@@ -740,6 +735,21 @@ async function resolveBattle(battleId, callerId, { result, signature }) {
       loser_controlled_until: controlledUntil,
     };
   });
+
+  // Sprint 9 — Quest System: server-side "Win 2 Battles" progress for a
+  // decisive, eligible (non-draw, non-training, non-pending_review) win
+  // only, once the resolution has committed. Best-effort: never allowed to
+  // affect the battle result (quest.service.js#recordProgress has its own
+  // try/catch, mirrored here defensively).
+  if (questWinnerId) {
+    try {
+      await questService.recordProgress(questWinnerId, 'win_battles', 1);
+    } catch (err) {
+      logger.warn('Sprint 9 quest progress hook failed (best-effort, ignored)', { error: err.message, winnerId: questWinnerId });
+    }
+  }
+
+  return response;
 }
 
 /**
