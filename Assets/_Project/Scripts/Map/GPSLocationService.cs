@@ -51,6 +51,14 @@ namespace Nfouz.Map
 
         public async Task<bool> InitializeAsync()
         {
+#if UNITY_EDITOR
+            if (EditorDevLocation.Enabled)
+            {
+                IsRunning = true;
+                Debug.Log("[GPSLocationService] Editor dev location in use (Tools > NFOUZ > Dev Location).");
+                return true;
+            }
+#endif
             if (!await RequestPermissionAsync())
             {
                 OnLocationError?.Invoke("إذن الموقع الجغرافي مرفوض. لا يمكن عرض خريطتك الحية بدونه.");
@@ -106,9 +114,15 @@ namespace Nfouz.Map
 #endif
         }
 
+#if UNITY_EDITOR
+        private static bool UsesEditorDevLocation => EditorDevLocation.Enabled;
+#else
+        private const bool UsesEditorDevLocation = false;
+#endif
+
         private void Update()
         {
-            if (!IsRunning || Input.location.status != LocationServiceStatus.Running)
+            if (!IsRunning || (!UsesEditorDevLocation && Input.location.status != LocationServiceStatus.Running))
             {
                 return;
             }
@@ -125,9 +139,19 @@ namespace Nfouz.Map
 
         private void HandleLocationTick()
         {
-            var data = Input.location.lastData;
-            LastLat = data.latitude;
-            LastLng = data.longitude;
+#if UNITY_EDITOR
+            if (UsesEditorDevLocation && EditorDevLocation.TryGet(out var devLat, out var devLng))
+            {
+                LastLat = devLat;
+                LastLng = devLng;
+            }
+            else
+#endif
+            {
+                var data = Input.location.lastData;
+                LastLat = data.latitude;
+                LastLng = data.longitude;
+            }
 
             OnLocationUpdated?.Invoke(LastLat, LastLng);
             _ = SendLocationToServerAsync(LastLat, LastLng);
@@ -192,7 +216,7 @@ namespace Nfouz.Map
 
         private void OnDestroy()
         {
-            if (IsRunning)
+            if (IsRunning && !UsesEditorDevLocation)
             {
                 Input.location.Stop();
             }

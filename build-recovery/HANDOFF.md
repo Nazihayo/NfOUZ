@@ -766,6 +766,11 @@ laptop; Unity 6000.0.58f2, Android target):
       after the laptop compiled it with the define on (no `error CS`) and
       EditMode Run All passed (owner, 2026-10-29). Still untested with two
       clients.
+    - **Dev-only location (owner approved 2026-10-29 for the two-client
+      test):** Tools → NFOUZ → Dev Location in the Editor. The Editor then
+      reports that latitude/longitude instead of GPS. Stored in the
+      laptop's EditorPrefs only (never a scene, asset or Git) and compiled
+      out of builds (`UNITY_EDITOR`); the server validates it as usual.
 
 Current test counts (cloud, after item 29; run from `backend/`):
 
