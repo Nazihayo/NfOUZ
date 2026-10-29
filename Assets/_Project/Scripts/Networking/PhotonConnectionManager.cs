@@ -136,15 +136,15 @@ namespace Nfouz.Networking
                     await ShutdownAsync();
                 }
 
+                // Wall-clock deadline from the first attempt: each StartGame
+                // is itself a cloud round-trip of a few seconds, so counting
+                // only the delays would let the retries run far past the
+                // server's 30 s ready timeout.
+                var retryClock = System.Diagnostics.Stopwatch.StartNew();
                 var result = await StartRunnerAsync(roomName, asHost);
 
                 // Client before Host: retry while the attacker's room does
                 // not exist yet (see ClientJoinRetrySeconds).
-                // Wall-clock deadline: each StartGame attempt is itself a
-                // cloud round-trip of a few seconds, so counting only the
-                // delays would let twenty attempts run far past the
-                // server's 30 s ready timeout.
-                var retryClock = System.Diagnostics.Stopwatch.StartNew();
                 while (!asHost && !result.Ok && result.ShutdownReason == ShutdownReason.GameNotFound &&
                        retryClock.Elapsed.TotalSeconds < ClientJoinRetrySeconds)
                 {

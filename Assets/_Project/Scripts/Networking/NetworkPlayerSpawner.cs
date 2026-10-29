@@ -183,6 +183,7 @@ namespace Nfouz.Networking
             catch (System.Exception e)
             {
                 Debug.LogError($"[NetworkPlayerSpawner] runner.Spawn threw: {e.Message}");
+                Debug.LogException(e);
                 spawned = null;
             }
 

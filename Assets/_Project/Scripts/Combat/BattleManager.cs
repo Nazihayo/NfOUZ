@@ -137,6 +137,11 @@ namespace Nfouz.Combat
             switch (_stateMachine.CurrentState)
             {
                 case CombatStateMachine.MatchState.Battle:
+                    if (CheckDeathReportedByHost())
+                    {
+                        return;
+                    }
+
                     _matchTimeRemaining -= Time.deltaTime;
                     if (_matchTimeRemaining <= 0f)
                     {
@@ -145,6 +150,11 @@ namespace Nfouz.Combat
                     break;
 
                 case CombatStateMachine.MatchState.Overtime:
+                    if (CheckDeathReportedByHost())
+                    {
+                        return;
+                    }
+
                     _overtimeTimeRemaining -= Time.deltaTime;
                     if (_overtimeTimeRemaining <= 0f)
                     {
@@ -498,6 +508,34 @@ namespace Nfouz.Combat
                 _defenderCombat.OnDeath -= HandleDefenderDeath;
                 UnsubscribeActions(_defenderCombat);
             }
+        }
+
+        /// <summary>Photon client: combat runs on the host, so a death shows
+        /// up here only as networked Health 0 (see
+        /// NetworkPlayerController.IsKnockedOutOnRemoteHost). Ends the match
+        /// like a local death; the non-host path then polls the server for
+        /// the host's signed result, it never decides it.</summary>
+        private bool CheckDeathReportedByHost()
+        {
+            if (IsKnockedOut(_attackerCombat))
+            {
+                HandleAttackerDeath();
+                return true;
+            }
+
+            if (IsKnockedOut(_defenderCombat))
+            {
+                HandleDefenderDeath();
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool IsKnockedOut(PlayerCombat combat)
+        {
+            var controller = combat != null ? combat.GetComponent<NetworkPlayerController>() : null;
+            return controller != null && controller.IsKnockedOutOnRemoteHost;
         }
 
         private void HandleAttackerDeath() => HandleDeath(loser: _attackerCombat, winner: _defenderCombat);

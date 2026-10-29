@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
@@ -17,6 +18,7 @@ namespace Nfouz.Networking
 
         private static int _fingerId = NoFinger;
         private static Vector2 _origin;
+        private static readonly List<RaycastResult> UiHits = new List<RaycastResult>();
 
         public static float MoveX { get; private set; }
         public static float MoveZ { get; private set; }
@@ -30,7 +32,7 @@ namespace Nfouz.Networking
                 var touch = Input.GetTouch(i);
                 if (_fingerId == NoFinger && touch.phase == TouchPhase.Began &&
                     TouchStickMath.StartsInZone(touch.position.x, touch.position.y, Screen.width, Screen.height) &&
-                    !IsOverUi(touch.fingerId))
+                    !IsOverUi(touch.position))
                 {
                     _fingerId = touch.fingerId;
                     _origin = touch.position;
@@ -66,10 +68,20 @@ namespace Nfouz.Networking
             MoveZ = 0f;
         }
 
-        private static bool IsOverUi(int fingerId)
+        /// <summary>Raycasts the UI at the touch directly: on a touch's first
+        /// frame IsPointerOverGameObject(fingerId) can still be false, and
+        /// the attack button lies inside the stick zone on narrow screens.</summary>
+        private static bool IsOverUi(Vector2 screenPosition)
         {
             var eventSystem = EventSystem.current;
-            return eventSystem != null && eventSystem.IsPointerOverGameObject(fingerId);
+            if (eventSystem == null)
+            {
+                return false;
+            }
+
+            UiHits.Clear();
+            eventSystem.RaycastAll(new PointerEventData(eventSystem) { position = screenPosition }, UiHits);
+            return UiHits.Count > 0;
         }
     }
 }

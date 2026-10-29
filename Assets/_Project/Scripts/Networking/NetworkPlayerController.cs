@@ -59,7 +59,30 @@ namespace Nfouz.Networking
         /// the matching PlayerCombat action (Host Mode Alpha: the host
         /// simulates the match). Never raised on a client.
         /// </summary>
+#pragma warning disable 0067 // never raised without the Fusion SDK (stub mode)
         public event System.Action<NetworkPlayerController, CombatAction> CombatActionsPressed;
+#pragma warning restore 0067
+
+        /// <summary>
+        /// On a Photon client: the host has brought this avatar's Health to
+        /// 0. Combat runs on the host, so a client's PlayerCombat never sees
+        /// the death itself; BattleManager ends the match from this instead
+        /// of waiting for the 90 s timer. False on the host and in stub mode,
+        /// where PlayerCombat.OnDeath fires directly, and before the starting
+        /// Health has arrived.
+        /// </summary>
+        public bool IsKnockedOutOnRemoteHost
+        {
+            get
+            {
+#if PHOTON_FUSION_AVAILABLE
+                return Object != null && Object.IsValid && !HasStateAuthority &&
+                       ProfileReceived && NetworkedHealth <= 0;
+#else
+                return false;
+#endif
+            }
+        }
 
         /// <summary>True when this machine owns this avatar's state: the
         /// Photon host; also an avatar that is not a spawned network object
@@ -227,8 +250,8 @@ namespace Nfouz.Networking
         }
 
         /// <summary>Input comes from the other player's device: the host
-        /// drops NaN/infinite values (they would make the position NaN) and
-        /// caps the stick at length 1.</summary>
+        /// drops NaN/infinite values (they would make the position NaN);
+        /// ApplyMovement caps the length at 1.</summary>
         private static NetworkInputData Sanitize(NetworkInputData input)
         {
             if (!IsFinite(input.MoveX) || !IsFinite(input.MoveZ))

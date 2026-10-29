@@ -3,6 +3,7 @@ using Nfouz.Networking;
 using Nfouz.Utils;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace Nfouz.UI.Screens
@@ -144,7 +145,16 @@ namespace Nfouz.UI.Screens
                 button = icon.AddComponent<Button>();
             }
 
-            button.onClick.AddListener(() => CombatActionLatch.Local.Press(action));
+            button.onClick.AddListener(() =>
+            {
+                CombatActionLatch.Local.Press(action);
+                // A selected button would be clicked again by Space (the
+                // Input Manager's Submit key), which is also the attack key.
+                if (EventSystem.current != null)
+                {
+                    EventSystem.current.SetSelectedGameObject(null);
+                }
+            });
         }
 
         private static void ReadEditorKeys()
