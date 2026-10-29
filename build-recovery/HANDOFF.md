@@ -762,6 +762,10 @@ laptop; Unity 6000.0.58f2, Android target):
       (`b7a0f39`; PlayerCombatTests had thrown on unspawned networked
       properties), and `ArabicUiAssetTests` ignores Mapbox's own asserts
       while opening MainMap (`3e2c328`).
+    - Battle controls branch merged into this one (fast-forward, PR #1)
+      after the laptop compiled it with the define on (no `error CS`) and
+      EditMode Run All passed (owner, 2026-10-29). Still untested with two
+      clients.
 
 Current test counts (cloud, after item 29; run from `backend/`):
 
