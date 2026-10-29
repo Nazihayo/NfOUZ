@@ -19,6 +19,8 @@ namespace Nfouz.Networking
         [SerializeField] private GameObject loadingPanel;
         [SerializeField] private GameObject countdownPanel;
 
+        private const int ReadyAttempts = 3;
+
         private ApiClient _apiClient;
         private bool _isAttacker;
         private bool _sessionActive;
@@ -69,6 +71,12 @@ namespace Nfouz.Networking
 
             _returningToMainMap = true;
             BattleSession.Clear();
+            var locator = ServiceLocator.Instance;
+            if (locator != null && locator.TryGet<PhotonConnectionManager>(out var photon))
+            {
+                await photon.LeaveRoomAsync();
+            }
+
             await SceneLoader.LoadAsync(Constants.Scenes.MainMap);
         }
 
@@ -84,18 +92,43 @@ namespace Nfouz.Networking
                 return;
             }
 
-            var response = await _apiClient.PostAsync<BattleSessionData>(
-                $"/battle/{BattleSession.Current.battle_id}/ready", null);
-
-            if (!response.success)
+            // A transient failure (offline, 500, rate limit) is retried a few
+            // times; then the wait loop below still leaves once the server
+            // ends the battle, so the loading screen never stays up forever.
+            ApiResponse<BattleSessionData> response = null;
+            for (var attempt = 0; attempt < ReadyAttempts && !_destroyed && BattleSession.HasActiveSession; attempt++)
             {
+                if (attempt > 0)
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(BattleLifecycle.ReadyPollIntervalSeconds));
+                    if (_destroyed || !BattleSession.HasActiveSession)
+                    {
+                        return;
+                    }
+                }
+
+                response = await _apiClient.PostAsync<BattleSessionData>(
+                    $"/battle/{BattleSession.Current.battle_id}/ready", null);
+                if (response.success || BattleLifecycle.IsBattleGone(response.error))
+                {
+                    break;
+                }
+
                 Debug.LogWarning($"[BattleLoadingController] Ready confirmation failed: {response.error?.code}");
-                if (BattleLifecycle.IsBattleGone(response.error))
+            }
+
+            if (response == null || !response.success)
+            {
+                if (response != null && BattleLifecycle.IsBattleGone(response.error))
                 {
                     // The server ended this battle (nobody became ready in time,
                     // a reconnect deadline passed, or no result can arrive any
                     // more). Nothing can start here: leave the loading screen.
                     await ReturnToMainMapAsync();
+                }
+                else if (!_destroyed && BattleSession.HasActiveSession)
+                {
+                    await WaitForOpponentAsync();
                 }
                 return;
             }

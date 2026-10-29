@@ -268,7 +268,10 @@ namespace Nfouz.Networking
 
         public void OnPlayerLeft(NetworkRunner runner, PlayerRef player)
         {
-            if (runner.IsServer)
+            // During a battle the leaver's avatar stays (no input: it stands
+            // still), so the match ends by the approved rules and the host
+            // can sign the result. DespawnAll / runner shutdown removes it.
+            if (runner.IsServer && !BattleSession.HasActiveSession)
             {
                 DespawnNetworkedPlayer(player);
             }

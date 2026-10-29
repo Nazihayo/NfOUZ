@@ -66,6 +66,9 @@ namespace Nfouz.Combat
         private float _overtimeTimeRemaining;
         private bool _inOvertime;
         private bool _matchEndHandled;
+        private bool _bothCombatantsIdentified;
+        private float _identifyRetryTimer;
+        private const float IdentifyRetryIntervalSeconds = 0.5f;
 
         /// <summary>
         /// Sprint 10 — Full UI Integration. Read-only accessors added so
@@ -107,7 +110,9 @@ namespace Nfouz.Combat
         /// <summary>How long the non-host client waits for the host to
         /// submit the signed result before giving up and showing an
         /// unknown-result screen.</summary>
-        private const float ResolutionPollTimeoutSeconds = 20f;
+        // The host may still play the 30 s Overtime after this client's timer
+        // ends (the countdowns can start up to one ready poll apart).
+        private const float ResolutionPollTimeoutSeconds = 20f + Constants.Combat.OvertimeSeconds;
         private const float ResolutionPollIntervalSeconds = 1.5f;
 
         private void Awake()
@@ -136,8 +141,20 @@ namespace Nfouz.Combat
 
             switch (_stateMachine.CurrentState)
             {
+                case CombatStateMachine.MatchState.Countdown:
+                    // A client's replicated avatars may arrive after the
+                    // countdown started: keep looking until both exist.
+                    _identifyRetryTimer -= Time.deltaTime;
+                    if ((_attackerCombat == null || _defenderCombat == null) && _identifyRetryTimer <= 0f)
+                    {
+                        _identifyRetryTimer = IdentifyRetryIntervalSeconds;
+                        UnsubscribeCombatants();
+                        IdentifyCombatants();
+                    }
+                    break;
+
                 case CombatStateMachine.MatchState.Battle:
-                    if (CheckDeathReportedByHost())
+                    if (CheckDeathReportedByHost() || CheckCombatantLost())
                     {
                         return;
                     }
@@ -150,7 +167,7 @@ namespace Nfouz.Combat
                     break;
 
                 case CombatStateMachine.MatchState.Overtime:
-                    if (CheckDeathReportedByHost())
+                    if (CheckDeathReportedByHost() || CheckCombatantLost())
                     {
                         return;
                     }
@@ -240,6 +257,7 @@ namespace Nfouz.Combat
 
             _attackerCombat = attacker;
             _defenderCombat = defender;
+            _bothCombatantsIdentified = _attackerCombat != null && _defenderCombat != null;
 
             InitializeCombatant(_attackerCombat, isAttacker: true);
             InitializeCombatant(_defenderCombat, isAttacker: false);
@@ -530,6 +548,24 @@ namespace Nfouz.Combat
             }
 
             return false;
+        }
+
+        /// <summary>An identified avatar was destroyed mid-match (its runner
+        /// shut down): nothing can be judged here any more, so ask the server
+        /// for its record instead of freezing at 0:00. Stub mode (one avatar)
+        /// never sets _bothCombatantsIdentified.</summary>
+        private bool CheckCombatantLost()
+        {
+            if (!_bothCombatantsIdentified || (_attackerCombat != null && _defenderCombat != null))
+            {
+                return false;
+            }
+
+            Debug.LogWarning("[BattleManager] A combatant's avatar disappeared mid-match; waiting for the server's record.");
+            _matchEndHandled = true;
+            _stateMachine.EndMatch();
+            _ = PollForResolutionAsync();
+            return true;
         }
 
         private static bool IsKnockedOut(PlayerCombat combat)

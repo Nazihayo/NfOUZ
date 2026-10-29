@@ -10944,7 +10944,7 @@ MonoBehaviour:
   markerLayerMask:
     serializedVersion: 2
     m_Bits: 256
-  maxRaycastDistance: 500
+  maxRaycastDistance: 5000
 --- !u!1 &2575792992665169471
 GameObject:
   m_ObjectHideFlags: 0

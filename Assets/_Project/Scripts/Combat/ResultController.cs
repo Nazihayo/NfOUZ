@@ -353,10 +353,23 @@ namespace Nfouz.Combat
 
             _returnTriggered = true;
             BattleSession.Clear();
+            // Clear() first: the host despawns both avatars (EndSession) while
+            // its runner still runs. Then leave the Photon room, which would
+            // otherwise stay open in MainMap and keep using CCU.
+            LeavePhotonRoom();
             // Sprint 7 continuation — MainMap refresh after battle
             // resolution: see MainMapRefreshRequest's doc comment.
             MainMapRefreshRequest.RequestImmediateRefresh();
             SceneLoader.Load(Constants.Scenes.MainMap);
+        }
+
+        private static void LeavePhotonRoom()
+        {
+            var locator = ServiceLocator.Instance;
+            if (locator != null && locator.TryGet<PhotonConnectionManager>(out var photon))
+            {
+                _ = photon.LeaveRoomAsync();
+            }
         }
     }
 }

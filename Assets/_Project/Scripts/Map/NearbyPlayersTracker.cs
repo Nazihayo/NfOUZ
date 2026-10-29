@@ -64,7 +64,9 @@ namespace Nfouz.Map
 
         private void Update()
         {
-            if (_gpsService == null || !_gpsService.IsRunning || _queryInFlight)
+            // LastLat/LastLng stay 0 until the first location tick.
+            if (_gpsService == null || !_gpsService.IsRunning || _queryInFlight ||
+                (_gpsService.LastLat == 0 && _gpsService.LastLng == 0))
             {
                 return;
             }

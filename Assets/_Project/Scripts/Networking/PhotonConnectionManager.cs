@@ -45,6 +45,9 @@ namespace Nfouz.Networking
         public event Action<string> OnConnectFailed;
         public event Action OnPlayerDisconnected;
         public event Action OnPlayerReconnected;
+        /// <summary>The other player left the room. Not reported to the
+        /// server: /disconnect records the caller, never someone else.</summary>
+        public event Action OnOpponentLeft;
 
         public bool IsConnected { get; private set; }
         public string CurrentRoomName { get; private set; }
@@ -281,8 +284,8 @@ namespace Nfouz.Networking
 
         public void OnPlayerLeft(NetworkRunner runner, PlayerRef player)
         {
-            Debug.LogWarning($"[PhotonConnectionManager] Player {player} left the room — starting disconnect grace period.");
-            OnPlayerDisconnected?.Invoke();
+            Debug.LogWarning($"[PhotonConnectionManager] Player {player} left the room.");
+            OnOpponentLeft?.Invoke();
         }
 
         public void OnInput(NetworkRunner runner, NetworkInput input)
@@ -296,6 +299,12 @@ namespace Nfouz.Networking
         {
             Debug.Log($"[PhotonConnectionManager] Runner shutdown: {shutdownReason}");
             IsConnected = false;
+            // A host gets no OnDisconnectedFromServer: losing the cloud shuts
+            // its runner down. (Our own Leave/Shutdown removes callbacks first.)
+            if (!_isJoining && runner.GameMode == GameMode.Host && shutdownReason != ShutdownReason.Ok)
+            {
+                OnPlayerDisconnected?.Invoke();
+            }
         }
 
         public void OnConnectedToServer(NetworkRunner runner) { }
@@ -307,6 +316,13 @@ namespace Nfouz.Networking
                 // A failed join attempt, reported by JoinRoomAsync's result;
                 // not a match disconnect, so no reconnect grace starts.
                 Debug.Log($"[PhotonConnectionManager] Join attempt disconnected: {reason}");
+                return;
+            }
+
+            if (reason == NetDisconnectReason.Requested || reason == NetDisconnectReason.ByRemote)
+            {
+                // We left, or the host closed its room: not this player's disconnect.
+                Debug.Log($"[PhotonConnectionManager] Room closed: {reason}");
                 return;
             }
 

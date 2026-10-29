@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 namespace Nfouz.Map
 {
@@ -13,7 +14,8 @@ namespace Nfouz.Map
     {
         [SerializeField] private Camera worldCamera;
         [SerializeField] private LayerMask markerLayerMask;
-        [SerializeField] private float maxRaycastDistance = 500f;
+        // The Mapbox camera sits ~700 units from the ground (far clip 5000).
+        [SerializeField] private float maxRaycastDistance = 5000f;
 
         public event Action<NearbyPlayerMarkerUi> OnPlayerSelected;
         public event Action OnSelectionCleared;
@@ -30,14 +32,27 @@ namespace Nfouz.Map
 
         private void Update()
         {
-            if (Input.GetMouseButtonDown(0))
+            // A press on UI (the mini profile's Challenge button, the HUD) is
+            // not a map tap: clearing the selection there would hide the
+            // popup before the button's click arrives.
+            if (Input.touchCount > 0)
+            {
+                var touch = Input.GetTouch(0);
+                if (touch.phase == TouchPhase.Began && !IsOverUi(touch.fingerId))
+                {
+                    TrySelectAtScreenPosition(touch.position);
+                }
+            }
+            else if (Input.GetMouseButtonDown(0) && !IsOverUi(-1))
             {
                 TrySelectAtScreenPosition(Input.mousePosition);
             }
-            else if (Input.touchCount > 0 && Input.GetTouch(0).phase == TouchPhase.Began)
-            {
-                TrySelectAtScreenPosition(Input.GetTouch(0).position);
-            }
+        }
+
+        private static bool IsOverUi(int pointerId)
+        {
+            var events = EventSystem.current;
+            return events != null && (pointerId < 0 ? events.IsPointerOverGameObject() : events.IsPointerOverGameObject(pointerId));
         }
 
         private void TrySelectAtScreenPosition(Vector2 screenPosition)

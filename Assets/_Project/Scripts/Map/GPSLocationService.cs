@@ -55,6 +55,7 @@ namespace Nfouz.Map
             if (EditorDevLocation.Enabled)
             {
                 IsRunning = true;
+                _throttleTimer = updateIntervalSeconds; // first fix on the next frame, not after 5 s
                 Debug.Log("[GPSLocationService] Editor dev location in use (Tools > NFOUZ > Dev Location).");
                 return true;
             }
@@ -82,6 +83,7 @@ namespace Nfouz.Map
             }
 
             IsRunning = true;
+            _throttleTimer = updateIntervalSeconds; // first fix on the next frame, not after 5 s
             Debug.Log("[GPSLocationService] GPS running.");
             return true;
         }
