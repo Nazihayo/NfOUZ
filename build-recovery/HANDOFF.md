@@ -779,6 +779,14 @@ laptop; Unity 6000.0.58f2, Android target):
     `art-reference/concept-sheet.html`. Fixed: `2e9fcbf` (backend, tested)
     and `c0fcc70` (Unity, **not compiled**: compile and run EditMode on the
     laptop before the two-device test). Owner decisions listed there.
+37. **Design council v3 and Gemini characters, 2026-10-29/30 (cloud).**
+    Five proposals for after Build Recovery in `build-recovery/council/v3/`
+    (combat v3 and weapons, 14 monthly competitions, travel between cities,
+    retention and creators, tech roadmap), with the Arabic summary
+    `summary.html` and 20 open owner decisions. Approved Gemini references
+    in `art-reference/gemini/approved/`. Owner: review on the laptop, then
+    implement step by step; build characters with free or low-cost tools
+    first. Nothing implemented; no code changed.
 
 Current test counts (cloud, after item 29; run from `backend/`):
 

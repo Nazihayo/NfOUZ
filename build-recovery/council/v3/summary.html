@@ -1,0 +1,318 @@
+<title>مجلس نفوذ v3</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;700&family=Reem+Kufi:wght@500;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: a single night-city column; each section is a "mission file" with class-coloured tags. Single dark look by choice (matches the game's night art). */
+:root{
+  --bg:#0d1216; --panel:#141c22; --line:#24313a; --fg:#e6edf0; --muted:#93a3ad;
+  --ring:#2fd6c4; --scout:#9d7bff; --ranger:#ffb23f; --titan:#ff7a2e; --warn:#f2c14e; --bad:#ff6b6b; --ok:#4cd68a;
+  --f-display:"Reem Kufi","IBM Plex Sans Arabic",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans Arabic",system-ui,"Segoe UI",Tahoma,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  color-scheme:dark;
+}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15.5px;line-height:1.75;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 64px}
+main{max-width:980px;margin:0 auto;display:flex;flex-direction:column;gap:44px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;line-height:1.35;margin:0}
+h1{font-size:clamp(28px,5vw,42px)}
+h2{font-size:clamp(21px,3.4vw,27px);display:flex;gap:12px;align-items:baseline}
+h2 .n{font-family:var(--f-mono);font-size:14px;color:var(--ring);border:1px solid var(--ring);border-radius:4px;padding:0 7px}
+h3{font-size:18px;color:var(--fg)}
+p{margin:0;max-width:70ch}
+a{color:var(--ring)}
+section{display:flex;flex-direction:column;gap:16px}
+.hero{border-bottom:1px solid var(--line);padding-bottom:28px;display:flex;flex-direction:column;gap:14px}
+.eyebrow{font-size:13px;color:var(--ring);letter-spacing:.04em}
+.lead{color:var(--muted);font-size:16.5px}
+.note{background:var(--panel);border:1px solid var(--line);border-inline-start:3px solid var(--warn);padding:12px 16px;border-radius:6px;max-width:none}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;min-width:560px;font-size:14px}
+th,td{text-align:start;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--muted);font-weight:500;font-size:13px;background:#10171c;position:sticky;top:0}
+tr:last-child td{border-bottom:0}
+td.num,.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.tag{display:inline-block;font-size:12px;padding:1px 8px;border-radius:999px;border:1px solid currentColor;white-space:nowrap}
+.p1{color:var(--ok)} .p2{color:var(--warn)} .p3{color:var(--muted)}
+.c-s{color:var(--scout)} .c-r{color:var(--ranger)} .c-t{color:var(--titan)}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:16px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.card h3{display:flex;justify-content:space-between;gap:8px}
+.card ul{margin:0;padding-inline-start:18px;color:var(--fg)}
+.card li{margin-block:2px}
+.card.s{border-top:3px solid var(--scout)} .card.r{border-top:3px solid var(--ranger)} .card.t{border-top:3px solid var(--titan)}
+.real{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:640px){.real{grid-template-columns:1fr}}
+.real .card h3{font-size:16px}
+.yes h3{color:var(--ok)} .no h3{color:var(--bad)}
+ol.dec{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px;counter-reset:d}
+ol.dec li{counter-increment:d;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:10px 14px 10px 14px;display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:start}
+ol.dec li::before{content:counter(d);font-family:var(--f-mono);color:var(--ring);min-width:2ch;text-align:center}
+ol.dec b{color:var(--fg)}
+ol.dec .rec{color:var(--muted);font-size:14px;display:block}
+.timeline{display:flex;flex-direction:column;gap:0;border-inline-start:2px solid var(--line);margin-inline-start:6px}
+.timeline div{position:relative;padding:4px 18px 14px;}
+.timeline div::before{content:"";position:absolute;inset-inline-start:-7px;top:12px;width:12px;height:12px;border-radius:50%;background:var(--bg);border:2px solid var(--ring)}
+.timeline b{font-family:var(--f-display);font-size:16px}
+.timeline .when{font-family:var(--f-mono);color:var(--ring);font-size:13px;margin-inline-start:8px}
+.timeline p{color:var(--muted);font-size:14.5px}
+.files{display:flex;flex-wrap:wrap;gap:10px}
+.files a{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:8px 12px;text-decoration:none;font-size:14px}
+.files a:hover,.files a:focus-visible{border-color:var(--ring);outline:none}
+footer{color:var(--muted);font-size:13px;border-top:1px solid var(--line);padding-top:16px}
+</style>
+
+<main dir="rtl" lang="ar">
+
+<header class="hero">
+  <span class="eyebrow">مجلس التصميم · الإصدار 3 · 30 أكتوبر 2026</span>
+  <h1>نفوذ: خطة اللعبة الكاملة</h1>
+  <p class="lead">اجتمع خمسة مسؤولين، كل واحد في مجاله: القتال، والمسابقات، والسفر والعالم، والاستمرارية والمجتمع، والتقنية. هذه خلاصة عملهم في صفحة واحدة، ومعها قائمة القرارات التي تنتظر موافقتك.</p>
+  <p class="note">كل ما هنا <b>مقترحات</b>. لم يُنفَّذ شيء ولم يُرفع شيء إلى المستودع، كما قررت: نجمع الأساسيات ثم ننقلها دفعة واحدة. المسؤولون مساعدون من Claude، كل واحد مكلّف بدور خبير، وليسوا موظفين من Anthropic.</p>
+</header>
+
+<section>
+  <h2><span class="n">1</span>الواقعية: ما نستطيعه بصراحة</h2>
+  <p>«واقعية 100%» غير ممكنة على أي هاتف، ولا حتى على أجهزة الكونسول. الممكن هو <b>إحساس واقعي</b>: حركات ملتقطة من ممثلين حقيقيين (Mocap)، وضربة يُحس وزنها، وإضاءة سينمائية، وصوت ارتطام. هذا ما يصنع الواقعية فعلاً، لا عدد المضلعات.</p>
+  <div class="real">
+    <div class="card yes"><h3>نلتزم به</h3><ul>
+      <li>حركات Mocap بنسب جسم بشري حقيقية</li>
+      <li>الضربة الثقيلة لا تُلغى بعد أن تبدأ، فيُحسّ وزنها</li>
+      <li>توقف لحظي عند الإصابة، واهتزاز الكاميرا، وشرر حسب المادة</li>
+      <li>رد فعل الجسم حسب جهة الضربة ومكانها</li>
+      <li><span class="mono">60</span> إطاراً في الثانية على iPhone 16 Pro، و<span class="mono">30</span> ثابتة على Galaxy A16</li>
+    </ul></div>
+    <div class="card no"><h3>لا نعد به</h3><ul>
+      <li>فيزياء أجساد كاملة كألعاب الكونسول، لأن معالج A16 لا يحتملها</li>
+      <li>دم وتقطيع، حفاظاً على التصنيف العمري العالمي (12+)</li>
+      <li>ملابس بمحاكاة قماش كاملة</li>
+      <li>واقعية فوتوغرافية على الهواتف الضعيفة</li>
+    </ul></div>
+  </div>
+  <p>المقترح: <b>ثلاث طبقات جودة</b>. «منخفضة» للهواتف الضعيفة مثل A16، و«عالية» لهواتف مثل iPhone 16 Pro، وطبقة وسطى بينهما. اللعبة واحدة، والجمال يزيد مع قوة الهاتف.</p>
+</section>
+
+<section>
+  <h2><span class="n">2</span>القتال v3: حتى الضربة القاضية</h2>
+  <p>كل معركة 1 ضد 1، لذلك تتحول الكاميرا إلى <b>كاميرا مبارزة جانبية</b> تثبّت على الخصم. الكاميرا الحالية من الأعلى تُظهر البطل بحجم 35 إلى 50 بكسل فقط، فلا تُرى أي تفاصيل. تُضاف ثلاثة عدادات: <b>التحمّل</b> (ينفد فينكسر الصد، فلا أحد يصد للأبد)، و<b>الحماية</b>، و<b>الأدرينالين</b> للضربة الكبرى. الهدف أن تستمر المعركة من <span class="mono">60</span> إلى <span class="mono">90</span> ثانية في المتوسط، ولا تقل أسرع ضربة قاضية عن <span class="mono">22</span> ثانية.</p>
+  <div class="grid3">
+    <div class="card s"><h3><span>الكشّافة</span><span class="tag c-s">السرعة والمراوغة</span></h3><ul>
+      <li>سلسلة خفيفة 1-2-3، وضربة «قطع الهلال» الثقيلة</li>
+      <li>«اختراق الظل»: ضربة مشحونة لا تُصد</li>
+      <li>انتقال خاطف، فإن جاء بعد صدّ ناجح ظهرت خلف الخصم</li>
+      <li>إمساك «قفزة الكتف» <span class="tag p2">P2</span></li>
+      <li>الضربة الكبرى «كسوف»: 4 ضربات متتالية</li>
+    </ul></div>
+    <div class="card r"><h3><span>الرامي</span><span class="tag c-r">المسافة والدقة</span></h3><ul>
+      <li>إطلاق سريع، وتصويب دقيق يُظهر للخصم خطاً كهرمانياً تحذيرياً</li>
+      <li>ضربة بالأخمص، وركلة تدفع الخصم بعيداً</li>
+      <li>انزلاق تكتيكي يحافظ على التصويب</li>
+      <li>إمساك «قفل الذراع» <span class="tag p2">P2</span></li>
+      <li>الضربة الكبرى «عين الصقر»: 3 طلقات لا تُصد</li>
+    </ul></div>
+    <div class="card t"><h3><span>العملاق</span><span class="tag c-t">الدرع والضغط</span></h3><ul>
+      <li>«ضربة المكبس»: لا يقاطعها هجوم خفيف</li>
+      <li>«انفجار الحرارة»: ضربة مشحونة تُسقط الخصم أرضاً، والنواة تتوهج تدريجياً</li>
+      <li>صدّ ثقيل يمنع 90% من الضرر</li>
+      <li>إمساك «الرفع والإسقاط» <span class="tag p2">P2</span></li>
+      <li>الضربة الكبرى «قلب الفرن»: انفجار دائري</li>
+    </ul></div>
+  </div>
+  <p><b>الضربة القاضية بلا دم:</b> يسقط الخاسر، وتتلاشى هويته الرقمية تحت ختم AYAZ. والنتيجة يحسمها الخادم <b>قبل</b> المشهد السينمائي، فلا يؤثر المشهد في الفوز.</p>
+
+  <h3>الأسلحة: 7 لكل فئة، والقوة متساوية</h3>
+  <p>أسلحة الفئة الواحدة متقاربة القوة، والفرق بينها لا يتجاوز 5%. السلاح الأندر يعطي <b>أسلوب لعب ومظهراً مختلفين، لا قوة أكبر</b>. والمال يشتري المظاهر فقط، لا السلاح الأقوى.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>الندرة</th><th class="c-s">الكشّافة</th><th class="c-r">الرامي</th><th class="c-t">العملاق</th></tr></thead>
+    <tbody>
+      <tr><td>عادي (البداية)</td><td>Shadow Dagger <span class="tag p1">P1</span></td><td>AR-7 «Ember» (البندقية المعتمدة) <span class="tag p1">P1</span></td><td>Piston Hammer (المطرقة المعتمدة) <span class="tag p1">P1</span></td></tr>
+      <tr><td>نادر</td><td>Twin Fangs: خنجران <span class="tag p1">P1</span></td><td>Longwatch: بندقية قنص قصير <span class="tag p1">P1</span></td><td>درع اقتحام وهراوة <span class="tag p1">P1</span></td></tr>
+      <tr><td>نادر</td><td>Wraith Kunai: سكاكين رمي <span class="tag p2">P2</span></td><td>Thunder Brace: بندقية خرطوش <span class="tag p2">P2</span></td><td>Siege Axe: فأس ثقيلة <span class="tag p2">P2</span></td></tr>
+      <tr><td>ملحمي</td><td>Veil Tanto: نصل طويل يُسحب من الغمد <span class="tag p2">P2</span></td><td>Hornet: رشاش قصير <span class="tag p2">P2</span></td><td>قفازات هيدروليكية <span class="tag p2">P2</span></td></tr>
+      <tr><td>ملحمي</td><td>Phase Glaive: رمح قصير قابل للطي <span class="tag p2">P2</span></td><td>Duet: مسدسان <span class="tag p2">P2</span></td><td>Pile-Bunker Lance: رمح بمكبس <span class="tag p2">P2</span></td></tr>
+      <tr><td>أسطوري</td><td>Nightfall Crescents: خنجرا هلال <span class="tag p3">P3</span></td><td>Influence Cannon (موجود في الكود) <span class="tag p2">P2</span></td><td>Furnace Maul: مطرقة الفرن <span class="tag p3">P3</span></td></tr>
+      <tr><td>أسطوري</td><td>Silent Edge: كاشفة نقاط الضعف <span class="tag p3">P3</span></td><td>Horizon Rail: بندقية مغناطيسية <span class="tag p3">P3</span></td><td>Aegis Bastion: درع برجي <span class="tag p3">P3</span></td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>ثلاث فئات قادمة <span class="tag p3">P3</span></h3>
+  <div class="tbl"><table>
+    <thead><tr><th>الفئة</th><th>الهوية</th><th>لون الطاقة</th><th>الفكرة الفريدة</th></tr></thead>
+    <tbody>
+      <tr><td><b>المصارِعة</b> (امرأة)</td><td>فنون قتال مختلطة بلا سلاح تقليدي</td><td>أخضر زمردي</td><td>سلاسل إمساك: كل رمية تفتح رمية ثانية</td></tr>
+      <tr><td><b>الحارس</b> (رجل)</td><td>رمح ودرع خفيف، سيد المسافة المتوسطة</td><td>أبيض جليدي</td><td>وضعية تعاكس الضربة القادمة تلقائياً</td></tr>
+      <tr><td><b>المهندسة</b> (امرأة)</td><td>تتحكم بالساحة بطائرة مسيّرة صغيرة وفخاخ</td><td>وردي أحمر</td><td>طائرة تطلق النار، وفخ واحد في الساحة</td></tr>
+    </tbody>
+  </table></div>
+  <p><b>التصنيف:</b> رتبة مهارة مخفية، ودوريات موسمية ظاهرة من «حديد» حتى «أسطورة»، منفصلة عن رتب النفوذ الحالية. وقبل قبول أي تحدٍّ يظهر <b>مؤشر خطر</b> يبيّن قوة الخصم.</p>
+</section>
+
+<section>
+  <h2><span class="n">3</span>السفر والمغامرة بين المدن</h2>
+  <p>السفر نوعان: <b>حقيقي</b> تحصل فيه على أختام «جواز نفوذ» حين تزور مدينة أو دولة أو معلماً بنفسك، و<b>افتراضي</b> تسافر فيه من بيتك. المهم في الافتراضي ألا يتحول إلى أداة للتجسس على أحياء الناس.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>الخيار</th><th>الفكرة</th><th>الحكم</th></tr></thead>
+    <tbody>
+      <tr><td>الموقع الحقيقي فقط</td><td>لا سفر افتراضي إطلاقاً</td><td class="c-t">مرفوض</td></tr>
+      <tr><td><b>البعثة عن بُعد</b></td><td>تنضم من مكانك إلى حدث في مدينة مميّزة: حرّاس وزعيم ومعارك مع مسافرين آخرين</td><td><span class="tag p1">P1 ✓</span></td></tr>
+      <tr><td><b>تذكرة البعثة</b> (التوصية)</td><td>تُنزَل شخصيتك في منطقة عامة محددة من المدينة لمدة 60 دقيقة، وتمشي بسرعة المشي. تذكرة مجانية كل أسبوع، وراحة 6 ساعات بين كل بعثتين</td><td><span class="tag p2">P2 ✓</span></td></tr>
+      <tr><td>الانتقال الحر لأي مكان</td><td>تختار أي نقطة على الكرة الأرضية</td><td class="c-t">مرفوض: خطر على خصوصية الناس</td></tr>
+    </tbody>
+  </table></div>
+  <p><b>طابور المدافعين:</b> حين يغزو مسافرون مدينتك، يرى أهلها رسالة مثل «12 مسافراً يغزون مدينتك الآن» وزر «أدافع عن مدينتي». تقع المعركة في ساحة افتراضية، فلا يعرف أحد أين يقف الآخر.</p>
+  <h3>عشرون مدينة، ولكل مدينة مغامرتها مع AYAZ</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>المدينة</th><th>المغامرة</th><th>المرحلة</th><th>المدينة</th><th>المغامرة</th><th>المرحلة</th></tr></thead>
+    <tbody>
+      <tr><td>الرياض</td><td>مفاتيح الدرعية</td><td><span class="tag p2">P2</span></td><td>روما</td><td>ساحة المجالدين</td><td><span class="tag p3">P3</span></td></tr>
+      <tr><td>دبي</td><td>سباق النيون</td><td><span class="tag p2">P2</span></td><td>طوكيو</td><td>تقاطع النيون</td><td><span class="tag p3">P3</span></td></tr>
+      <tr><td>الدوحة</td><td>لؤلؤة الكورنيش</td><td><span class="tag p2">P2</span></td><td>سيول</td><td>الحارس الجليدي</td><td><span class="tag p3">P3</span></td></tr>
+      <tr><td>القاهرة</td><td>لغز الأهرام الرقمي</td><td><span class="tag p2">P2</span></td><td>سنغافورة</td><td>حديقة المستقبل</td><td><span class="tag p3">P3</span></td></tr>
+      <tr><td>إسطنبول</td><td>جسر القارتين</td><td><span class="tag p2">P2</span></td><td>مومباي</td><td>بوابة البحر</td><td><span class="tag p3">P3</span></td></tr>
+      <tr><td>مراكش</td><td>متاهة المدينة الحمراء</td><td><span class="tag p3">P3</span></td><td>سيدني</td><td>أول شروق</td><td><span class="tag p3">P3</span></td></tr>
+      <tr><td>نيروبي</td><td>إشارة السافانا</td><td><span class="tag p3">P3</span></td><td>نيويورك</td><td>المدينة التي لا تنام</td><td><span class="tag p3">P3</span></td></tr>
+      <tr><td>كيب تاون</td><td>رأس العواصف</td><td><span class="tag p3">P3</span></td><td>مكسيكو سيتي</td><td>أسطورة البحيرة</td><td><span class="tag p3">P3</span></td></tr>
+      <tr><td>لندن</td><td>ضباب الشوشرة</td><td><span class="tag p3">P3</span></td><td>ريو دي جانيرو</td><td>إيقاع الشاطئ</td><td><span class="tag p3">P3</span></td></tr>
+      <tr><td>باريس</td><td>سرّ الأضواء</td><td><span class="tag p3">P3</span></td><td>بوينس آيرس</td><td>رقصة الظلال</td><td><span class="tag p3">P3</span></td></tr>
+    </tbody>
+  </table></div>
+  <p>وفي كل مدينة: مهام من أماكن حقيقية، وبحث عن كنز، وأحداث مرتبطة بالطقس الحقيقي وبالليل، وزعماء في الساحات العامة. <b>مستبعدة عمداً:</b> مكة المكرمة والمدينة المنورة والقدس. ولا تُوضع أي مهمة قرب المدارس أو البيوت أو الطرق أو المستشفيات أو دور العبادة.</p>
+  <p class="note"><b>خلل موجود الآن في الكود:</b> المسافر بالطائرة يُرفض موقعه لساعات طويلة، لأن الخادم يحسب سرعته أكثر من 300 كم/س. في رحلة الرياض إلى لندن يبقى مرفوضاً قرابة 16 ساعة. الإصلاح المقترح صغير («إعادة الإرساء»)، لكنه يمس خدمة معتمدة، فيحتاج موافقتك.</p>
+</section>
+
+<section>
+  <h2><span class="n">4</span>المسابقات الشهرية: 14 شهراً</h2>
+  <p>«الشهر 1» هو أول شهر بعد الإطلاق. المناسبات الموسمية، مثل رمضان والصيف والأعياد الوطنية، تُوضع على الشهر الصحيح حسب تاريخ الإطلاق. <b>الدخول مجاني دائماً، والفوز بالمهارة فقط</b>: لا رسوم دخول، ولا صناديق حظ، ولا سحوبات. بهذا لا تُعدّ المسابقة قماراً في أغلب الدول.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>الشهر</th><th>المسابقة</th><th>النوع</th><th>الجوائز</th></tr></thead>
+    <tbody>
+      <tr><td class="num">1</td><td><b>نداء أياز: كأس المؤسسين</b></td><td>تصنيف وتحديات فردية</td><td>تجميلية</td></tr>
+      <tr><td class="num">2</td><td><b>ماراثون الإنقاذ</b></td><td>تعاوني بين الأصدقاء</td><td>تجميلية</td></tr>
+      <tr><td class="num">3</td><td><b>كؤوس الفئات</b></td><td>بطولات أسبوعية لكل فئة</td><td>تجميلية</td></tr>
+      <tr><td class="num">4</td><td><b>مدينة ضد مدينة</b></td><td>تنافس جماعي بين المدن</td><td>تجميلية</td></tr>
+      <tr><td class="num">5</td><td><b>كأس المبدعين الأول</b></td><td>فرق يقودها مؤثرون</td><td>تجميلية + توقيع المؤثر</td></tr>
+      <tr><td class="num">6</td><td><b>ليالي الصيف</b></td><td>بطولات ليلية قصيرة</td><td>تجميلية</td></tr>
+      <tr><td class="num">7</td><td><b>حرب الفصائل</b></td><td>4 فصائل حول العالم</td><td>جوائز عينية صغيرة</td></tr>
+      <tr><td class="num">8</td><td><b>كأس الأصدقاء الثنائي</b></td><td>فريقان من لاعبين</td><td>جوائز عينية</td></tr>
+      <tr><td class="num">9</td><td><b>كأس الأمم: التصفيات</b></td><td>دولة ضد دولة</td><td>عينية + رعاة</td></tr>
+      <tr><td class="num">10</td><td><b>كأس الرعاة والمبدعين الثاني</b></td><td>بطولة يرعاها متجر أو علامة تجارية</td><td>قسائم من الرعاة</td></tr>
+      <tr><td class="num">11</td><td><b>التصفيات الإقليمية الكبرى</b></td><td>4 أقاليم</td><td>عينية، ونقدية بعد استيفاء الشروط القانونية</td></tr>
+      <tr><td class="num">12</td><td><b>النهائيات العالمية</b></td><td>أفضل 32 لاعباً في العالم</td><td>الأكبر في السنة</td></tr>
+      <tr><td class="num">13</td><td><b>الذكرى الأولى: عام النفوذ</b></td><td>احتفال ومباريات استعراضية</td><td>تجميلية</td></tr>
+      <tr><td class="num">14</td><td><b>موسم الأساطير</b></td><td>قاعة المشاهير، وتمهيد السنة الثانية</td><td>تجميلية + لقب دائم</td></tr>
+    </tbody>
+  </table></div>
+  <p><b>تتدرج الجوائز على ثلاث مراحل:</b> جوائز تجميلية داخل اللعبة في الأشهر 1 إلى 6، ثم جوائز عينية وقسائم من الرعاة في الأشهر 7 إلى 11، ثم جوائز نقدية <b>بعد</b> رأي المحامي، والتحقق من هوية الفائزين، وخادم يحسم القتال حتى لا يغش أحد. وتُلعب مباريات البطولات <b>عن بُعد</b> داخل «ساحة أياز»، فلا نطلب من غرباء أن يلتقوا وجهاً لوجه من أجل جائزة.</p>
+</section>
+
+<section>
+  <h2><span class="n">5</span>ما يُبقي اللاعب، ويجذب المؤثرين</h2>
+  <p>القاعدة الحاكمة: <b>المال يشتري المظهر والهوية، ولا يشتري القوة أبداً.</b> أكبر خطر على اللعبة هو «الخريطة الفارغة» التي لا يجد فيها اللاعب أحداً قريباً منه، لذلك يجب أن يكون لكل نشاط يومي طريقة يُلعب بها منفرداً.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>#</th><th>الميزة</th><th>لماذا</th><th>المرحلة</th></tr></thead>
+    <tbody>
+      <tr><td class="num">1</td><td>ساعة إنقاذ درامية + إشعار استغاثة</td><td>الخسارة تصير قصة يتشاركها الأصدقاء: أسر ← استغاثة ← إنقاذ ← ثأر</td><td><span class="tag p1">P1</span></td></tr>
+      <tr><td class="num">2</td><td>تدريب ضد حارس يديره الذكاء الاصطناعي</td><td>علاج الخريطة الفارغة</td><td><span class="tag p1">P1</span></td></tr>
+      <tr><td class="num">3</td><td>كود صديق + QR + «أضف خصمك»</td><td>أسهل طريقة للنمو</td><td><span class="tag p1">P1</span></td></tr>
+      <tr><td class="num">4</td><td>أول 10 دقائق مع AYAZ ومعركة تعليمية</td><td>اللاعب الجديد يفهم اللعبة ويحبها</td><td><span class="tag p1">P1</span></td></tr>
+      <tr><td class="num">5</td><td>مستويات الحساب ومكافآت الفوز</td><td>إحساس بالتقدم</td><td><span class="tag p1">P1</span></td></tr>
+      <tr><td class="num">6</td><td>إعادة الضربة القاضية وتصدير مقطع عمودي 9:16</td><td>مقطع تيك توك أو Shorts جاهز في 3 نقرات</td><td><span class="tag p1">P1</span> / <span class="tag p2">P2</span></td></tr>
+      <tr><td class="num">7</td><td>شاشة المواجهة السينمائية</td><td>لحظة ما قبل القتال</td><td><span class="tag p1">P1</span></td></tr>
+      <tr><td class="num">8</td><td>وضع البث: يخفي موقع المؤثر إجبارياً</td><td>حماية المؤثرين من التتبع</td><td><span class="tag p1">P1</span></td></tr>
+      <tr><td class="num">9</td><td>إتقان كل فئة وكل سلاح</td><td>هدف طويل المدى</td><td><span class="tag p2">P2</span></td></tr>
+      <tr><td class="num">10</td><td>تذكرة المعركة بمسارين + متجر المظاهر</td><td>الدخل الأساسي</td><td><span class="tag p2">P2</span></td></tr>
+      <tr><td class="num">11</td><td>حرب الأحياء الأسبوعية بين الفصائل</td><td>سبب للعودة كل أسبوع</td><td><span class="tag p2">P2</span></td></tr>
+      <tr><td class="num">12</td><td>غنائم مؤقتة في الأماكن العامة وقت الذروة</td><td>تجمع اللاعبين في وقت واحد</td><td><span class="tag p2">P2</span></td></tr>
+      <tr><td class="num">13</td><td>الفرق (العشائر) مع دردشة مراقَبة</td><td>انتماء</td><td><span class="tag p2">P2</span></td></tr>
+      <tr><td class="num">14</td><td>أكواد المؤثرين: 5% من صافي المشتريات</td><td>المؤثر يربح حين يربح اللاعبون</td><td><span class="tag p2">P2</span></td></tr>
+      <tr><td class="num">15</td><td>وضع المشاهدة + أحداث المؤثرين</td><td>بث البطولات</td><td><span class="tag p3">P3</span></td></tr>
+    </tbody>
+  </table></div>
+  <p><b>تُركت خارج القائمة عمداً:</b> السوق بين اللاعبين لأنه باب للاحتيال، وصناديق الحظ، والدردشة العامة للمدينة لأنها خطر في لعبة تعتمد على الموقع، ومضاعفات النفوذ المدفوعة.</p>
+</section>
+
+<section>
+  <h2><span class="n">6</span>التقنية والتكلفة</h2>
+  <div class="grid3">
+    <div class="card"><h3>بناء الشخصيات</h3><p><b>نبدأ بالخطة الرخيصة</b> المفصّلة تحت هذه البطاقات (من 0 إلى نحو 150 دولاراً). وتبقى صور Gemini المعتمدة هي المرجع والهدف النهائي. أما النسخة الاحترافية (<span class="mono">11–30</span> ألف دولار) فتُبنى حين يكون للعبة مشتركون يموّلونها.</p></div>
+    <div class="card"><h3>شخصية السيلفي</h3><p>يُقرأ الوجه على الهاتف نفسه، ولا تُرفع الصورة ولا تُحفظ. الميزة تحتاج موافقة صريحة من المستخدم، و18 سنة فأكثر، ورأياً قانونياً قبل كتابة أي كود. ولا تتوفر في ثلاث ولايات أمريكية بسبب قوانين بيانات الوجه.</p></div>
+    <div class="card"><h3>منع الغش</h3><p>وضع «المضيف» الحالي يكفي للنسخة الأولية فقط. في النسخة التجريبية ننتقل إلى <b>خوادم مخصصة</b> تحسم القتال. ولا مسابقات بجوائز قبل ذلك. التكلفة نحو <span class="mono">300–800</span> دولار شهرياً لكل 10 آلاف لاعب يومي.</p></div>
+    <div class="card"><h3>iPhone بلا Mac</h3><p>نبني نسخة iPhone بخدمة سحابية مثل Codemagic، ونختبرها عبر TestFlight على هاتفك iPhone 16 Pro.</p></div>
+    <div class="card"><h3>تكلفة الخوادم كاملة</h3><p>نحو <span class="mono">0.6–1.6</span> ألف دولار شهرياً عند 10 آلاف لاعب يومي، و<span class="mono">6–16</span> ألفاً عند 100 ألف. الأرقام تقديرية، ويجب التحقق منها مع كل مزوّد.</p></div>
+    <div class="card"><h3>فريق العمل</h3><p>أكبر خطر أن يعمل شخص واحد مع الذكاء الاصطناعي على أربع جبهات. المقترح: فنان 3D مستقل بدوام جزئي من مرحلة Beta، ومستشار قانوني بالساعة.</p></div>
+  </div>
+
+  <h3>بناء الشخصيات بميزانية شبه صفرية (قرار المالك)</h3>
+  <p class="note"><b>القرار:</b> نبدأ الآن بأدوات مجانية أو رخيصة. <b>صور Gemini المعتمدة تبقى المرجع الرسمي</b> للشكل النهائي لكل شخصية وسلاح. وحين يكون للعبة مشتركون، يُموَّل من دخلهم بناء النسخ الاحترافية المطابقة لهذه الصور.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>الخطوة</th><th>ماذا نفعل</th><th>الأداة</th><th>التكلفة</th></tr></thead>
+    <tbody>
+      <tr><td>الجسم والوجه</td><td>جسم بشري واقعي لكل شخصية</td><td>MakeHuman أو MPFB في Blender</td><td class="num">0$</td></tr>
+      <tr><td>الملابس والدروع</td><td>من حزم جاهزة، تُعدَّل ألوانها لتطابق صور Gemini</td><td>Unity Asset Store + Blender</td><td class="num">0–60$</td></tr>
+      <tr><td>الأسلحة</td><td>تحويل صور Gemini المعتمدة إلى 3D</td><td>Meshy أو Tripo</td><td class="num">0–20$</td></tr>
+      <tr><td>العظام والحركة</td><td>تركيب الهيكل العظمي آلياً</td><td>Mixamo</td><td class="num">0$</td></tr>
+      <tr><td>حركات القتال</td><td>حركات جاهزة: ضرب، ومراوغة، وسقوط</td><td>Mixamo + حزم رخيصة</td><td class="num">0–50$</td></tr>
+      <tr><td>حركات خاصة</td><td>تصوير الحركة بالهاتف، ثم تحويلها بالذكاء الاصطناعي</td><td>Rokoko Vision أو DeepMotion (الخطة المجانية)</td><td class="num">0$</td></tr>
+    </tbody>
+  </table></div>
+  <p><b>للتوفير:</b> جسم واحد للرجال وجسم واحد للنساء، وتتغير الوجوه والملابس والأسلحة لكل فئة، فتشترك الشخصيات في الحركات نفسها. وقبل استعمال أي أداة أو حزمة نتحقق من أن رخصتها تسمح بالاستعمال التجاري.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>المرحلة</th><th>مستوى الشخصيات</th><th>التمويل</th></tr></thead>
+    <tbody>
+      <tr><td>Alpha مع الأصدقاء</td><td>شخصيات بسيطة، والتركيز على متعة القتال</td><td>مجاني</td></tr>
+      <tr><td>Beta والإطلاق</td><td>الخطة الرخيصة أعلاه، قريبة من صور Gemini</td><td class="num">≈150$</td></tr>
+      <tr><td>بعد وصول المشتركين</td><td>نسخ احترافية مطابقة لصور Gemini، مع فنان محترف</td><td>من دخل الاشتراكات والمظاهر</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>خريطة الطريق</h3>
+  <div class="timeline">
+    <div><b>المرحلة 0: إنهاء الإصلاح</b><span class="when">نوفمبر 2026</span><p>13 بنداً على اللابتوب: تجميع الإصلاحات، واختبار الجهازين، والمواد بدل الكبسولات الوردية، ونسخة APK بـPhoton. الهدف معركة كاملة بين جهازين بنتيجة صحيحة في الخادم.</p></div>
+    <div><b>Alpha: من 10 إلى 20 صديقاً</b><span class="when">ديسمبر 2026 – يناير 2027</span><p>مدينة واحدة على Android، وخادم مستضاف، و100 معركة حقيقية على الأقل.</p></div>
+    <div><b>Beta مغلقة: من 300 إلى 2000 لاعب</b><span class="when">فبراير – يونيو 2027</span><p>خوادم مخصصة، وأبطال 3D بحركات، والقتال الجديد، ونسخة iPhone. ورمضان فرصة لاختبار أحداث المساء.</p></div>
+    <div><b>إطلاق تجريبي في دولة واحدة</b><span class="when">سبتمبر – أكتوبر 2027</span><p>بعد ذروة الحر.</p></div>
+    <div><b>الإطلاق</b><span class="when">نوفمبر 2027</span><p>ثم تبدأ المسابقات الشهرية الـ14، حتى ديسمبر 2028 تقريباً.</p></div>
+  </div>
+</section>
+
+<section>
+  <h2><span class="n">7</span>قرارات تنتظرك</h2>
+  <p>هذه أهم القرارات. للرد اكتب لي الأرقام، مثلاً: «موافق على 1 إلى 8، وأريد تعديل 9». بجانب كل قرار توصية المجلس.</p>
+  <ol class="dec">
+    <li><div><b>الواقعية بثلاث طبقات جودة</b>، بدل الوعد بـ«100%».<span class="rec">التوصية: نعم.</span></div></li>
+    <li><div><b>كاميرا المبارزة الجانبية</b> وعدادات التحمّل والحماية والأدرينالين.<span class="rec">التوصية: نعم. ويحتاج قبلها اعتماد أرقام القتال v2.</span></div></li>
+    <li><div><b>7 أسلحة لكل فئة بقوة متساوية</b>، والمال يشتري المظاهر فقط.<span class="rec">التوصية: نعم.</span></div></li>
+    <li><div><b>لا قوة مقابل المال في أي وضع</b>، ولا صناديق حظ ولا سحوبات.<span class="rec">التوصية: نعم، ويُكتب ذلك في وثيقة التصميم.</span></div></li>
+    <li><div><b>الضربة القاضية بلا دم</b>، مع ختم AYAZ.<span class="rec">التوصية: نعم، ليبقى التصنيف 12+.</span></div></li>
+    <li><div><b>قاعدة السفر الافتراضي:</b> البعثة عن بُعد أولاً، ثم «تذكرة البعثة» المحدودة، ورفض الانتقال الحر.<span class="rec">التوصية: نعم.</span></div></li>
+    <li><div><b>هل تُباع تذاكر البعثة؟</b> بحد أسبوعي، أم من اللعب فقط؟<span class="rec">التوصية: من اللعب أولاً، ونقرر البيع بعد القياس.</span></div></li>
+    <li><div><b>إصلاح موقع المسافر بالطائرة</b> («إعادة الإرساء»).<span class="rec">التوصية: نعم، إصلاح صغير.</span></div></li>
+    <li><div><b>قائمة المدن العشرين</b>، وأول خمس: الرياض، دبي، القاهرة، إسطنبول، الدوحة.<span class="rec">التوصية: نعم.</span></div></li>
+    <li><div><b>المسابقات مجانية الدخول</b>، والجوائز على 3 مراحل، والنقدية فقط بعد المحامي.<span class="rec">التوصية: نعم.</span></div></li>
+    <li><div><b>مباريات البطولات عن بُعد</b>، استثناءً من قاعدة الـ20 متراً للبطولات فقط.<span class="rec">التوصية: نعم.</span></div></li>
+    <li><div><b>الحد الأدنى للعمر:</b> 13 سنة مع «وضع المراهق»، و18 لاشتراك السيلفي.<span class="rec">التوصية: نعم، بعد رأي المحامي.</span></div></li>
+    <li><div><b>ماذا يحدث لشخصية السيلفي حين ينتهي الاشتراك؟</b><span class="rec">التوصية: تُجمَّد 30 يوماً، ثم تعود الشخصية العادية مع حفظ المظهر إن عاد.</span></div></li>
+    <li><div><b>تذكرة المعركة</b> بمسار مجاني ومسار مدفوع، ومكافآت تجميلية فقط.<span class="rec">التوصية: نعم. والمسار المدفوع ضمن اشتراك 9.99 دولار.</span></div></li>
+    <li><div><b>أكواد المؤثرين</b> بنسبة 5%، و«وضع البث» إجباري لحساباتهم.<span class="rec">التوصية: نعم.</span></div></li>
+    <li><div><b>حد الإشعارات:</b> 3 يومياً كحد أعلى، مع ساعات هدوء واحترام أوقات الصلاة والصيام.<span class="rec">التوصية: نعم.</span></div></li>
+    <li><div><b>الانتقال إلى خوادم مخصصة</b> في مرحلة Beta، ولا جوائز قبلها.<span class="rec">التوصية: نعم.</span></div></li>
+    <li><div><b>الفئات الثلاث القادمة:</b> المصارِعة، والحارس، والمهندسة.<span class="rec">التوصية: نعم، في P3.</span></div></li>
+    <li><div><b>إضافة وثيقة التصميم الأحدث (GDD) إلى المستودع</b>، لأن المجلس عمل بدونها.<span class="rec">التوصية: مهم جداً. أرسلها لي إن كانت عندك.</span></div></li>
+    <li><div><b>ميزانية المحامي</b> قبل الشهر السابع من المسابقات، والدول التي نبدأ بها.<span class="rec">التوصية: السعودية، الإمارات، ألمانيا، أمريكا.</span></div></li>
+  </ol>
+</section>
+
+<section>
+  <h2><span class="n">8</span>الوثائق الكاملة</h2>
+  <p>لكل مسؤول وثيقة تفصيلية بالعربية، فيها الأرقام والجداول والمصادر كلها. مجموعها نحو 2700 سطر. ستُضاف إلى المستودع مع الدفعة الكاملة، في مجلد <span class="mono">build-recovery/council/v3/</span>.</p>
+  <div class="files">
+    <span class="card">01 · القتال v3 والأسلحة</span>
+    <span class="card">02 · المسابقات: 14 شهراً</span>
+    <span class="card">03 · السفر والمغامرة</span>
+    <span class="card">04 · الاستمرارية والاقتصاد والمؤثرون</span>
+    <span class="card">05 · التقنية وخريطة الطريق</span>
+  </div>
+</section>
+
+<footer>كل الأرقام تقديرية، وتحتاج اختباراً على هواتف حقيقية ومراجعة قانونية. لم يتغير شيء في المستودع.</footer>
+</main>

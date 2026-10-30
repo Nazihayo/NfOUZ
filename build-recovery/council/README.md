@@ -14,6 +14,11 @@ approved design change: proposals marked "needs decision" wait for the owner.
 | `combat.md` | Combat design book (current behaviour), balance and proposals |
 | `art_bible.md` | Art direction and asset list; concept page in `art-reference/concept-sheet.html` |
 
+Second round (2026-10-29/30): `v3/` holds five design proposals (combat v3,
+14 months of competitions, travel between cities, retention and creators,
+tech roadmap); see `v3/README.md`. Approved Gemini character references are in
+`art-reference/gemini/`.
+
 ## Fixed in the cloud (commits `2e9fcbf`, `c0fcc70`)
 
 Backend (unit-tested, 487/487):
