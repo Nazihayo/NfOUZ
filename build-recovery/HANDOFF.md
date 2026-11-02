@@ -779,6 +779,12 @@ laptop; Unity 6000.0.58f2, Android target):
     `art-reference/concept-sheet.html`. Fixed: `2e9fcbf` (backend, tested)
     and `c0fcc70` (Unity, **not compiled**: compile and run EditMode on the
     laptop before the two-device test). Owner decisions listed there.
+    **2026-11-02 on the laptop:** pulled, `c0fcc70` compiles, EditMode
+    384/384 (345 Nfouz + 39 Mapbox). `PHOTON_FUSION_AVAILABLE` had been lost
+    in the branch switch and was re-added in Player Settings (Android).
+    x86-64 is off. The Mapbox sample's "`UnityLocationProvider` is missing
+    the class attribute 'ExtensionOfNativeClass'" Console error is from the
+    SDK sample prefab and harmless in the Editor (Dev Location is used).
 37. **Design council v3 and Gemini characters, 2026-10-29/30 (cloud).**
     Five proposals for after Build Recovery in `build-recovery/council/v3/`
     (combat v3 and weapons, 14 monthly competitions, travel between cities,
