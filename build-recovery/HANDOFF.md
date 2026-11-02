@@ -785,6 +785,26 @@ laptop; Unity 6000.0.58f2, Android target):
     x86-64 is off. The Mapbox sample's "`UnityLocationProvider` is missing
     the class attribute 'ExtensionOfNativeClass'" Console error is from the
     SDK sample prefab and harmless in the Editor (Dev Location is used).
+    Same evening, first two-client attempt (Editor + Galaxy A16):
+    - Done: `PhotonRoomLifecycle` on Battle → BattleSystems (`2ed5b33`, which
+      also registers `NetworkPlayerController` in `NetworkPlayer.prefab`'s
+      NetworkedBehaviours; it was empty before). Fixed Region `eu` and Run In
+      Background set locally. APK `nfouz-photon.apk` built with
+      `PHOTON_FUSION_AVAILABLE` (20 min) and installed; backend migrated and
+      running; `adb reverse tcp:3000 tcp:3000`; Dev Location set.
+    - Verified: a new account gets class base stats (Scout 80/120).
+    - **Blocker 1, markers invisible:** both maps show no player markers.
+      The Editor Hierarchy has an active `PlayerMarker(Clone)` and the
+      `NearbyPlayerMarker` pool, so the server likely returns the phone
+      player, but the markers (about 2 m capsules) are far too small at the
+      map's zoom; setting Scale 40 in Play mode was not yet checked. Next:
+      Scene view, double-click `PlayerMarker(Clone)`, compare with the
+      buildings, then fix the prefab scale (and the URP material).
+    - **Puzzle 2:** the Editor logs "Location update rate-limited" on every
+      5 s tick (limit is 1 per 4 s per Firebase uid). Look at the backend
+      log for how many `PATCH /player/:id/location` arrive per tick.
+    - No sign-out button exists in the UI; switching the phone's account
+      needed Android "Clear data". Candidate small addition (needs approval).
 37. **Design council v3 and Gemini characters, 2026-10-29/30 (cloud).**
     Five proposals for after Build Recovery in `build-recovery/council/v3/`
     (combat v3 and weapons, 14 monthly competitions, travel between cities,
