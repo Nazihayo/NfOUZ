@@ -1,3 +1,4 @@
+using System.Globalization;
 using Nfouz.Auth;
 using Nfouz.Utils;
 
@@ -18,6 +19,15 @@ namespace Nfouz.Map
         public const string Protected = "لا يمكن التحدي الآن: أحد اللاعبين محمي.";
         public const string NotAvailable = "هذا اللاعب غير متاح للتحدي.";
         public const string JoinFailed = "تعذّر دخول غرفة المعركة. حاول مرة أخرى.";
+
+        /// <summary>Shown under the opponent's class while the challenge
+        /// button is disabled because the opponent is out of range, so the
+        /// player sees why (STATUS.md D7).</summary>
+        public static string OutOfRangeDistance(double distanceMeters, float maxMeters)
+        {
+            return string.Format(CultureInfo.InvariantCulture,
+                "الخصم على بعد {0:0} م، والتحدي حتى {1:0} م.", distanceMeters, maxMeters);
+        }
 
         public static string FromApiError(ApiError error)
         {

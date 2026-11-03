@@ -33,5 +33,11 @@ namespace Nfouz.Tests.EditMode
         {
             Assert.AreEqual(AuthErrorMessages.Generic, ChallengeErrorMessages.FromApiError(null));
         }
+
+        [Test]
+        public void OutOfRangeDistance_NamesBothDistancesInWholeMetres()
+        {
+            Assert.AreEqual("الخصم على بعد 37 م، والتحدي حتى 20 م.", ChallengeErrorMessages.OutOfRangeDistance(37.4, 20f));
+        }
     }
 }

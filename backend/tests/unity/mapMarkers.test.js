@@ -29,3 +29,35 @@ describe('Map markers are large enough to see at map zoom', () => {
     });
   }
 });
+
+/**
+ * STATUS.md D3: the markers used Unity's built-in Default-Material, which URP
+ * draws pink. Every renderer in both prefabs must point at a project material
+ * that uses URP Lit.
+ */
+const fs = require('fs');
+const { listFiles, metaGuid } = require('./unityAssets');
+
+const URP_LIT_SHADER = '{fileID: 4800000, guid: 933532a4fcc9baf4fa0491de14d08ed7, type: 3}';
+
+describe('Map markers use URP materials', () => {
+  const materialByGuid = new Map(
+    listFiles(path.join(ASSETS, '_Project/Art/Materials'), '.mat').map((f) => [metaGuid(f), f]));
+
+  for (const name of ['PlayerMarker', 'NearbyPlayerMarker']) {
+    // Text renderers keep their font's SDF material (a sub-asset of the font).
+    test(`${name}: no built-in material; every mesh material is URP Lit from Art/Materials`, () => {
+      const text = fs.readFileSync(path.join(ASSETS, `_Project/Prefabs/Map/${name}.prefab`), 'utf8');
+      const refs = [...text.matchAll(/^ {2}m_Materials:\r?\n((?: {2}- .*\r?\n)+)/gm)]
+        .flatMap((m) => m[1].trim().split(/\r?\n/).map((l) => l.trim().slice(2)));
+      expect(refs.length).toBeGreaterThan(0);
+      expect(refs.filter((r) => r.includes('guid: 0000000000000000f000000000000000'))).toEqual([]);
+      const meshMaterials = refs.map((r) => r.match(/^\{fileID: 2100000, guid: ([0-9a-f]{32}), type: 2\}$/)).filter(Boolean);
+      expect(meshMaterials.length).toBeGreaterThan(0);
+      for (const m of meshMaterials) {
+        expect(materialByGuid.has(m[1])).toBe(true);
+        expect(fs.readFileSync(materialByGuid.get(m[1]), 'utf8')).toContain(`m_Shader: ${URP_LIT_SHADER}`);
+      }
+    });
+  }
+});

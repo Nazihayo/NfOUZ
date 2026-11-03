@@ -40,6 +40,8 @@ namespace Nfouz.Map
         public event Action<NearbyPlayerData> OnChallengeRequested;
 
         private NearbyPlayerMarkerUi _currentMarker;
+        private string _shownClassLabel;
+        private float _nextRefreshTime;
 
         private void Awake()
         {
@@ -101,8 +103,11 @@ namespace Nfouz.Map
             // can change on every NearbyPlayersTracker refresh tick while it
             // remains selected — re-evaluate eligibility continuously rather
             // than only at the moment of selection.
-            if (_currentMarker != null && miniProfilePopup != null && miniProfilePopup.activeSelf)
+            // Twice a second is enough: the data only changes on a nearby poll.
+            if (_currentMarker != null && miniProfilePopup != null && miniProfilePopup.activeSelf &&
+                Time.unscaledTime >= _nextRefreshTime)
             {
+                _nextRefreshTime = Time.unscaledTime + 0.5f;
                 RefreshChallengeButtonState(_currentMarker.Data);
             }
         }
@@ -119,11 +124,7 @@ namespace Nfouz.Map
                 usernameLabel.text = data.username;
             }
 
-            if (classLabel != null)
-            {
-                classLabel.text = data.class_type;
-            }
-
+            _shownClassLabel = null;
             RefreshChallengeButtonState(data);
         }
 
@@ -172,7 +173,7 @@ namespace Nfouz.Map
 
             if (data.distance_meters > maxChallengeDistanceMeters)
             {
-                reasonIfNot = "الخصم بعيد جداً للتحدي.";
+                reasonIfNot = ChallengeErrorMessages.OutOfRangeDistance(data.distance_meters, maxChallengeDistanceMeters);
                 return false;
             }
 
@@ -213,8 +214,20 @@ namespace Nfouz.Map
                 return;
             }
 
-            var eligible = IsChallengeEligible(data, out _);
+            var eligible = IsChallengeEligible(data, out var reason);
             challengeButton.interactable = eligible;
+
+            // A disabled button alone does not tell the player why (STATUS.md
+            // D7), so the reason goes under the opponent's class.
+            if (classLabel != null)
+            {
+                var text = eligible ? data.class_type : $"{data.class_type}\n{reason}";
+                if (text != _shownClassLabel)
+                {
+                    _shownClassLabel = text;
+                    classLabel.text = text;
+                }
+            }
         }
 
         private void HandleChallengeButtonPressed()
