@@ -6,10 +6,10 @@ describes.
 
 Last updated: 2026-11-03 (evening), branch `claude/sprint-5-photon-multiplayer-5jv8v2`.
 
-## Overall: FAILED
+## Overall: PARTIAL
 
-The two-device battle has never run. Players cannot see each other on the
-map (D1), so no challenge or battle can start (D2).
+Players now see each other on both devices (D1 fixed). The two-device
+challenge and battle (D2) have not run yet.
 
 Statuses (see `CLAUDE.md` → Verification): VERIFIED, PARTIAL, FAILED, BLOCKED.
 
@@ -26,14 +26,14 @@ Statuses (see `CLAUDE.md` → Verification): VERIFIED, PARTIAL, FAILED, BLOCKED.
 | Android APK with Photon | VERIFIED | `nfouz-photon.apk` built and installed, 2026-11-02 (owner's screenshots) |
 | Login → MainMap on phone and Editor | VERIFIED | 2026-11-02 (owner's screenshots); new account gets class stats (Scout 80/120) |
 | `PHOTON_FUSION_AVAILABLE` committed in ProjectSettings | PARTIAL | edited as text in the cloud (one line, same as the laptop's local diff); counts once Unity has opened and re-saved it |
-| Players visible to each other | PARTIAL | own marker visible in the Editor Simulator after `c8dcec1` (owner's screenshot); phone needs a new APK; other player's marker not yet seen |
-| Challenge → battle → result between two devices | BLOCKED | needs D1 |
+| Players visible to each other | VERIFIED for `b5f35d3` | 2026-11-03 21:58: phone (`nfouz-markers.apk`) and Editor Simulator each show two markers, own and the other player's (owner's photo) |
+| Challenge → battle → result between two devices | BLOCKED | not yet run (next step) |
 
 ## Open defects
 
 | ID | Defect | Status of root cause |
 |---|---|---|
-| D1 | No player markers visible on either map (owner's screenshots, 2026-11-02) | **Root cause confirmed 2026-11-03:** the markers were person-sized (about 2 units) while the MainMap camera is about 700 units away, so they drew under one pixel. Scene view showed the marker standing on the ground, at its map position, tiny next to the buildings (owner's screenshot); the terrain hypothesis is ruled out. Fix `c8dcec1`: both marker roots scaled x20 in Unity (the tap collider scales with them). Regression test `backend/tests/unity/mapMarkers.test.js` fails on the old prefabs. Still to verify: both devices see the other player's marker (needs a new APK) |
+| D1 | No player markers visible on either map (owner's screenshots, 2026-11-02) | **Root cause confirmed 2026-11-03:** the markers were person-sized (about 2 units) while the MainMap camera is about 700 units away, so they drew under one pixel. Scene view showed the marker standing on the ground, at its map position, tiny next to the buildings (owner's screenshot); the terrain hypothesis is ruled out. Fix `c8dcec1`: both marker roots scaled x20 in Unity (the tap collider scales with them). Regression test `backend/tests/unity/mapMarkers.test.js` fails on the old prefabs. Verified 2026-11-03: both devices see both markers |
 | D2 | Two-device battle never run | Blocked by D1 |
 | D3 | Markers use Unity's default material (pink under URP) | Confirmed (`NearbyPlayerMarker.prefab`, `fileID 10303`) |
 | D4 | The stats panel covers the top of the map | Seen on both devices in the owner's screenshots; cause not traced |
