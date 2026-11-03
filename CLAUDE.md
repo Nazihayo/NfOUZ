@@ -6,8 +6,28 @@ suggestions.
 
 ## Current status
 
-- **Resuming work?** Read `build-recovery/HANDOFF.md` first: current
-  state, verified results, the active blocker and the next steps.
+- **Resuming work?** Read `build-recovery/STATUS.md` first: what is
+  verified, what is failing, and the open defects. `build-recovery/HANDOFF.md`
+  holds the full history and the laptop setup.
+
+## Verification
+
+- **Status words.** Report every check as VERIFIED (ran, passed, evidence
+  recorded), PARTIAL, FAILED or BLOCKED (could not run). Never call the game
+  ready, stable or working without VERIFIED evidence for that exact commit. A
+  successful build is not a working game.
+- **Unity cannot run in the cloud.** C# written in the cloud is UNCOMPILED
+  until the laptop compiles it; say so in the commit message and in
+  `STATUS.md`, and never describe it as tested.
+- **Unity assets edited as text** (scenes, prefabs, `ProjectSettings`) count
+  only after Unity has opened and re-saved them on the laptop. Change only the
+  lines the fix needs, keep GUIDs and fileIDs, and add a check in
+  `backend/tests/unity/` where the rule can be read from the file.
+- **Every confirmed defect** gets its root cause and reproduction in
+  `STATUS.md`, and a regression test where practical. A hypothesis is never
+  written up as the cause.
+- **Tests.** `backend/` `npm test` runs in CI and in a pre-push hook
+  (`.claude/settings.json`). Never skip, disable or weaken a test to get green.
 
 ## Authoritative sources
 

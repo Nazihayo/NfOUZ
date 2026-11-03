@@ -882,8 +882,10 @@ Notes for the laptop:
   Development URL in `Resources/ApiEnvironmentSettings.asset` at the
   laptop's LAN IP (or `10.0.2.2` on the emulator) for device tests. Don't
   commit a personal IP.
-- The repo's `ProjectSettings/ProjectSettings.asset` is a 10-line stub; the
-  real Android settings exist only on the laptop. Review that file's diff
+- `ProjectSettings/ProjectSettings.asset` is the full file (committed with
+  the Fusion SDK in `55865be`). Since 2026-11-03 it also carries
+  `PHOTON_FUSION_AVAILABLE`, and `backend/tests/unity/networking.test.js`
+  fails if the define goes missing. Review any other diff in that file
   (package name, min/target SDK, IL2CPP + ARM64, "Allow downloads over HTTP")
   before committing it. Unity does not store keystore passwords there.
 

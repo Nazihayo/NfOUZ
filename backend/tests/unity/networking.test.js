@@ -17,7 +17,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { ASSETS, parseUnityFile, field, localRef, metaGuid } = require('./unityAssets');
+const { PROJECT, ASSETS, SCRIPTS_DIR, listFiles, parseUnityFile, field, localRef, metaGuid, scriptGuid } = require('./unityAssets');
 
 const PREFAB = path.join(ASSETS, '_Project/Prefabs/Networking/NetworkPlayer.prefab');
 const BATTLE = path.join(ASSETS, '_Project/Scenes/Battle.unity');
@@ -61,6 +61,20 @@ describe('Photon Fusion: NetworkPlayer prefab', () => {
     expect(new Set(unity.docs.map((d) => d.fileID)).size).toBe(unity.docs.length);
   });
 
+  // Fusion only ticks, syncs and runs RPCs on the behaviours its NetworkObject
+  // lists. Until the prefab was re-saved in Unity on 2026-11-02 (2ed5b33) the
+  // list was empty, so NetworkPlayerController would never have synced.
+  test('the NetworkObject lists every NetworkBehaviour on the prefab', () => {
+    const script = `{fileID: ${NETWORK_OBJECT_FILE_ID}, guid: ${fusionGuid}, type: 3}`;
+    const networkObject = unity.docs.find((d) => d.classId === 114 && field(d, 'm_Script') === script);
+    const listed = [...networkObject.body.matchAll(/^ {2}NetworkedBehaviours:\r?\n((?: {2}- \{fileID: -?\d+\}\r?\n)*)/gm)]
+      .flatMap((m) => [...m[1].matchAll(/fileID: (-?\d+)/g)].map((r) => r[1]));
+    const behaviourGuids = networkBehaviourScriptGuids();
+    const behaviours = unity.docs.filter((d) => d.classId === 114 && behaviourGuids.has(scriptGuid(d)));
+    expect(behaviours.length).toBeGreaterThan(0);
+    expect(listed.sort()).toEqual(behaviours.map((d) => d.fileID).sort());
+  });
+
   test('the prefab carries the FusionPrefab label, so Fusion lists it in its prefab table', () => {
     const meta = fs.readFileSync(`${PREFAB}.meta`, 'utf8');
     expect(/^labels:\r?\n(?:- .*\r?\n)*- FusionPrefab\r?$/m.test(meta)).toBe(true);
@@ -74,11 +88,32 @@ describe('Photon Fusion: project wiring', () => {
     expect(text.includes(`networkPlayerPrefab: {fileID: ${rootGameObject(parseUnityFile(PREFAB)).fileID}, guid: ${guid}, type: 3}`)).toBe(true);
   });
 
+  // Without PHOTON_FUSION_AVAILABLE the battle code compiles its offline stub
+  // instead of Fusion. It used to live only in the laptop's working copy, and
+  // a branch switch on 2026-11-02 silently reset it to this committed file.
+  test('the Android build defines PHOTON_FUSION_AVAILABLE and MAPBOX_SDK_AVAILABLE', () => {
+    const settings = fs.readFileSync(path.join(PROJECT, 'ProjectSettings/ProjectSettings.asset'), 'utf8');
+    const m = settings.match(/^ {2}scriptingDefineSymbols:\r?\n(?: {4}\w+: .*\r?\n)*? {4}Android: (.*?)\r?$/m);
+    expect(m).not.toBeNull();
+    const defines = m[1].split(';');
+    expect(defines).toContain('PHOTON_FUSION_AVAILABLE');
+    expect(defines).toContain('MAPBOX_SDK_AVAILABLE');
+  });
+
   test('Fusion weaves Nfouz.Runtime (the [Networked] properties and RPCs)', () => {
     const config = JSON.parse(fs.readFileSync(FUSION_CONFIG, 'utf8'));
     expect(config.AssembliesToWeave).toContain('Nfouz.Runtime');
   });
 });
+
+/** Script GUIDs of the project's classes that derive from Fusion's NetworkBehaviour. */
+function networkBehaviourScriptGuids() {
+  const guids = new Set();
+  for (const file of listFiles(SCRIPTS_DIR, '.cs')) {
+    if (/\bclass\s+\w+\s*:\s*NetworkBehaviour\b/.test(fs.readFileSync(file, 'utf8'))) guids.add(metaGuid(file));
+  }
+  return guids;
+}
 
 function unquoteName(go) {
   return (field(go, 'm_Name') || '').trim();

@@ -1,0 +1,28 @@
+# Runs the backend test suite on every push and pull request.
+# It also runs the Unity asset checks in backend/tests/unity (scene, prefab and
+# ProjectSettings wiring read as text), which need no Unity install.
+# Unity compilation and EditMode/PlayMode tests still run only on the laptop.
+name: Backend tests
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - run: npm test
