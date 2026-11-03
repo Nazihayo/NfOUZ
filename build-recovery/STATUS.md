@@ -38,6 +38,7 @@ Statuses (see `CLAUDE.md` → Verification): VERIFIED, PARTIAL, FAILED, BLOCKED.
 | D3 | Markers use Unity's default material (pink under URP) | Confirmed (`NearbyPlayerMarker.prefab`, `fileID 10303`) |
 | D4 | The stats panel covers the top of the map | Seen on both devices in the owner's screenshots; cause not traced |
 | D6 | `[ServiceLocator] Accessed before initialization` when Play starts in a scene other than Boot | Expected: start Play from Boot. Not a defect in the build (Boot is scene 0) |
+| D7 | Challenge button looks disabled (dim red) when the opponent's panel opens (owner's photo, 2026-11-03 22:10); no challenge reaches the phone | **Not confirmed.** `ChallengeInteractionController.RefreshChallengeButtonState` disables the button without telling the player why. Most likely reason: distance over `MaxChallengeDistanceMeters` (20 m), since the Editor's dev location came from Google Maps and the phone's indoor GPS can be tens of metres off. Next evidence: Inspector → ChallengeButton → Interactable during Play, and the backend log for `POST /battle/challenge` |
 | D5 | No sign-out button; changing accounts needs Android "Clear data" | Confirmed; a fix is a small feature and needs owner approval |
 
 Most likely explained (not reproduced): the location "rate-limited" log every
