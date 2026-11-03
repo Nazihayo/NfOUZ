@@ -125,6 +125,11 @@ namespace Nfouz.Map
             }
 
             _shownClassLabel = null;
+            if (classLabel != null)
+            {
+                classLabel.text = string.Empty;
+            }
+
             RefreshChallengeButtonState(data);
         }
 
@@ -209,24 +214,24 @@ namespace Nfouz.Map
 
         private void RefreshChallengeButtonState(NearbyPlayerData data)
         {
-            if (challengeButton == null)
-            {
-                return;
-            }
-
             var eligible = IsChallengeEligible(data, out var reason);
-            challengeButton.interactable = eligible;
 
             // A disabled button alone does not tell the player why (STATUS.md
-            // D7), so the reason goes under the opponent's class.
+            // D7): while it is disabled the reason replaces the class, on one
+            // line so the label keeps its height.
             if (classLabel != null)
             {
-                var text = eligible ? data.class_type : $"{data.class_type}\n{reason}";
+                var text = (eligible ? data.class_type : reason) ?? string.Empty;
                 if (text != _shownClassLabel)
                 {
                     _shownClassLabel = text;
                     classLabel.text = text;
                 }
+            }
+
+            if (challengeButton != null)
+            {
+                challengeButton.interactable = eligible;
             }
         }
 

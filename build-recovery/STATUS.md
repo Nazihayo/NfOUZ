@@ -4,7 +4,7 @@ Read this first. `HANDOFF.md` keeps the full history; this file only says
 where things stand now. Update it in the same commit as any change it
 describes.
 
-Last updated: 2026-11-03 (evening), branch `claude/sprint-5-photon-multiplayer-5jv8v2`.
+Last updated: 2026-11-04 (night), branch `claude/sprint-5-photon-multiplayer-5jv8v2`.
 
 ## Overall: PARTIAL
 
@@ -35,11 +35,11 @@ Statuses (see `CLAUDE.md` → Verification): VERIFIED, PARTIAL, FAILED, BLOCKED.
 |---|---|---|
 | D1 | No player markers visible on either map (owner's screenshots, 2026-11-02) | **Root cause confirmed 2026-11-03:** the markers were person-sized (about 2 units) while the MainMap camera is about 700 units away, so they drew under one pixel. Scene view showed the marker standing on the ground, at its map position, tiny next to the buildings (owner's screenshot); the terrain hypothesis is ruled out. Fix `c8dcec1`: both marker roots scaled x20 in Unity (the tap collider scales with them). Regression test `backend/tests/unity/mapMarkers.test.js` fails on the old prefabs. Verified 2026-11-03: both devices see both markers |
 | D2 | Two-device battle never run | Blocked by D1 |
-| D3 | Markers use Unity's default material (pink under URP) | Confirmed (`NearbyPlayerMarker.prefab`, `fileID 10303`) |
+| D3 | Markers used Unity's default material (pink under URP) | Confirmed. **Fix committed (UNCOMPILED, assets edited as text):** five URP Lit materials in `Assets/_Project/Art/Materials` (own blue, opponent red, selection amber, controlled orange, protected teal), assigned in both marker prefabs. Counts once Unity opens and re-saves both prefabs on the laptop. Test `mapMarkers.test.js` fails on the old prefabs |
 | D4 | The stats panel covers the top of the map | Seen on both devices in the owner's screenshots; cause not traced |
 | D6 | `[ServiceLocator] Accessed before initialization` when Play starts in a scene other than Boot | Expected: start Play from Boot. Not a defect in the build (Boot is scene 0) |
-| D7 | Challenge button disabled, no challenge sent (owner's photo, 2026-11-03 22:10) | **Root cause confirmed 2026-11-04:** the opponent marker's DistanceText read 37 m, over `MaxChallengeDistanceMeters` (20 m), so `RefreshChallengeButtonState` disabled the button as designed. The Editor's dev location came from Google Maps, the phone's indoor GPS reported a point 37 m away. Backend log confirmed no `POST /battle/challenge`. **Remaining UI defect:** the panel does not say why the button is disabled (`IsChallengeEligible` returns a reason that is never shown); fixing it changes existing UI behaviour, needs owner approval |
-| D5 | No sign-out button; changing accounts needs Android "Clear data" | Confirmed; a fix is a small feature and needs owner approval |
+| D7 | Challenge button disabled, no challenge sent (owner's photo, 2026-11-03 22:10) | **Root cause confirmed 2026-11-04:** the opponent marker's DistanceText read 37 m, over `MaxChallengeDistanceMeters` (20 m), so the button was disabled as designed; the Editor dev location was 37 m from the phone's indoor GPS fix. Backend log: no `POST /battle/challenge`. **UI fix (owner approved 2026-11-04), UNCOMPILED:** while the button is disabled the panel shows the reason in place of the class, e.g. `بعيد: 38 م (التحدي حتى 20 م)`. EditMode test added |
+| D5 | No sign-out button; changing accounts needed Android "Clear data" | **Owner approved 2026-11-04 ("fix everything"). Code committed, UNCOMPILED:** `SettingsScreen` sign-out flow (confirm popup, push token deactivation best effort, Firebase sign-out, API token cleared, SOS local state cleared, session cleared, Login). **Still needed on the laptop:** add a Button to MainMap's Settings panel and assign it to `SettingsScreen.signOutButton` (and `pushNotificationHandler`). Not verified: push re-registration after a sign-in in the same app run |
 
 Most likely explained (not reproduced): the location "rate-limited" log every
 5 s on 2026-11-02 matches the phone and the Editor signed in to the same

@@ -1,9 +1,11 @@
 using Nfouz.Core;
+using Nfouz.Social;
 using Nfouz.Localization;
 using Nfouz.Map;
 using Nfouz.Networking;
 using Nfouz.Utils;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 namespace Nfouz.UI.Screens
@@ -43,10 +45,11 @@ namespace Nfouz.UI.Screens
 
         [Header("Account")]
         [SerializeField] private Button signOutButton;
-        [Tooltip("Optional: MainMap's PushNotificationHandler, so sign-out stops this device's notifications.")]
+        [Tooltip("MainMap's PushNotificationHandler, so sign-out stops this device's notifications. Found in the scene if left empty.")]
         [SerializeField] private PushNotificationHandler pushNotificationHandler;
 
         private bool _signingOut;
+        private const string SignOutPopupKey = "sign_out";
 
         private bool _savingVisibility;
         private bool _settingToggle; // set from code: not a player's tap
@@ -109,8 +112,9 @@ namespace Nfouz.UI.Screens
             var locator = ServiceLocator.Instance;
             if (locator != null && locator.TryGet<PopupManager>(out var popups))
             {
+                popups.Dismiss(SignOutPopupKey); // a second tap must not queue a second popup
                 popups.ShowConfirm(SignOutMessages.Title, SignOutMessages.Confirm, SignOutMessages.ConfirmLabel,
-                    SignOutMessages.CancelLabel, () => _ = SignOutAsync());
+                    SignOutMessages.CancelLabel, () => _ = SignOutAsync(), null, SignOutPopupKey);
             }
             else
             {
@@ -133,9 +137,15 @@ namespace Nfouz.UI.Screens
 
             try
             {
+                if (pushNotificationHandler == null)
+                {
+                    pushNotificationHandler = FindFirstObjectByType<PushNotificationHandler>();
+                }
+
                 if (pushNotificationHandler != null)
                 {
-                    // Best effort: a failed deactivation must not keep the player signed in.
+                    // Best effort: if this fails (offline), the server keeps this
+                    // device on the old account until the next sign-in moves it.
                     await pushNotificationHandler.ClearTokenAsync();
                 }
             }
@@ -144,14 +154,42 @@ namespace Nfouz.UI.Screens
                 Debug.LogWarning($"[SettingsScreen] Push token deactivation failed on sign-out: {e.GetType().Name}");
             }
 
-            var locator = ServiceLocator.Instance;
-            if (locator != null && locator.TryGet<FirebaseManager>(out var firebaseManager))
+            try
             {
-                firebaseManager.SignOut();
-            }
+                var locator = ServiceLocator.Instance;
+                if (locator != null && locator.TryGet<FirebaseManager>(out var firebaseManager))
+                {
+                    firebaseManager.SignOut();
+                }
 
-            PlayerSession.Clear();
-            await SceneLoader.LoadAsync(Constants.Scenes.Login);
+                // Nothing may keep calling the server with the old account's token.
+                if (locator != null && locator.TryGet<ApiClient>(out var apiClient))
+                {
+                    apiClient.SetAuthToken(null);
+                }
+
+                if (SOSManager.Instance != null)
+                {
+                    SOSManager.Instance.ClearLocalState(); // its saved SOS id is not per player
+                }
+                PlayerSession.Clear();
+                await SceneLoader.LoadAsync(Constants.Scenes.Login);
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogException(e);
+            }
+            finally
+            {
+                if (this != null && SceneManager.GetActiveScene().name != Constants.Scenes.Login)
+                {
+                    _signingOut = false;
+                    if (signOutButton != null)
+                    {
+                        signOutButton.interactable = true;
+                    }
+                }
+            }
         }
 
         private void SetVisibleToggle(bool isOn)
