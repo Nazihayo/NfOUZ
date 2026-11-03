@@ -64,7 +64,7 @@ describe('Photon Fusion: NetworkPlayer prefab', () => {
   // Fusion only ticks, syncs and runs RPCs on the behaviours its NetworkObject
   // lists. Until the prefab was re-saved in Unity on 2026-11-02 (2ed5b33) the
   // list was empty, so NetworkPlayerController would never have synced.
-  test('the NetworkObject lists every NetworkBehaviour on the prefab', () => {
+  test('the NetworkObject lists every NetworkBehaviour of ours on the prefab', () => {
     const script = `{fileID: ${NETWORK_OBJECT_FILE_ID}, guid: ${fusionGuid}, type: 3}`;
     const networkObject = unity.docs.find((d) => d.classId === 114 && field(d, 'm_Script') === script);
     const listed = [...networkObject.body.matchAll(/^ {2}NetworkedBehaviours:\r?\n((?: {2}- \{fileID: -?\d+\}\r?\n)*)/gm)]
@@ -72,7 +72,9 @@ describe('Photon Fusion: NetworkPlayer prefab', () => {
     const behaviourGuids = networkBehaviourScriptGuids();
     const behaviours = unity.docs.filter((d) => d.classId === 114 && behaviourGuids.has(scriptGuid(d)));
     expect(behaviours.length).toBeGreaterThan(0);
-    expect(listed.sort()).toEqual(behaviours.map((d) => d.fileID).sort());
+    // Fusion's own behaviours (NetworkTransform, ...) may be listed too.
+    for (const b of behaviours) expect(listed).toContain(b.fileID);
+    for (const id of listed) expect(unity.byId.get(id)?.classId).toBe(114);
   });
 
   test('the prefab carries the FusionPrefab label, so Fusion lists it in its prefab table', () => {
@@ -93,7 +95,7 @@ describe('Photon Fusion: project wiring', () => {
   // a branch switch on 2026-11-02 silently reset it to this committed file.
   test('the Android build defines PHOTON_FUSION_AVAILABLE and MAPBOX_SDK_AVAILABLE', () => {
     const settings = fs.readFileSync(path.join(PROJECT, 'ProjectSettings/ProjectSettings.asset'), 'utf8');
-    const m = settings.match(/^ {2}scriptingDefineSymbols:\r?\n(?: {4}\w+: .*\r?\n)*? {4}Android: (.*?)\r?$/m);
+    const m = settings.match(/^ {2}scriptingDefineSymbols:\r?\n(?: {4}\w+:.*\r?\n)*? {4}Android: ?(.*?)\r?$/m);
     expect(m).not.toBeNull();
     const defines = m[1].split(';');
     expect(defines).toContain('PHOTON_FUSION_AVAILABLE');
@@ -106,12 +108,30 @@ describe('Photon Fusion: project wiring', () => {
   });
 });
 
-/** Script GUIDs of the project's classes that derive from Fusion's NetworkBehaviour. */
+/**
+ * Script GUIDs of the project's classes that derive, directly or through
+ * another class of ours, from Fusion's NetworkBehaviour.
+ */
 function networkBehaviourScriptGuids() {
-  const guids = new Set();
-  for (const file of listFiles(SCRIPTS_DIR, '.cs')) {
-    if (/\bclass\s+\w+\s*:\s*NetworkBehaviour\b/.test(fs.readFileSync(file, 'utf8'))) guids.add(metaGuid(file));
+  const files = listFiles(SCRIPTS_DIR, '.cs');
+  const decl = /\bclass\s+(\w+)\s*(?:<[^>]*>)?\s*:\s*(?:[\w.]+\.)?(\w+)/g;
+  const baseOf = new Map();
+  const fileOf = new Map();
+  for (const file of files) {
+    for (const m of fs.readFileSync(file, 'utf8').matchAll(decl)) {
+      // A class may be declared once per #if branch (Fusion / offline stub).
+      if (!baseOf.has(m[1])) baseOf.set(m[1], new Set());
+      baseOf.get(m[1]).add(m[2]);
+      fileOf.set(m[1], file);
+    }
   }
+  const derives = (cls, seen = new Set()) => {
+    if (!baseOf.has(cls) || seen.has(cls)) return false;
+    seen.add(cls);
+    return [...baseOf.get(cls)].some((base) => base === 'NetworkBehaviour' || derives(base, seen));
+  };
+  const guids = new Set();
+  for (const cls of baseOf.keys()) if (derives(cls)) guids.add(metaGuid(fileOf.get(cls)));
   return guids;
 }
 

@@ -1,4 +1,4 @@
-# Runs the backend test suite on every push and pull request.
+# Runs the backend test suite on every push (a pull request runs it on its branch's push).
 # It also runs the Unity asset checks in backend/tests/unity (scene, prefab and
 # ProjectSettings wiring read as text), which need no Unity install.
 # Unity compilation and EditMode/PlayMode tests still run only on the laptop.
@@ -6,7 +6,6 @@ name: Backend tests
 
 on:
   push:
-  pull_request:
 
 permissions:
   contents: read
