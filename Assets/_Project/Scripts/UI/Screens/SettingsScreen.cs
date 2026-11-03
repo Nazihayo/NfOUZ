@@ -22,6 +22,11 @@ namespace Nfouz.UI.Screens
     /// "Show me to nearby players" (PATCH /player/{id}/visibility): the
     /// server stores and enforces it; the toggle only shows the stored
     /// value and reverts if saving fails.
+    ///
+    /// Sign out (STATUS.md D5): after a confirmation, deactivates this
+    /// device's push token, signs out of Firebase, clears the session and
+    /// returns to Login. Before this, changing accounts needed Android's
+    /// "Clear data".
     /// </summary>
     public class SettingsScreen : MonoBehaviour
     {
@@ -35,6 +40,13 @@ namespace Nfouz.UI.Screens
 
         [Header("Safety")]
         [SerializeField] private Toggle visibleToggle;
+
+        [Header("Account")]
+        [SerializeField] private Button signOutButton;
+        [Tooltip("Optional: MainMap's PushNotificationHandler, so sign-out stops this device's notifications.")]
+        [SerializeField] private PushNotificationHandler pushNotificationHandler;
+
+        private bool _signingOut;
 
         private bool _savingVisibility;
         private bool _settingToggle; // set from code: not a player's tap
@@ -70,6 +82,11 @@ namespace Nfouz.UI.Screens
                 SetVisibleToggle(!PlayerSession.HasActiveSession || PlayerSession.Current.IsVisible);
                 visibleToggle.onValueChanged.AddListener(HandleVisibleToggleChanged);
             }
+
+            if (signOutButton != null)
+            {
+                signOutButton.onClick.AddListener(HandleSignOutPressed);
+            }
         }
 
         private void OnDisable()
@@ -79,6 +96,62 @@ namespace Nfouz.UI.Screens
             if (musicVolumeSlider != null) musicVolumeSlider.onValueChanged.RemoveListener(HandleMusicVolumeChanged);
             if (sfxVolumeSlider != null) sfxVolumeSlider.onValueChanged.RemoveListener(HandleSfxVolumeChanged);
             if (visibleToggle != null) visibleToggle.onValueChanged.RemoveListener(HandleVisibleToggleChanged);
+            if (signOutButton != null) signOutButton.onClick.RemoveListener(HandleSignOutPressed);
+        }
+
+        private void HandleSignOutPressed()
+        {
+            if (_signingOut || !PlayerSession.HasActiveSession)
+            {
+                return;
+            }
+
+            var locator = ServiceLocator.Instance;
+            if (locator != null && locator.TryGet<PopupManager>(out var popups))
+            {
+                popups.ShowConfirm(SignOutMessages.Title, SignOutMessages.Confirm, SignOutMessages.ConfirmLabel,
+                    SignOutMessages.CancelLabel, () => _ = SignOutAsync());
+            }
+            else
+            {
+                _ = SignOutAsync();
+            }
+        }
+
+        private async System.Threading.Tasks.Task SignOutAsync()
+        {
+            if (_signingOut)
+            {
+                return;
+            }
+
+            _signingOut = true;
+            if (signOutButton != null)
+            {
+                signOutButton.interactable = false;
+            }
+
+            try
+            {
+                if (pushNotificationHandler != null)
+                {
+                    // Best effort: a failed deactivation must not keep the player signed in.
+                    await pushNotificationHandler.ClearTokenAsync();
+                }
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogWarning($"[SettingsScreen] Push token deactivation failed on sign-out: {e.GetType().Name}");
+            }
+
+            var locator = ServiceLocator.Instance;
+            if (locator != null && locator.TryGet<FirebaseManager>(out var firebaseManager))
+            {
+                firebaseManager.SignOut();
+            }
+
+            PlayerSession.Clear();
+            await SceneLoader.LoadAsync(Constants.Scenes.Login);
         }
 
         private void SetVisibleToggle(bool isOn)
