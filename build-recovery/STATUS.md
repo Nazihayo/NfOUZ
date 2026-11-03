@@ -4,7 +4,7 @@ Read this first. `HANDOFF.md` keeps the full history; this file only says
 where things stand now. Update it in the same commit as any change it
 describes.
 
-Last updated: 2026-11-03, branch `claude/sprint-5-photon-multiplayer-5jv8v2`.
+Last updated: 2026-11-03 (evening), branch `claude/sprint-5-photon-multiplayer-5jv8v2`.
 
 ## Overall: FAILED
 
@@ -20,9 +20,9 @@ Statuses (see `CLAUDE.md` → Verification): VERIFIED, PARTIAL, FAILED, BLOCKED.
 | Backend `npm test` (includes Unity asset checks) | VERIFIED | 34 suites / 489 tests, cloud, 2026-11-03 |
 | CI (`.github/workflows/backend-tests.yml`) | see GitHub Actions | added 2026-11-03; a green run there is the evidence |
 | Backend `npm run test:contract:db` | BLOCKED | needs a database; last run item 22 |
-| Unity C# compiles | VERIFIED for `c0fcc70` | laptop, 2026-11-02 (owner's screenshot) |
-| EditMode | VERIFIED for `c0fcc70` | 384/384 (345 Nfouz + 39 Mapbox), laptop, 2026-11-02 (owner's screenshot); no XML kept |
-| PlayMode | BLOCKED | last 9/9 at item 30; not run on the current code |
+| Unity C# compiles | VERIFIED for `0a926d8` | laptop, 2026-11-03: Console 0 errors, 0 warnings after pull (owner's screenshot) |
+| EditMode | VERIFIED for `0a926d8` | 384/384 (345 Nfouz + 39 Mapbox), 0 failed, laptop, 2026-11-03 20:48 (owner's screenshot; Export Results did not save, no XML) |
+| PlayMode | VERIFIED for `0a926d8` | 9/9, 0 failed, laptop, 2026-11-03 20:50 (owner's screenshot) |
 | Android APK with Photon | VERIFIED | `nfouz-photon.apk` built and installed, 2026-11-02 (owner's screenshots) |
 | Login → MainMap on phone and Editor | VERIFIED | 2026-11-02 (owner's screenshots); new account gets class stats (Scout 80/120) |
 | `PHOTON_FUSION_AVAILABLE` committed in ProjectSettings | PARTIAL | edited as text in the cloud (one line, same as the laptop's local diff); counts once Unity has opened and re-saved it |
