@@ -17,7 +17,7 @@ Statuses (see `CLAUDE.md` → Verification): VERIFIED, PARTIAL, FAILED, BLOCKED.
 
 | Check | Status | Evidence (commit, date) |
 |---|---|---|
-| Backend `npm test` (includes Unity asset checks) | VERIFIED | 34 suites / 489 tests, cloud, 2026-11-03 |
+| Backend `npm test` (includes Unity asset checks) | VERIFIED | 35 suites / 491 tests, cloud, 2026-11-03 |
 | CI (`.github/workflows/backend-tests.yml`) | see GitHub Actions | added 2026-11-03; a green run there is the evidence |
 | Backend `npm run test:contract:db` | BLOCKED | needs a database; last run item 22 |
 | Unity C# compiles | VERIFIED for `0a926d8` | laptop, 2026-11-03: Console 0 errors, 0 warnings after pull (owner's screenshot) |
@@ -26,17 +26,18 @@ Statuses (see `CLAUDE.md` → Verification): VERIFIED, PARTIAL, FAILED, BLOCKED.
 | Android APK with Photon | VERIFIED | `nfouz-photon.apk` built and installed, 2026-11-02 (owner's screenshots) |
 | Login → MainMap on phone and Editor | VERIFIED | 2026-11-02 (owner's screenshots); new account gets class stats (Scout 80/120) |
 | `PHOTON_FUSION_AVAILABLE` committed in ProjectSettings | PARTIAL | edited as text in the cloud (one line, same as the laptop's local diff); counts once Unity has opened and re-saved it |
-| Players visible to each other | FAILED | D1 |
+| Players visible to each other | PARTIAL | own marker visible in the Editor Simulator after `c8dcec1` (owner's screenshot); phone needs a new APK; other player's marker not yet seen |
 | Challenge → battle → result between two devices | BLOCKED | needs D1 |
 
 ## Open defects
 
 | ID | Defect | Status of root cause |
 |---|---|---|
-| D1 | No player markers visible on either map (owner's screenshots, 2026-11-02), although the Editor Hierarchy showed an active `PlayerMarker(Clone)` and, once, an active `NearbyPlayerMarker(Clone)` | **Not confirmed.** Hypotheses: marker (~2 units) far too small for a camera ~700 units away (`MainMap.unity`: y 500, z -500, FOV 77); marker below the terrain (`MapboxManager.GeoToWorldPosition` returns the map's y); phone stopped reporting while its screen was off (offline after 120 s). Next evidence: Scene view, double-click `PlayerMarker(Clone)` during Play |
+| D1 | No player markers visible on either map (owner's screenshots, 2026-11-02) | **Root cause confirmed 2026-11-03:** the markers were person-sized (about 2 units) while the MainMap camera is about 700 units away, so they drew under one pixel. Scene view showed the marker standing on the ground, at its map position, tiny next to the buildings (owner's screenshot); the terrain hypothesis is ruled out. Fix `c8dcec1`: both marker roots scaled x20 in Unity (the tap collider scales with them). Regression test `backend/tests/unity/mapMarkers.test.js` fails on the old prefabs. Still to verify: both devices see the other player's marker (needs a new APK) |
 | D2 | Two-device battle never run | Blocked by D1 |
 | D3 | Markers use Unity's default material (pink under URP) | Confirmed (`NearbyPlayerMarker.prefab`, `fileID 10303`) |
 | D4 | The stats panel covers the top of the map | Seen on both devices in the owner's screenshots; cause not traced |
+| D6 | `[ServiceLocator] Accessed before initialization` when Play starts in a scene other than Boot | Expected: start Play from Boot. Not a defect in the build (Boot is scene 0) |
 | D5 | No sign-out button; changing accounts needs Android "Clear data" | Confirmed; a fix is a small feature and needs owner approval |
 
 Most likely explained (not reproduced): the location "rate-limited" log every
