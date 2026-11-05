@@ -4,13 +4,14 @@ Read this first. `HANDOFF.md` keeps the full history; this file only says
 where things stand now. Update it in the same commit as any change it
 describes.
 
-Last updated: 2026-11-04 21:55, branch `claude/sprint-5-photon-multiplayer-5jv8v2`.
+Last updated: 2026-11-05 22:15, branch `claude/sprint-5-photon-multiplayer-5jv8v2`.
 
 ## Overall: PARTIAL
 
-Players see each other on both devices (D1 fixed). The first two-device
-challenge ran on 2026-11-04 and reached the Battle scene, but it was not a real
-fight: the Editor client froze (D8) and the server still recorded a result (D9).
+Players see each other on both devices (D1 fixed). The second two-device battle
+(2026-11-05) ran without `FieldAccessException` (D8) and both devices reached
+the Battle state, but it was not a real fight: nothing moved and no damage
+happened on either device (D12), and the result came from a health mismatch (D11).
 
 Statuses (see `CLAUDE.md` → Verification): VERIFIED, PARTIAL, FAILED, BLOCKED.
 
@@ -28,15 +29,17 @@ Statuses (see `CLAUDE.md` → Verification): VERIFIED, PARTIAL, FAILED, BLOCKED.
 | Login → MainMap on phone and Editor | VERIFIED | 2026-11-02 (owner's screenshots); new account gets class stats (Scout 80/120) |
 | `PHOTON_FUSION_AVAILABLE` committed in ProjectSettings | PARTIAL | edited as text in the cloud (one line, same as the laptop's local diff); counts once Unity has opened and re-saved it |
 | Players visible to each other | VERIFIED for `b5f35d3` | 2026-11-03 21:58: phone (`nfouz-markers.apk`) and Editor Simulator each show two markers, own and the other player's (owner's photo) |
-| Challenge → battle → result between two devices | FAILED for `996be28` | 2026-11-04, phone `nfouz-signout.apk` + Editor: challenge, accept, ready and Photon join worked; the Editor client threw `FieldAccessException` (D8), so no real fight happened. See "First two-device battle" |
+| Challenge → battle → result between two devices | FAILED for Editor `7627607` + phone APK `996be28` | 2026-11-05: challenge to `resolve` and the return to MainMap ran, with no `FieldAccessException`; nothing moved and no damage happened (D12), and the devices disagreed at time end (D11). See "Second two-device battle" |
 
 ## Open defects
 
 | ID | Defect | Status of root cause |
 |---|---|---|
 | D1 | No player markers visible on either map (owner's screenshots, 2026-11-02) | **Root cause confirmed 2026-11-03:** the markers were person-sized (about 2 units) while the MainMap camera is about 700 units away, so they drew under one pixel. Scene view showed the marker standing on the ground, at its map position, tiny next to the buildings (owner's screenshot); the terrain hypothesis is ruled out. Fix `c8dcec1`: both marker roots scaled x20 in Unity (the tap collider scales with them). Regression test `backend/tests/unity/mapMarkers.test.js` fails on the old prefabs. Verified 2026-11-03: both devices see both markers |
-| D2 | No complete two-device battle yet | First attempt 2026-11-04 failed, blocked by D8. Retest after the D8 fix. Step-by-step retest and evidence E1–E7: `FIRST_BATTLE_CHECKLIST.md` |
-| D8 | Editor client stuck on "connecting" in Battle; `FieldAccessException` for `Fusion.NetworkBehaviour:InvokeRpc` and `:Ptr` (`NetworkPlayerController.Spawned`, line 235, then every tick) | **Cause supported by evidence, fix not tried:** both fields are `internal` in `Fusion.Runtime.dll`, and `Nfouz.Runtime` is not in its `InternalsVisibleTo` list. Weaved `Fusion.Unity.dll` (`allowUnsafeCode: true`) carries `UnverifiableCode` and `SkipVerification`; weaved `Nfouz.Runtime.dll` (`allowUnsafeCode: false`) has neither. `Assets/_Project/Scripts/Nfouz.Runtime.asmdef` is the only weaved assembly here with it off. The Player setting is on, but an asmdef has its own flag. Ruled out: all Fusion assemblies and references are 2.0.13; `Nfouz.Runtime` is in `AssembliesToWeave`. Phone (IL2CPP) logged 0 of these errors. **Fix applied (owner approved 2026-11-04):** `allowUnsafeCode: true` in that asmdef, no Library deletion. After it, weaved `Nfouz.Runtime.dll` carries `UnverifiableCode` and `SkipVerification`; batchmode EditMode 386/386, PlayMode 9/9, backend 493/493. These tests did not show the error before the fix either, so it counts as confirmed only when the errors stop in a two-client battle |
+| D2 | No complete two-device battle yet | First attempt 2026-11-04 failed on D8; second attempt 2026-11-05 failed on D12 (E3, E4) and D11 (E5). Step-by-step retest and evidence E1–E7: `FIRST_BATTLE_CHECKLIST.md` |
+| D11 | At time end the host and the client compute different results; a player can win with no recorded damage | **Mechanism shown by code and data, runtime values not logged:** `BattleManager.InitializeCombatant` takes the local player's real max health from `PlayerSession`, but the opponent's from the class base table. `aya3` is a Scout with stored 100/100 (base is 80), `miran` a Scout with 80/80. Host (phone): `miran` 80/80 = 100%, `aya3` 100/80 = 125%, so `aya3` wins. Client (Editor): `aya3` 100/100 = 100%, `miran` 80/80 = 100%, so Overtime. Both match the logs. Reproduction: this battle. Not fixed, needs a decision |
+| D12 | In the battle nothing moved on either device and no damage happened (owner's report, 2026-11-05) | **Root cause not established; no log records input or spawns.** On the host, 3 attack attempts were rejected: `Basic attack ... 12,00m > 2,2m` and Pulse Arc out of range twice, so at least one device's button input reached the host, and the avatars were still 12 m apart 73 s into the match. The log does not say which device sent them. Not yet checked: both avatars present, input authority, `MoveX`/`MoveZ` values. Next step: observe them in the Editor Inspector during a battle |
+| D8 | Editor client stuck on "connecting" in Battle; `FieldAccessException` for `Fusion.NetworkBehaviour:InvokeRpc` and `:Ptr` (`NetworkPlayerController.Spawned`, line 235, then every tick) | **Cause supported by evidence, fix not tried:** both fields are `internal` in `Fusion.Runtime.dll`, and `Nfouz.Runtime` is not in its `InternalsVisibleTo` list. Weaved `Fusion.Unity.dll` (`allowUnsafeCode: true`) carries `UnverifiableCode` and `SkipVerification`; weaved `Nfouz.Runtime.dll` (`allowUnsafeCode: false`) has neither. `Assets/_Project/Scripts/Nfouz.Runtime.asmdef` is the only weaved assembly here with it off. The Player setting is on, but an asmdef has its own flag. Ruled out: all Fusion assemblies and references are 2.0.13; `Nfouz.Runtime` is in `AssembliesToWeave`. Phone (IL2CPP) logged 0 of these errors. **Fix applied (owner approved 2026-11-04):** `allowUnsafeCode: true` in that asmdef, no Library deletion. After it, weaved `Nfouz.Runtime.dll` carries `UnverifiableCode` and `SkipVerification`; batchmode EditMode 386/386, PlayMode 9/9, backend 493/493. These tests did not show the error before the fix either. **Fix verified 2026-11-05 in a two-client battle (Editor `7627607`):** 0 `FieldAccessException` in `Editor.log` after joining the room (about 34,000 in the first battle), and the Editor went through Countdown into Battle. Regression guard in `backend/tests/unity/networking.test.js` |
 | D9 | A battle gets a result while one player is frozen | **Confirmed in code and data, design decision open:** `resolveBattle` accepts the host's signed result and needs nothing from the other player. Host Mode Alpha documents this as a limitation. Not changed. Owner decision 2026-11-04: accepted for Alpha (Host Mode limit); fixed by dedicated servers in Beta; no prize competitions before. |
 | D10 | Phone showed `CurlError 52: Empty reply from server` (owner's report) | **Not reproduced, cause unknown.** 0 matches in the recorded phone Unity log (10:09:47 to 11:17:30), `Editor.log` and the server log. Server stayed up and `adb reverse` was on. The phone was then disconnected, so the full `adb logcat` could not run. Hypothesis to test: Node's default 5 s `keepAliveTimeout` racing the client's roughly 5 s polling |
 | D3 | Markers used Unity's default material (pink under URP) | Confirmed. **Fix committed:** five URP Lit materials in `Assets/_Project/Art/Materials` (own blue, opponent red, selection amber, controlled orange, protected teal), assigned in both marker prefabs. Unity re-saved both prefabs and all five materials in batchmode on the laptop, 2026-11-04: every marker renderer resolves to its material and shader, no content change. Not yet checked on a device. Test `mapMarkers.test.js` fails on the old prefabs |
@@ -71,6 +74,30 @@ Photon host. Editor: `aya3`, defender and client.
   UTC (`control_relationships`). Not reverted; a frozen client caused them. At
   20:52 UTC `is_controlled` still read true; `battle.service.js` has a
   self-heal step for stale rows, not yet seen running here.
+
+## Second two-device battle (2026-11-05, Editor `7627607`, phone APK `996be28`)
+
+Battle `dfce2b61-662a-4645-ac5e-a587cc0ffc03`. Phone: `miran`, attacker and
+Photon host. Editor: `aya3`, defender and client. Requests: `challenge` 21:05:03
+UTC, `accept` 21:05:10, `ready` 21:05:14 and 21:05:17, `resolve` 21:06:50.
+
+| # | Evidence | Status | Detail |
+|---|---|---|---|
+| E1 | No `FieldAccessException` | VERIFIED | 0 in `Editor.log` after joining the room; D8 fix confirmed |
+| E2 | No freeze | PARTIAL | Countdown 3, 2, 1 and `Countdown -> Battle` logged on both devices; screens not confirmed |
+| E3 | Movement synced | FAILED | Owner: nothing moved on either device. See D12 |
+| E4 | Damage synced | FAILED | Owner: no hits or damage. Logged: 3 rejected attacks on the host (`12,00m > 2,2m` and Pulse Arc out of range), 0 deaths. Successful hits are not logged. See D12 |
+| E5 | Same result after a real fight | FAILED | Phone `Battle -> Ended`, showed defeat and -10 Influence. Editor `Battle -> Overtime`, then `Overtime -> Ended` after the host left. See D11 |
+| E6 | Server | VERIFIED | One `resolve`, `status` `resolved`, `forfeited_by` null, `duration_seconds` 90, Influence changed once. Final health is not stored in the database or logged by the server |
+| E7 | Return to the map | PARTIAL | Both reloaded MainMap and both sent location afterwards. A new challenge was not tried |
+
+**Was it a real fight? No.** Owner's report: no movement, no hits, no damage. The
+host ended the match on time at 90 s without Overtime (only the Editor entered
+it), and D11 explains the winner with no damage at all.
+
+**Effects:** `aya3` Influence +15 (now 105), `miran` -10 (now 105), and `miran`
+controlled by `aya3` until 23:06:50 UTC. Not reverted. D10: 0 `CurlError 52` in
+this run; `Curl error 28` (2 s timeout) seen once on each device, source unknown.
 
 Most likely explained (not reproduced): the location "rate-limited" log every
 5 s on 2026-11-02 matches the phone and the Editor signed in to the same
