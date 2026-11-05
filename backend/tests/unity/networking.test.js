@@ -102,6 +102,24 @@ describe('Photon Fusion: project wiring', () => {
     expect(defines).toContain('MAPBOX_SDK_AVAILABLE');
   });
 
+  // STATUS.md D8: Fusion's weaver makes woven code read internal Fusion fields
+  // (NetworkBehaviour.Ptr, InvokeRpc). Mono in the Editor allows that only for
+  // an assembly compiled with unsafe code; without it the Editor threw
+  // FieldAccessException every tick in the first two-device battle, while the
+  // IL2CPP phone build ran. Every project assembly Fusion weaves needs it.
+  test('every project assembly Fusion weaves allows unsafe code', () => {
+    const config = JSON.parse(fs.readFileSync(FUSION_CONFIG, 'utf8'));
+    const woven = new Set(config.AssembliesToWeave);
+    const projectAsmdefs = listFiles(path.join(ASSETS, '_Project'), '.asmdef')
+      .map((file) => ({ file, def: JSON.parse(fs.readFileSync(file, 'utf8')) }))
+      .filter(({ def }) => woven.has(def.name));
+    expect(projectAsmdefs.map(({ def }) => def.name)).toContain('Nfouz.Runtime');
+    for (const { def } of projectAsmdefs) {
+      expect({ assembly: def.name, allowUnsafeCode: def.allowUnsafeCode })
+        .toEqual({ assembly: def.name, allowUnsafeCode: true });
+    }
+  });
+
   test('Fusion weaves Nfouz.Runtime (the [Networked] properties and RPCs)', () => {
     const config = JSON.parse(fs.readFileSync(FUSION_CONFIG, 'utf8'));
     expect(config.AssembliesToWeave).toContain('Nfouz.Runtime');
