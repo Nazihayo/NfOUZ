@@ -24,6 +24,12 @@ waiting for the owner (also published as a private claude.ai page).
   `art-reference/gemini/approved/` stay the official target; professional
   versions are paid for once there are subscribers.
 
+- 2026-11-05: selfie characters become a monthly subscription at a trial
+  price of US$4.99 (not final), replacing the US$9.99 mentioned in `02`, `04`
+  and `05`, which are kept as written. Decisions in `POST_ALPHA_VISION.md`
+  §7.2; prototype plan (on-device vs cloud, measured) in
+  `06_selfie_prototype_plan.md`, after the first real two-player battle.
+
 ## Found while reviewing (needs approval before any change)
 - `backend/src/services/location.service.js` (`MAX_SPEED_KMH = 300`) rejects
   a player's location for hours after a flight (about 16 h for Riyadh to
