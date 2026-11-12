@@ -30,6 +30,15 @@ waiting for the owner (also published as a private claude.ai page).
   §7.2; prototype plan (on-device vs cloud, measured) in
   `06_selfie_prototype_plan.md`, after the first real two-player battle.
 
+- 2026-11-12: NFOUZ is a global game, not a Gulf-only one; the streets are
+  those of the player's own city, anywhere. Decision in
+  `POST_ALPHA_VISION.md` §7.4. These proposals are read in its light and kept
+  as written: the soft launch in "one Gulf country" and the "GCC + Arab"
+  launch in `05` §6.1 and §6.5 (launch markets are open again), the
+  Gulf-heavy first five cities in `03` §4, and the Gulf look of heroes and
+  gear in `05` §2 (one regional style line among several, as `01` already
+  says for weapons).
+
 ## Found while reviewing (needs approval before any change)
 - `backend/src/services/location.service.js` (`MAX_SPEED_KMH = 300`) rejects
   a player's location for hours after a flight (about 16 h for Riyadh to
