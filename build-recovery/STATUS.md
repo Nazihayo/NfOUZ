@@ -130,3 +130,19 @@ Test Runner → EditMode (then PlayMode) → Run All → ⋮ → Export Results,
 
 (close the Editor first; repeat with `PlayMode` and `playmode.xml`). Note the
 commit (`git log -1 --oneline`) next to the result.
+
+## Battle visuals tool (2026-11-14): UNCOMPILED, not run
+
+Written in the cloud, so it has not been compiled or run; nothing in the
+Battle scene has changed yet. `Assets/_Project/Editor/BattleVisualSetup.cs`
+(Tools → NFOUZ → Battle Visuals, or batchmode
+`-executeMethod Nfouz.EditorTools.BattleVisualSetup.ApplyBatch`) gives Battle
+a procedural sky, a warm low sun with soft shadows, a trilight ambient, light
+fog, and one global post-processing Volume (ACES tonemapping, low bloom,
+small contrast and saturation lift, soft vignette) with post-processing and
+FXAA on the battle camera. It touches no gameplay code. Run it on the laptop
+only after the materials fix (`289d726`, laptop only) is merged and the third
+battle has been played; then check frame rate on the Galaxy A16 before
+keeping it, and add a scene check in `backend/tests/unity/` once Unity has
+saved the scene. New test `editorCode.test.js`: any C# file using
+`UnityEditor` must be editor-only (fails on a misplaced copy of this tool).
