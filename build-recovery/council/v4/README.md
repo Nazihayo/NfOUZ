@@ -15,6 +15,24 @@ claims against the code, and wrote the decision. All files are in Arabic.
 | `04_growth_liveops.md` | Growth & live-ops | How location games grow and die, city-by-city launch, monetization without pay-to-win, KPI gates, legal minimum |
 | `05_producer_plan.md` | Producer | Real velocity, realistic timeline, budget by phase, scope freeze, 90-day plan, working process |
 
+## Owner decisions
+
+- 2026-11-26: the owner approved all eight decisions in
+  `00_DIRECTOR_DECISION.md` §6 with the director's defaults: (1) scope frozen
+  until Alpha, and the latest GDD to be added to the repo; (2) D11 fix: the
+  server supplies both players' stored max health, and old accounts are
+  corrected to the GDD class values; (3) B1 fix in the same batch: the host
+  rejects health above that value, and the server checks each player's final
+  health against their own stored value; (4) first market: the owner's city
+  in Germany (students and the Arab community), the Gulf second through a
+  local partner, no German localization before Beta; (5) age 16+ at launch,
+  18+ for selfie and prizes, adults only in Alpha; (6) battle length stays
+  90 s + 30 s overtime unless the GDD says otherwise; (7) Alpha budget up to
+  EUR 1,500 in the stated order, nothing spent before Phase 0 ends;
+  (8) `BattleVisualSetup` is not run before the third battle, then kept only
+  if it holds 30 fps on the Galaxy A16, otherwise a Low version without
+  post-processing. The 20 v3 decisions stay open and frozen.
+
 ## Status
 
 **Everything here is a proposal awaiting the owner's approval**, except work
